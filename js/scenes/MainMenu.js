@@ -1,6 +1,7 @@
 export default class MainMenu extends Phaser.Scene {
     constructor() {
         super('MainMenu');
+        console.log('MainMenu loaded - Stats updated: Titan 20% fire, 30% speed, Pulsar 60% fire, 60% speed');
         this.titleMusicStarted = false;
         this.scorePanel = null; // Store reference to score panel for updates
         this.settingsPanel = null; // Store reference to settings panel
@@ -9,6 +10,43 @@ export default class MainMenu extends Phaser.Scene {
         this.taskListVisible = false; // Track if task list is visible
         this.shipSelectionPanel = null; // Store reference to ship selection panel
         this.shipSelectionVisible = false; // Track if ship selection panel is visible
+        this.difficultySelectionPanel = null; // Store reference to difficulty selection panel
+        this.difficultySelectionVisible = false; // Track if difficulty selection panel is visible
+        this.activeNotifications = []; // Track active quest notifications
+        
+        // Difficulty settings
+        this.difficulties = [
+            {
+                id: 'easy',
+                name: 'EASY',
+                description: 'Fewer enemies, lower health, less damage',
+                enemyHealthMod: 0.7,
+                enemyDamageMod: 0.7,
+                enemySpawnMod: 1.3,  // Higher value = slower spawns
+                maxEnemiesMod: 0.7   // Lower value = fewer enemies
+            },
+            {
+                id: 'normal',
+                name: 'NORMAL',
+                description: 'Standard challenge for most players',
+                enemyHealthMod: 1.0,
+                enemyDamageMod: 1.0,
+                enemySpawnMod: 1.0,
+                maxEnemiesMod: 1.0
+            },
+            {
+                id: 'hard',
+                name: 'HARD',
+                description: 'More enemies, higher health, more damage',
+                enemyHealthMod: 1.3,
+                enemyDamageMod: 1.3,
+                enemySpawnMod: 0.8,  // Lower value = faster spawns
+                maxEnemiesMod: 1.3    // Higher value = more enemies
+            }
+        ];
+        
+        // Load selected difficulty (default to Normal)
+        this.selectedDifficultyIndex = parseInt(localStorage.getItem('selectedDifficultyIndex') || '1');
         
         // Ship data with stats
         this.ships = [
@@ -17,9 +55,10 @@ export default class MainMenu extends Phaser.Scene {
                 name: 'PULSAR',
                 sprite: 'normal_spaceship',
                 description: 'Balanced performance for all pilots',
-                speed: 0.7, // 70% of max
+                speed: 0.6, // 60% of max (reduced from 0.7)
                 hp: 0.6,    // 60% of max
-                fireRate: 0.7, // 70% of max (medium fire rate)
+                fireRate: 0.6, // 60% of max (reduced from 0.7)
+                damage: 0.6, // 60% of max (20 damage)
                 scale: 0.5  // Display scale for menu
             },
             { 
@@ -27,9 +66,10 @@ export default class MainMenu extends Phaser.Scene {
                 name: 'TITAN',
                 sprite: 'tank_spaceship-removebg-preview',
                 description: 'Heavy armor, slower movement',
-                speed: 0.4, // 40% of max
+                speed: 0.3, // 30% of max (reduced from 0.4)
                 hp: 1.0,    // 100% of max
-                fireRate: 0.4, // 40% of max (slow fire rate)
+                fireRate: 0.2, // 20% of max (reduced from 0.4)
+                damage: 0.8, // 80% of max (25 damage)
                 scale: 0.6  // Display scale for menu
             },
             { 
@@ -40,6 +80,7 @@ export default class MainMenu extends Phaser.Scene {
                 speed: 1.0, // 100% of max
                 hp: 0.3,    // 30% of max
                 fireRate: 1.0, // 100% of max (fastest fire rate)
+                damage: 0.5, // 50% of max (15 damage)
                 scale: 0.45 // Display scale for menu (smaller)
             }
         ];
@@ -49,43 +90,111 @@ export default class MainMenu extends Phaser.Scene {
         
         // Define tasks - stored as static property for easy reference elsewhere
         this.tasks = [
+            { id: 'score5k', description: 'Reach high score of 5,000', type: 'score', target: 5000 },
+            { id: 'wave4', description: 'Complete Wave 4', type: 'waveCompleted', target: 4 },
+            { id: 'score15k', description: 'Reach high score of 15,000', type: 'score', target: 15000 },
+            { id: 'wave7', description: 'Complete Wave 7', type: 'waveCompleted', target: 7 },
             { id: 'score25k', description: 'Reach high score of 25,000', type: 'score', target: 25000 },
-            { id: 'score50k', description: 'Reach high score of 50,000', type: 'score', target: 50000 },
-            { id: 'score100k', description: 'Reach high score of 100,000', type: 'score', target: 100000 },
-            { id: 'wave5', description: 'Reach Wave 5', type: 'wave', target: 5 },
-            { id: 'wave10', description: 'Reach Wave 10', type: 'wave', target: 10 },
-            { id: 'wave25', description: 'Reach Wave 25', type: 'wave', target: 25 }
+            { id: 'wave10', description: 'Complete Wave 10', type: 'waveCompleted', target: 10 }
         ];
     }
 
     preload() {
         // Preload ship sprites if they haven't been loaded elsewhere
         if (!this.textures.exists('normal_spaceship')) {
-            this.load.image('normal_spaceship', 'assets/images/sprites/normal_spaceship.png');
+            this.load.image('normal_spaceship', 'assets/images/sprites/ships/normal_spaceship.png');
         }
         if (!this.textures.exists('tank_spaceship-removebg-preview')) {
-            this.load.image('tank_spaceship-removebg-preview', 'assets/images/sprites/tank_spaceship-removebg-preview.png');
+            this.load.image('tank_spaceship-removebg-preview', 'assets/images/sprites/ships/tank_spaceship-removebg-preview.png');
         }
         if (!this.textures.exists('speedy_spaceship-removebg-preview')) {
-            this.load.image('speedy_spaceship-removebg-preview', 'assets/images/sprites/speedy_spaceship-removebg-preview.png');
+            this.load.image('speedy_spaceship-removebg-preview', 'assets/images/sprites/ships/speedy_spaceship-removebg-preview.png');
         }
         
         // Preload button images with correct paths
-        this.load.image('questsbtn', 'assets/images/sprites/questsbtn.png');
-        this.load.image('startbutton', 'assets/images/sprites/startbutton.png');
-        this.load.image('settingsbtn', 'assets/images/sprites/settingsbtn.png');
+        this.load.image('questsbtn', 'assets/images/sprites/buttons/questsbtn.png');
+        this.load.image('startbutton', 'assets/images/sprites/buttons/startbutton.png');
+        this.load.image('settingsbtn', 'assets/images/sprites/buttons/settingsbtn.png');
+        this.load.image('difficultybtn', 'assets/images/sprites/buttons/difficultybtn.png');
+        this.load.image('quest', 'assets/images/sprites/quests/quest.png');
+        this.load.image('questcomplete', 'assets/images/sprites/quests/questcomplete.png');
         
         // Preload title image
         this.load.image('title', 'assets/images/sprites/title.png');
         
         // Preload sound effects
         this.load.audio('button-sound', 'assets/audio/sfx/button.mp3');
+        
+        // Setup fallback for quest icons if they don't load
+        this.load.on('filecomplete', this.checkAndCreateFallbackTextures, this);
+    }
+    
+    // Create fallback textures for quest icons if needed
+    checkAndCreateFallbackTextures(key) {
+        // Only run this after the create method has been called
+        if (this.scene.isActive('MainMenu')) {
+            if (key === 'quest' && !this.textures.exists('quest')) {
+                this.createFallbackQuestTexture();
+            }
+            if (key === 'questcomplete' && !this.textures.exists('questcomplete')) {
+                this.createFallbackQuestCompleteTexture();
+            }
+        }
+    }
+    
+    // Create a fallback texture for the incomplete quest icon
+    createFallbackQuestTexture() {
+        const graphics = this.make.graphics();
+        
+        // Create a purple circle with a border
+        graphics.fillStyle(0x550055, 1);
+        graphics.fillCircle(15, 15, 15);
+        graphics.lineStyle(2, 0xff00ff, 1);
+        graphics.strokeCircle(15, 15, 15);
+        
+        // Draw a question mark
+        graphics.fillStyle(0xffffff, 1);
+        graphics.fillCircle(15, 8, 3);
+        graphics.fillRect(12, 11, 3, 7);
+        graphics.fillRect(15, 18, 3, 3);
+        
+        graphics.generateTexture('quest', 30, 30);
+        graphics.destroy();
+        
+        console.log('Created fallback quest texture');
+    }
+    
+    // Create a fallback texture for the completed quest icon
+    createFallbackQuestCompleteTexture() {
+        const graphics = this.make.graphics();
+        
+        // Create a green circle with a border
+        graphics.fillStyle(0x005500, 1);
+        graphics.fillCircle(15, 15, 15);
+        graphics.lineStyle(2, 0x00ff00, 1);
+        graphics.strokeCircle(15, 15, 15);
+        
+        // Draw a checkmark
+        graphics.lineStyle(4, 0xffffff, 1);
+        graphics.beginPath();
+        graphics.moveTo(8, 15);
+        graphics.lineTo(13, 20);
+        graphics.lineTo(22, 10);
+        graphics.strokePath();
+        
+        graphics.generateTexture('questcomplete', 30, 30);
+        graphics.destroy();
+        
+        console.log('Created fallback quest complete texture');
     }
 
     create() {
         // Make sure to explicitly load sound settings
         this.soundVolume = parseFloat(localStorage.getItem('soundVolume') || '0.8');
         console.log("MainMenu create: Sound volume =", this.soundVolume);
+        
+        // First, forcefully clean up any leftover UI elements from previous sessions
+        this.forceRemoveAllQuestElements();
         
         // Create enhanced background
         this.createEnhancedBackground();
@@ -114,6 +223,9 @@ export default class MainMenu extends Phaser.Scene {
         // Load selected ship from localStorage
         this.loadSelectedShip();
         
+        // Load selected difficulty from localStorage
+        this.loadSelectedDifficulty();
+        
         // Game title using image - moved down and smaller
         const title = this.add.image(width / 2, height / 4, 'title');
         title.setScale(0.35);
@@ -134,7 +246,7 @@ export default class MainMenu extends Phaser.Scene {
         this.soundVolume = parseFloat(localStorage.getItem('soundVolume') || '0.8');
         
         // Play button using image with proper hitArea
-        const playButton = this.add.image(width / 2, height / 2 + 80, 'startbutton');
+        const playButton = this.add.image(width / 2, height / 2 + 120, 'startbutton');
         playButton.setScale(0.25);
         playButton.setDepth(UI_DEPTH);
         
@@ -151,7 +263,7 @@ export default class MainMenu extends Phaser.Scene {
         ), Phaser.Geom.Rectangle.Contains, { useHandCursor: true });
         
         // Add glow effect to play button
-        const playGlow = this.add.rectangle(width / 2, height / 2 + 80, 210, 80, 0xff00ff, 0.2);
+        const playGlow = this.add.rectangle(width / 2, height / 2 + 120, 210, 80, 0xff00ff, 0.2);
         this.tweens.add({
             targets: playGlow,
             alpha: { from: 0.2, to: 0.4 },
@@ -215,6 +327,9 @@ export default class MainMenu extends Phaser.Scene {
         // Add task list button
         this.createTaskButton();
         
+        // Add difficulty button next to the task list button
+        this.createDifficultyButton();
+        
         // Create settings panel (initially hidden)
         this.createSettingsPanel();
         
@@ -224,10 +339,295 @@ export default class MainMenu extends Phaser.Scene {
         // Create ship selection panel (initially hidden)
         this.createShipSelectionPanel();
         
+        // Create difficulty selection panel (initially hidden)
+        this.createDifficultySelectionPanel();
+        
+        // Schedule another cleanup after a short delay to catch any elements that might be created after the main UI is set up
+        this.time.delayedCall(100, this.forceRemoveAllQuestElements, [], this);
+        this.time.delayedCall(500, this.forceRemoveAllQuestElements, [], this);
+        this.time.delayedCall(1000, this.forceRemoveAllQuestElements, [], this);
+        
         // Check if tasks need to be updated based on high score/wave
         this.checkTaskCompletion();
     }
     
+    // Aggressive cleanup of quest elements - will search and destroy all quest-related UI elements
+    forceRemoveAllQuestElements() {
+        console.log("Force removing all quest elements");
+        
+        // First try to clean up using existing methods
+        this.cleanupNotifications();
+        
+        if (this.questNotification) {
+            this.questNotification.destroy();
+            this.questNotification = null;
+        }
+
+        // Now scan the ENTIRE scene for ANY quest-related elements
+        const purpleTints = [0xff00ff, 0x880088, 0x550055, 0xaa00aa, 0xdd00dd];
+        
+        // Find all objects in the scene
+        const objects = this.children.list;
+        
+        objects.forEach(obj => {
+            // Skip any background elements by checking depth
+            if (obj.depth !== undefined && obj.depth < 0) {
+                return; // Skip background elements (they have negative depth)
+            }
+            
+            // Skip bg layers or star containers explicitly
+            if ((obj.type === 'Container' && 
+                 (obj === this.bgLayers?.far || 
+                  obj === this.bgLayers?.mid || 
+                  obj === this.bgLayers?.near))) {
+                return;
+            }
+            
+            // Skip any object that belongs to background
+            if (this.isBackgroundElement(obj)) {
+                return;
+            }
+            
+            // Skip star particles
+            if (obj.type === 'Particle' || 
+                (obj.texture && obj.texture.key === 'particle')) {
+                return;
+            }
+            
+            // Check for quest textures directly
+            if (obj.texture && (obj.texture.key === 'quest' || obj.texture.key === 'questcomplete')) {
+                console.log("Found quest texture:", obj.texture.key);
+                obj.destroy();
+                return;
+            }
+            
+            // Check for purple-tinted objects that are likely quest-related
+            if (obj.tintTopLeft && purpleTints.includes(obj.tintTopLeft)) {
+                // Skip if it's the play button glow
+                if (obj === this.playGlow) return;
+                
+                console.log("Found purple tinted object");
+                obj.destroy();
+                return;
+            }
+            
+            // Check for purple fill colors - ONLY for small objects likely to be quest indicators
+            if (obj.fillColor && purpleTints.includes(obj.fillColor)) {
+                // Skip the play button glow which is also purple
+                if (obj === this.playGlow) return;
+                
+                // Only remove small purple objects that are likely quest indicators
+                const isSmall = obj.width < 50 && obj.height < 50;
+                
+                // Skip if it's part of essential UI (settings, ship selection, etc.)
+                if (isSmall && !this.isEssentialUIElement(obj)) {
+                    console.log("Found small purple fill color object");
+                    obj.destroy();
+                    return;
+                }
+            }
+            
+            // If it's a container, check its children, but ONLY for small containers
+            if (obj.type === 'Container') {
+                // Don't check essential UI containers to avoid breaking the UI
+                if (this.isEssentialUIComponent(obj)) {
+                    return;
+                }
+                
+                // Only check small containers that are likely notifications
+                const isSmallContainer = !obj.width || obj.width < 200;
+                const isTopAreaContainer = obj.y < 100;
+                
+                if (isSmallContainer && isTopAreaContainer) {
+                    console.log("Found small top container, checking for quest elements");
+                    
+                    // Check if this container includes quest-related elements
+                    const hasQuestElements = this.containerHasQuestElements(obj);
+                    if (hasQuestElements) {
+                        console.log("Found container with quest elements");
+                        obj.destroy();
+                        return;
+                    }
+                    
+                    // If it's a standalone notification in the top area
+                    if (obj.y < 100 && (!obj.width || obj.width < 100)) {
+                        console.log("Found probable notification container at y=", obj.y);
+                        obj.destroy();
+                        return;
+                    }
+                }
+            }
+        });
+    }
+    
+    // Check if an element is part of the background
+    isBackgroundElement(obj) {
+        // Check if it belongs to any background layer
+        if (this.bgLayers) {
+            for (const layer of Object.values(this.bgLayers)) {
+                if (this.isChildOfContainer(obj, layer)) {
+                    return true;
+                }
+            }
+        }
+        
+        // Check for particles, stars, or nebula elements
+        if (this.stars && this.stars.some(star => star.sprite === obj)) {
+            return true;
+        }
+        
+        // Check depth - background elements usually have negative depth
+        if (obj.depth !== undefined && obj.depth < 0) {
+            return true;
+        }
+        
+        return false;
+    }
+    
+    // Check if a container is an essential UI component
+    isEssentialUIComponent(container) {
+        const essentialContainers = [
+            this.shipSelectionPanel,
+            this.settingsPanel,
+            this.taskListPanel,
+            this.difficultySelectionPanel,
+            this.shipShowcase,
+            this.difficultyShowcase,
+            this.scorePanel
+        ];
+        
+        return essentialContainers.includes(container);
+    }
+    
+    // Check if a container has any quest-related elements
+    containerHasQuestElements(container) {
+        if (!container || !container.list) return false;
+        
+        const purpleTints = [0xff00ff, 0x880088, 0x550055, 0xaa00aa, 0xdd00dd];
+        
+        for (const child of container.list) {
+            // Check for quest textures
+            if (child.texture && (child.texture.key === 'quest' || child.texture.key === 'questcomplete')) {
+                return true;
+            }
+            
+            // Check for purple tints
+            if (child.tintTopLeft && purpleTints.includes(child.tintTopLeft)) {
+                return true;
+            }
+            
+            // Check for purple fill colors
+            if (child.fillColor && purpleTints.includes(child.fillColor)) {
+                return true;
+            }
+            
+            // Check for text that mentions quests or challenges
+            if (child.text && (child.text.includes('QUEST') || child.text.includes('CHALLENGE'))) {
+                return true;
+            }
+            
+            // Recursively check child containers
+            if (child.type === 'Container' && this.containerHasQuestElements(child)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    // Add explicit cleanup to the showQuestCompletedNotification method
+    showQuestCompletedNotification(task, delay = 0) {
+        // Skip notifications in the main menu scene
+        if (this.scene.key === 'MainMenu') {
+            console.log("Skipping quest notification in MainMenu scene");
+            return;
+        }
+        
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+        
+        // Create notification container - make it smaller and position it at the top of the screen
+        const notification = this.add.container(width / 2, 70);
+        notification.setDepth(1000);
+        
+        // Track this notification
+        this.activeNotifications.push(notification);
+        
+        // Background - reduced size
+        const bg = this.add.rectangle(0, 0, 350, 60, 0x000000, 0.8);
+        bg.setStrokeStyle(2, 0xff00ff);
+        notification.add(bg);
+        
+        // Quest complete icon - smaller size
+        const questIcon = this.add.image(-140, 0, 'questcomplete');
+        questIcon.setDisplaySize(30, 30);
+        notification.add(questIcon);
+        
+        // Completed text - smaller font
+        const title = this.add.text(-100, -15, 'QUEST COMPLETED!', {
+            font: 'bold 16px Arial',
+            fill: '#ffff00'
+        });
+        title.setOrigin(0.5);
+        notification.add(title);
+        
+        // Quest description - smaller font
+        const description = this.add.text(-100, 15, task.description, {
+            font: '14px Arial',
+            fill: '#ffffff'
+        });
+        description.setOrigin(0, 0.5);
+        notification.add(description);
+        
+        // Set initial state for animation
+        notification.setAlpha(0);
+        notification.y -= 30;
+        
+        // Delayed appearance for multiple notifications
+        this.time.delayedCall(delay * 500, () => {
+            // Play sound
+            this.sound.play('button-sound', { volume: this.soundVolume * 1.5 });
+            
+            // Animate in
+            this.tweens.add({
+                targets: notification,
+                y: 70,
+                alpha: 1,
+                duration: 300,
+                ease: 'Back.easeOut',
+                onComplete: () => {
+                    // Animate quest icon - subtler animation
+                    this.tweens.add({
+                        targets: questIcon,
+                        scale: { from: 1, to: 1.2 },
+                        duration: 400,
+                        yoyo: true,
+                        repeat: 2
+                    });
+                    
+                    // Wait and fade out - shorter duration
+                    this.time.delayedCall(2000, () => {
+                        this.tweens.add({
+                            targets: notification,
+                            y: notification.y - 30,
+                            alpha: 0,
+                            duration: 300,
+                            ease: 'Back.easeIn',
+                            onComplete: () => {
+                                // Remove from tracking array
+                                const index = this.activeNotifications.indexOf(notification);
+                                if (index > -1) {
+                                    this.activeNotifications.splice(index, 1);
+                                }
+                                notification.destroy();
+                            }
+                        });
+                    });
+                }
+            });
+        });
+    }
+
     // Override scene's init to force refreshing the high score display when returning to the menu
     init() {
         // Flag to track if this is a return from another scene
@@ -278,6 +678,116 @@ export default class MainMenu extends Phaser.Scene {
             this.shipSelectionPanel.setVisible(false);
             this.shipSelectionVisible = false;
         }
+        
+        // Clean up any active notifications
+        this.cleanupNotifications();
+        
+        // Make sure to destroy any quest notification indicator
+        if (this.questNotification) {
+            this.questNotification.destroy();
+            this.questNotification = null;
+        }
+        
+        // Find and destroy all quest-related elements that might be leftover
+        this.cleanupQuestElements();
+    }
+    
+    // Helper method to cleanup all active notifications
+    cleanupNotifications() {
+        // Destroy all active notifications
+        if (this.activeNotifications && this.activeNotifications.length > 0) {
+            this.activeNotifications.forEach(notification => {
+                if (notification && notification.destroy) {
+                    notification.destroy();
+                }
+            });
+            this.activeNotifications = [];
+        }
+    }
+    
+    // Find and destroy any quest-related elements that might be leftover
+    cleanupQuestElements() {
+        if (this.children && this.children.list) {
+            // Look for any quest-related containers, images, or notification elements
+            this.children.list.forEach(child => {
+                // Look for quest icons or purple UI elements
+                if ((child.texture && (child.texture.key === 'quest' || child.texture.key === 'questcomplete')) ||
+                    (child.type === 'Container' && child.name === 'questNotification') ||
+                    (child.fillColor === 0xff00ff || child.fillColor === 0x880088 || child.fillColor === 0x550055)) {
+                    
+                    // Check if it's not part of a necessary UI element
+                    if (!this.isEssentialUIElement(child)) {
+                        console.log('Removing quest element:', child.type, child.name);
+                        child.destroy();
+                    }
+                }
+                
+                // Check for containers that might contain quest notifications
+                if (child.type === 'Container') {
+                    const purpleElements = this.findPurpleElements(child);
+                    if (purpleElements.length > 0 && !this.isEssentialUIElement(child)) {
+                        console.log('Removing container with purple elements');
+                        child.destroy();
+                    }
+                }
+            });
+        }
+    }
+    
+    // Helper to find purple elements in containers
+    findPurpleElements(container) {
+        const purpleElements = [];
+        if (container && container.list) {
+            container.list.forEach(item => {
+                if (item.fillColor === 0xff00ff || 
+                    item.fillColor === 0x880088 || 
+                    item.fillColor === 0x550055 ||
+                    (item.texture && (item.texture.key === 'quest' || item.texture.key === 'questcomplete'))) {
+                    purpleElements.push(item);
+                }
+            });
+        }
+        return purpleElements;
+    }
+    
+    // Check if the element is part of essential UI that should not be removed
+    isEssentialUIElement(element) {
+        // Don't remove elements that are part of these essential UI containers
+        const essentialContainers = [
+            this.shipSelectionPanel,
+            this.difficultySelectionPanel, 
+            this.settingsPanel,
+            this.scorePanel,
+            this.taskListPanel,
+            this.shipShowcase,
+            this.difficultyShowcase
+        ];
+        
+        // Check if the element is or belongs to an essential container
+        for (const container of essentialContainers) {
+            if (container && (element === container || this.isChildOfContainer(element, container))) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    // Check if an element is a child of a container
+    isChildOfContainer(element, container) {
+        if (!container || !container.list) return false;
+        
+        // Direct children
+        if (container.list.includes(element)) return true;
+        
+        // Check nested containers
+        for (const child of container.list) {
+            if (child.type === 'Container' && this.isChildOfContainer(element, child)) {
+                return true;
+            }
+        }
+        
+        return false;
     }
     
     // Load selected ship from localStorage
@@ -310,6 +820,34 @@ export default class MainMenu extends Phaser.Scene {
         }
     }
     
+    // Load selected difficulty from localStorage
+    loadSelectedDifficulty() {
+        try {
+            const savedDifficulty = localStorage.getItem('selectedDifficulty');
+            if (savedDifficulty) {
+                // Find the index of the saved difficulty
+                const index = this.difficulties.findIndex(diff => diff.id === savedDifficulty);
+                if (index !== -1) {
+                    this.selectedDifficultyIndex = index;
+                }
+            }
+        } catch (e) {
+            console.error('Error loading selected difficulty:', e);
+        }
+    }
+    
+    // Save selected difficulty to localStorage
+    saveSelectedDifficulty() {
+        try {
+            const difficultyId = this.difficulties[this.selectedDifficultyIndex].id;
+            localStorage.setItem('selectedDifficulty', difficultyId);
+            localStorage.setItem('selectedDifficultyIndex', this.selectedDifficultyIndex.toString());
+            console.log('Saved selected difficulty:', difficultyId);
+        } catch (e) {
+            console.error('Error saving selected difficulty:', e);
+        }
+    }
+    
     createShipSelectionPanel() {
         const width = this.cameras.main.width;
         const height = this.cameras.main.height;
@@ -318,13 +856,13 @@ export default class MainMenu extends Phaser.Scene {
         this.shipSelectionPanel = this.add.container(width / 2, height / 2);
         this.shipSelectionPanel.setDepth(100);
         
-        // Add panel background - increased height from 450 to 500
-        const panelBg = this.add.rectangle(0, 0, 600, 500, 0x220022, 0.9);
+        // Add panel background - increased height from 550 to 590
+        const panelBg = this.add.rectangle(0, 0, 600, 590, 0x220022, 0.9);
         panelBg.setStrokeStyle(3, 0xff00ff, 0.8);
         this.shipSelectionPanel.add(panelBg);
         
-        // Add title
-        const title = this.add.text(0, -180, 'SELECT YOUR SHIP', {
+        // Add title - moved up by 10px (from -180 to -190)
+        const title = this.add.text(0, -190, 'SELECT YOUR SHIP', {
             font: 'bold 32px Arial',
             fill: '#ffff00',
             stroke: '#880088',
@@ -333,8 +871,8 @@ export default class MainMenu extends Phaser.Scene {
         title.setOrigin(0.5);
         this.shipSelectionPanel.add(title);
         
-        // Add close button
-        const closeButton = this.add.text(280, -180, '✕', {
+        // Add close button - moved up by 10px (from -180 to -190)
+        const closeButton = this.add.text(280, -190, '✕', {
             font: 'bold 24px Arial',
             fill: '#ffffff'
         });
@@ -382,8 +920,8 @@ export default class MainMenu extends Phaser.Scene {
         
         const currentShip = this.ships[this.selectedShipIndex];
         
-        // Ship name
-        const shipName = this.add.text(0, -120, currentShip.name, {
+        // Ship name - moved up by 10px (from -120 to -130)
+        const shipName = this.add.text(0, -130, currentShip.name, {
             font: 'bold 28px Arial',
             fill: '#ffffff',
             stroke: '#550055',
@@ -392,8 +930,8 @@ export default class MainMenu extends Phaser.Scene {
         shipName.setOrigin(0.5);
         this.shipDisplayContainer.add(shipName);
         
-        // Ship description
-        const shipDesc = this.add.text(0, -85, currentShip.description, {
+        // Ship description - moved up by 10px (from -85 to -95)
+        const shipDesc = this.add.text(0, -95, currentShip.description, {
             font: '18px Arial',
             fill: '#cccccc'
         });
@@ -423,13 +961,13 @@ export default class MainMenu extends Phaser.Scene {
                 displayScale = 0.12;
         }
         
-        // Ship sprite with adjusted scale
-        const shipSprite = this.add.image(0, 0, currentShip.sprite);
+        // Ship sprite with adjusted scale - moved up by 10px (from 0 to -10)
+        const shipSprite = this.add.image(0, -10, currentShip.sprite);
         shipSprite.setScale(displayScale);
         this.shipDisplayContainer.add(shipSprite);
         
-        // Add glow effect behind ship - increased size
-        const glow = this.add.ellipse(0, 0, 250, 120, 0xff00ff, 0.2);
+        // Add glow effect behind ship - increased size - moved up by 10px (from 0 to -10)
+        const glow = this.add.ellipse(0, -10, 250, 120, 0xff00ff, 0.2);
         this.shipDisplayContainer.add(glow);
         this.shipDisplayContainer.sendToBack(glow);
         
@@ -447,12 +985,12 @@ export default class MainMenu extends Phaser.Scene {
         // Create stat bars
         this.createStatBars(currentShip);
         
-        // Add select button - moved to position 210
-        const selectBtnBg = this.add.rectangle(0, 210, 180, 50, 0x880088, 0.8);
+        // Add select button - moved up by 10px (from 250 to 240)
+        const selectBtnBg = this.add.rectangle(0, 240, 180, 50, 0x880088, 0.8);
         selectBtnBg.setStrokeStyle(2, 0xff00ff, 1);
         this.shipDisplayContainer.add(selectBtnBg);
         
-        const selectBtn = this.add.text(0, 210, 'SELECT', {
+        const selectBtn = this.add.text(0, 240, 'SELECT', {
             font: 'bold 24px Arial',
             fill: '#ffffff'
         });
@@ -513,14 +1051,17 @@ export default class MainMenu extends Phaser.Scene {
     }
     
     createStatBars(ship) {
-        // Health bar
-        this.createStatBar('HEALTH', ship.hp, 80, 0xff0000);
+        // Health bar - moved up by 10px (from 80 to 70)
+        this.createStatBar('HEALTH', ship.hp, 70, 0xff0000);
         
-        // Speed bar
-        this.createStatBar('SPEED', ship.speed, 120, 0x00ffff);
+        // Damage bar - moved up by 10px (from 120 to 110)
+        this.createStatBar('DAMAGE', ship.damage, 110, 0xffcc00);
         
-        // Fire Rate bar
-        this.createStatBar('FIRE RATE', ship.fireRate, 160, 0xffaa00);
+        // Speed bar - moved up by 10px (from 160 to 150)
+        this.createStatBar('SPEED', ship.speed, 150, 0x00ffff);
+        
+        // Fire Rate bar - moved up by 10px (from 200 to 190)
+        this.createStatBar('FIRE RATE', ship.fireRate, 190, 0xffaa00);
     }
     
     createStatBar(label, value, yPosition, color) {
@@ -559,8 +1100,8 @@ export default class MainMenu extends Phaser.Scene {
     }
     
     createNavigationArrows() {
-        // Left arrow
-        const leftArrow = this.add.text(-220, 0, '⟨', {
+        // Left arrow - moved up by 10px (from 0 to -10)
+        const leftArrow = this.add.text(-220, -10, '⟨', {
             font: 'bold 90px Arial',
             fill: '#ffaaff'
         });
@@ -568,8 +1109,8 @@ export default class MainMenu extends Phaser.Scene {
         leftArrow.setInteractive({ useHandCursor: true });
         this.shipSelectionPanel.add(leftArrow);
         
-        // Right arrow
-        const rightArrow = this.add.text(220, 0, '⟩', {
+        // Right arrow - moved up by 10px (from 0 to -10)
+        const rightArrow = this.add.text(220, -10, '⟩', {
             font: 'bold 90px Arial',
             fill: '#ffaaff'
         });
@@ -652,6 +1193,9 @@ export default class MainMenu extends Phaser.Scene {
             if (this.taskListVisible) {
                 this.toggleTaskListPanel();
             }
+            if (this.difficultySelectionVisible) {
+                this.toggleDifficultySelectionPanel();
+            }
             
             this.shipSelectionPanel.alpha = 0;
             this.tweens.add({
@@ -671,6 +1215,190 @@ export default class MainMenu extends Phaser.Scene {
         }
     }
     
+    createDifficultySelectionPanel() {
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+        
+        // Create a container for all difficulty selection elements
+        this.difficultySelectionPanel = this.add.container(width / 2, height / 2);
+        this.difficultySelectionPanel.setDepth(100);
+        
+        // Add panel background
+        const panelBg = this.add.rectangle(0, 0, 600, 450, 0x220022, 0.9);
+        panelBg.setStrokeStyle(3, 0xff00ff, 0.8);
+        this.difficultySelectionPanel.add(panelBg);
+        
+        // Add title
+        const title = this.add.text(0, -180, 'SELECT DIFFICULTY', {
+            font: 'bold 32px Arial',
+            fill: '#ffff00',
+            stroke: '#880088',
+            strokeThickness: 2
+        });
+        title.setOrigin(0.5);
+        this.difficultySelectionPanel.add(title);
+        
+        // Add close button
+        const closeButton = this.add.text(280, -180, '✕', {
+            font: 'bold 24px Arial',
+            fill: '#ffffff'
+        });
+        closeButton.setOrigin(0.5);
+        closeButton.setInteractive({ useHandCursor: true });
+        this.difficultySelectionPanel.add(closeButton);
+        
+        // Close button hover effects
+        closeButton.on('pointerover', () => {
+            closeButton.setStyle({ fill: '#ff5555' });
+        });
+        
+        closeButton.on('pointerout', () => {
+            closeButton.setStyle({ fill: '#ffffff' });
+        });
+        
+        // Close button functionality
+        closeButton.on('pointerup', () => {
+            this.toggleDifficultySelectionPanel();
+        });
+        
+        // Create difficulty options
+        this.createDifficultyOptions();
+        
+        // Initially hide the panel
+        this.difficultySelectionPanel.setVisible(false);
+        this.difficultySelectionVisible = false;
+    }
+    
+    createDifficultyOptions() {
+        const yStartPosition = -100;
+        const spacing = 110;
+        
+        // Create each difficulty option
+        this.difficulties.forEach((difficulty, index) => {
+            const yPosition = yStartPosition + (index * spacing);
+            
+            // Create difficulty container
+            const diffContainer = this.add.container(0, yPosition);
+            this.difficultySelectionPanel.add(diffContainer);
+            
+            // Background panel - highlighted if selected
+            const isSelected = index === this.selectedDifficultyIndex;
+            const bgColor = isSelected ? 0x550055 : 0x330033;
+            const bg = this.add.rectangle(0, 0, 500, 95, bgColor, 0.8);
+            bg.setStrokeStyle(2, isSelected ? 0xff00ff : 0x880088, isSelected ? 1 : 0.6);
+            diffContainer.add(bg);
+            
+            // Difficulty name
+            const nameText = this.add.text(-230, -30, difficulty.name, {
+                font: 'bold 28px Arial',
+                fill: isSelected ? '#ffffff' : '#cccccc'
+            });
+            nameText.setOrigin(0, 0.5);
+            diffContainer.add(nameText);
+            
+            // Difficulty description
+            const descText = this.add.text(-230, 10, difficulty.description, {
+                font: '18px Arial',
+                fill: isSelected ? '#cccccc' : '#aaaaaa'
+            });
+            descText.setOrigin(0, 0.5);
+            diffContainer.add(descText);
+            
+            // Make the entire difficulty option interactive
+            bg.setInteractive({ useHandCursor: true });
+            
+            // Hover effects
+            bg.on('pointerover', () => {
+                if (index !== this.selectedDifficultyIndex) {
+                    bg.setFillStyle(0x440044, 0.8);
+                    nameText.setStyle({ fill: '#dddddd' });
+                    descText.setStyle({ fill: '#bbbbbb' });
+                }
+            });
+            
+            bg.on('pointerout', () => {
+                if (index !== this.selectedDifficultyIndex) {
+                    bg.setFillStyle(0x330033, 0.8);
+                    nameText.setStyle({ fill: '#cccccc' });
+                    descText.setStyle({ fill: '#aaaaaa' });
+                }
+            });
+            
+            // Selection functionality
+            bg.on('pointerup', () => {
+                // Play selection sound
+                this.sound.play('button-sound', { volume: this.soundVolume });
+                
+                // Set new selection
+                this.selectedDifficultyIndex = index;
+                
+                // Save the selection
+                this.saveSelectedDifficulty();
+                
+                // Refresh the display
+                this.refreshDifficultyOptions();
+                
+                // Visual feedback
+                this.tweens.add({
+                    targets: bg,
+                    scaleX: 1.05,
+                    scaleY: 1.05,
+                    duration: 100,
+                    yoyo: true
+                });
+            });
+        });
+    }
+    
+    refreshDifficultyOptions() {
+        // Remove existing options
+        while (this.difficultySelectionPanel.list.length > 3) {
+            this.difficultySelectionPanel.list[3].destroy();
+            this.difficultySelectionPanel.list.splice(3, 1);
+        }
+        
+        // Recreate with updated selections
+        this.createDifficultyOptions();
+        
+        // Update the difficulty showcase display
+        this.updateDifficultyShowcase();
+    }
+    
+    toggleDifficultySelectionPanel() {
+        this.difficultySelectionVisible = !this.difficultySelectionVisible;
+        this.difficultySelectionPanel.setVisible(this.difficultySelectionVisible);
+        
+        // Add fade in/out animation
+        if (this.difficultySelectionVisible) {
+            // Hide other panels if they're open
+            if (this.settingsVisible) {
+                this.toggleSettingsPanel();
+            }
+            if (this.taskListVisible) {
+                this.toggleTaskListPanel();
+            }
+            if (this.shipSelectionVisible) {
+                this.toggleShipSelectionPanel();
+            }
+            
+            this.difficultySelectionPanel.alpha = 0;
+            this.tweens.add({
+                targets: this.difficultySelectionPanel,
+                alpha: 1,
+                duration: 200
+            });
+        } else {
+            this.tweens.add({
+                targets: this.difficultySelectionPanel,
+                alpha: 0,
+                duration: 200,
+                onComplete: () => {
+                    this.difficultySelectionPanel.setVisible(false);
+                }
+            });
+        }
+    }
+
     createSettingsButton() {
         const width = this.cameras.main.width;
         
@@ -934,7 +1662,7 @@ export default class MainMenu extends Phaser.Scene {
         const formattedHighScore = this.formatNumber(highScore);
         
         // Create container with background - moved 45px to the left and 20px up
-        this.scorePanel = this.add.container(width * 0.25 - 45, height / 2 + 60);
+        this.scorePanel = this.add.container(width * 0.25 - 45, height / 2 + 100);
         this.scorePanel.setDepth(10);
         
         // Add background panel with improved styling - larger size
@@ -1439,8 +2167,9 @@ export default class MainMenu extends Phaser.Scene {
 
     createTaskButton() {
         const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
         
-        // Create tasks button using image - even smaller scale 
+        // Create tasks button using image - even smaller scale
         const taskButton = this.add.image(60, 50, 'questsbtn');
         taskButton.setScale(0.1);
         taskButton.setDepth(10);
@@ -1448,7 +2177,7 @@ export default class MainMenu extends Phaser.Scene {
         // Make button interactive
         taskButton.setInteractive({ useHandCursor: true });
         
-        // Add hover effects
+        // Button hover effect
         taskButton.on('pointerover', () => {
             this.tweens.add({
                 targets: taskButton,
@@ -1469,6 +2198,106 @@ export default class MainMenu extends Phaser.Scene {
         taskButton.on('pointerup', () => {
             this.sound.play('button-sound', { volume: this.soundVolume });
             this.toggleTaskListPanel();
+        });
+        
+        // Add quest completion notification
+        this.updateQuestButton(taskButton);
+    }
+    
+    // Update quest button to show notification for available completed quests
+    updateQuestButton(taskButton) {
+        const completedTasks = this.getCompletedTasks();
+        
+        // Remove any existing notification first
+        if (this.questNotification) {
+            this.questNotification.destroy();
+            this.questNotification = null;
+        }
+        
+        // If there are completed tasks, show a notification icon
+        if (completedTasks.length > 0) {
+            // Create a small container for the notification
+            const notificationContainer = this.add.container(taskButton.x + 15, taskButton.y - 15);
+            notificationContainer.setDepth(11);
+            notificationContainer.name = 'questNotification'; // Add name for identification
+            
+            // Add a small circle background
+            const notificationBg = this.add.circle(0, 0, 8, 0x000000, 0.7);
+            notificationBg.setStrokeStyle(1, 0xff00ff);
+            notificationContainer.add(notificationBg);
+            
+            // Add a count if there are multiple completed quests
+            if (completedTasks.length > 1) {
+                const countText = this.add.text(0, 0, completedTasks.length.toString(), {
+                    font: 'bold 9px Arial',
+                    fill: '#ffffff'
+                });
+                countText.setOrigin(0.5);
+                notificationContainer.add(countText);
+            } else {
+                // Add a small dot for a single completed quest
+                const dot = this.add.circle(0, 0, 4, 0xff00ff, 1);
+                notificationContainer.add(dot);
+            }
+            
+            // Animation to draw attention
+            this.tweens.add({
+                targets: notificationContainer,
+                scale: { from: 0.8, to: 1.1 },
+                duration: 1000,
+                yoyo: true,
+                repeat: -1
+            });
+            
+            // Store reference to remove later if needed
+            this.questNotification = notificationContainer;
+        }
+    }
+    
+    createDifficultyButton() {
+        // Create difficulty button positioned to the right of the quests button
+        const difficultyButton = this.add.image(130, 50, 'difficultybtn');
+        difficultyButton.setScale(0.085);
+        difficultyButton.setDepth(10);
+        
+        // Make button interactive
+        difficultyButton.setInteractive({ useHandCursor: true });
+        
+        // Add hover effects
+        difficultyButton.on('pointerover', () => {
+            this.tweens.add({
+                targets: difficultyButton,
+                scale: 0.11,
+                duration: 100
+            });
+        });
+        
+        difficultyButton.on('pointerout', () => {
+            this.tweens.add({
+                targets: difficultyButton,
+                scale: 0.1,
+                duration: 100
+            });
+        });
+        
+        // Add down-press effect
+        difficultyButton.on('pointerdown', () => {
+            this.tweens.add({
+                targets: difficultyButton,
+                scale: 0.09,
+                duration: 50
+            });
+        });
+        
+        // Toggle difficulty selection panel on click with sound
+        difficultyButton.on('pointerup', () => {
+            this.tweens.add({
+                targets: difficultyButton,
+                scale: 0.1,
+                duration: 50
+            });
+            this.sound.play('button-sound', { volume: this.soundVolume });
+            this.toggleDifficultySelectionPanel();
         });
     }
     
@@ -1542,23 +2371,15 @@ export default class MainMenu extends Phaser.Scene {
             const taskContainer = this.add.container(0, yPos + (index * 50));
             this.taskListPanel.add(taskContainer);
             
-            // Checkbox or completion indicator
-            const checkboxBg = this.add.rectangle(-200, 0, 30, 30, 0x550055, 0.8);
-            checkboxBg.setStrokeStyle(2, 0xff00ff, 0.8);
-            taskContainer.add(checkboxBg);
+            // Add quest icon based on completion status
+            const questIcon = this.add.image(-200, 0, isCompleted ? 'questcomplete' : 'quest');
+            questIcon.setDisplaySize(50, 50);
+            taskContainer.add(questIcon);
             
-            // Add checkmark if completed
+            // Add glow effect to completed quests
             if (isCompleted) {
-                const checkmark = this.add.text(-200, 0, '✓', {
-                    font: 'bold 20px Arial',
-                    fill: '#00ff00'
-                });
-                checkmark.setOrigin(0.5);
-                taskContainer.add(checkmark);
-                
-                // Add glow effect to checkmark
                 this.tweens.add({
-                    targets: checkmark,
+                    targets: questIcon,
                     alpha: { from: 0.7, to: 1 },
                     duration: 1500,
                     yoyo: true,
@@ -1584,9 +2405,9 @@ export default class MainMenu extends Phaser.Scene {
                 if (task.type === 'score') {
                     const highScore = parseInt(localStorage.getItem('highScore') || '0');
                     progress = Math.min(1, highScore / task.target);
-                } else if (task.type === 'wave') {
-                    const highWave = parseInt(localStorage.getItem('highWave') || '1');
-                    progress = Math.min(1, highWave / task.target);
+                } else if (task.type === 'waveCompleted') {
+                    const highestWaveCompleted = parseInt(localStorage.getItem('highestWaveCompleted') || '0');
+                    progress = Math.min(1, highestWaveCompleted / task.target);
                 }
                 
                 // Draw progress bar
@@ -1677,10 +2498,12 @@ export default class MainMenu extends Phaser.Scene {
     checkTaskCompletion() {
         const completedTasks = this.getCompletedTasks();
         let updatedTasks = false;
-        
-        // Get current high score and wave
+        // Get current high score and completed wave
         const highScore = parseInt(localStorage.getItem('highScore') || '0');
-        const highWave = parseInt(localStorage.getItem('highWave') || '1');
+        const highestWaveCompleted = parseInt(localStorage.getItem('highestWaveCompleted') || '0');
+        
+        // Track newly completed tasks for notifications
+        let newlyCompletedTasks = [];
         
         // Check each task
         this.tasks.forEach(task => {
@@ -1688,20 +2511,18 @@ export default class MainMenu extends Phaser.Scene {
             if (completedTasks.includes(task.id)) {
                 return;
             }
-            
             // Check if task is completed
             let isCompleted = false;
-            
             if (task.type === 'score' && highScore >= task.target) {
                 isCompleted = true;
-            } else if (task.type === 'wave' && highWave >= task.target) {
+            } else if (task.type === 'waveCompleted' && highestWaveCompleted >= task.target) {
                 isCompleted = true;
             }
-            
             // Add to completed tasks if newly completed
             if (isCompleted) {
                 completedTasks.push(task.id);
                 updatedTasks = true;
+                newlyCompletedTasks.push(task);
             }
         });
         
@@ -1709,11 +2530,110 @@ export default class MainMenu extends Phaser.Scene {
         if (updatedTasks) {
             this.saveCompletedTasks(completedTasks);
             
+            // Update the quest button notification
+            const taskButton = this.children.list.find(child => 
+                child.type === 'Image' && child.texture.key === 'questsbtn');
+            if (taskButton) {
+                this.updateQuestButton(taskButton);
+            }
+            
             // If task list is open, refresh it
             if (this.taskListVisible && this.taskListPanel) {
                 this.recreateTaskList();
             }
+            
+            // Show notifications for newly completed tasks
+            newlyCompletedTasks.forEach((task, index) => {
+                this.showQuestCompletedNotification(task, index);
+            });
         }
+    }
+    
+    // Show notification for completed quest
+    showQuestCompletedNotification(task, delay = 0) {
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+        
+        // Create notification container - make it smaller and position it at the top of the screen
+        const notification = this.add.container(width / 2, 70);
+        notification.setDepth(1000);
+        
+        // Track this notification
+        this.activeNotifications.push(notification);
+        
+        // Background - reduced size
+        const bg = this.add.rectangle(0, 0, 350, 60, 0x000000, 0.8);
+        bg.setStrokeStyle(2, 0xff00ff);
+        notification.add(bg);
+        
+        // Quest complete icon - smaller size
+        const questIcon = this.add.image(-140, 0, 'questcomplete');
+        questIcon.setDisplaySize(30, 30);
+        notification.add(questIcon);
+        
+        // Completed text - smaller font
+        const title = this.add.text(-100, -15, 'QUEST COMPLETED!', {
+            font: 'bold 16px Arial',
+            fill: '#ffff00'
+        });
+        title.setOrigin(0.5);
+        notification.add(title);
+        
+        // Quest description - smaller font
+        const description = this.add.text(-100, 15, task.description, {
+            font: '14px Arial',
+            fill: '#ffffff'
+        });
+        description.setOrigin(0, 0.5);
+        notification.add(description);
+        
+        // Set initial state for animation
+        notification.setAlpha(0);
+        notification.y -= 30;
+        
+        // Delayed appearance for multiple notifications
+        this.time.delayedCall(delay * 500, () => {
+            // Play sound
+            this.sound.play('button-sound', { volume: this.soundVolume * 1.5 });
+            
+            // Animate in
+            this.tweens.add({
+                targets: notification,
+                y: 70,
+                alpha: 1,
+                duration: 300,
+                ease: 'Back.easeOut',
+                onComplete: () => {
+                    // Animate quest icon - subtler animation
+                    this.tweens.add({
+                        targets: questIcon,
+                        scale: { from: 1, to: 1.2 },
+                        duration: 400,
+                        yoyo: true,
+                        repeat: 2
+                    });
+                    
+                    // Wait and fade out - shorter duration
+                    this.time.delayedCall(2000, () => {
+                        this.tweens.add({
+                            targets: notification,
+                            y: notification.y - 30,
+                            alpha: 0,
+                            duration: 300,
+                            ease: 'Back.easeIn',
+                            onComplete: () => {
+                                // Remove from tracking array
+                                const index = this.activeNotifications.indexOf(notification);
+                                if (index > -1) {
+                                    this.activeNotifications.splice(index, 1);
+                                }
+                                notification.destroy();
+                            }
+                        });
+                    });
+                }
+            });
+        });
     }
     
     // Recreate the task list to reflect updated completion status
@@ -1729,6 +2649,13 @@ export default class MainMenu extends Phaser.Scene {
             // Add updated task items
             this.createTaskListItems();
         }
+        
+        // Update the quest button notification
+        const taskButton = this.children.list.find(child => 
+            child.type === 'Image' && child.texture.key === 'questsbtn');
+        if (taskButton) {
+            this.updateQuestButton(taskButton);
+        }
     }
 
     // Create ship showcase on the right side of the screen
@@ -1736,8 +2663,8 @@ export default class MainMenu extends Phaser.Scene {
         const width = this.cameras.main.width;
         const height = this.cameras.main.height;
         
-        // Create container for ship showcase - moved 65px to the right and 10px up
-        this.shipShowcase = this.add.container(width * 0.75 + 65, height / 2 + 70);
+        // Create container for ship showcase - moved 65px to the right and 110px up
+        this.shipShowcase = this.add.container(width * 0.75 + 65, height / 2 + 110);
         this.shipShowcase.setDepth(10);
         
         // Add background panel - increased height and width
@@ -1882,6 +2809,125 @@ export default class MainMenu extends Phaser.Scene {
         }
     }
 
+    // Create difficulty showcase below ship showcase
+    createDifficultyShowcase() {
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+        
+        // Create container for difficulty showcase - position it below ship showcase
+        this.difficultyShowcase = this.add.container(width * 0.75 + 65, height / 2 + 220);
+        this.difficultyShowcase.setDepth(10);
+        
+        // Add background panel
+        const showcaseBg = this.add.rectangle(0, 0, 230, 90, 0x330033, 0.7);
+        showcaseBg.setStrokeStyle(2, 0xff00ff, 0.8);
+        this.difficultyShowcase.add(showcaseBg);
+        
+        // Get current difficulty data
+        const currentDifficulty = this.difficulties[this.selectedDifficultyIndex];
+        
+        // Add difficulty label
+        const difficultyLabel = this.add.text(0, -30, 'DIFFICULTY', {
+            font: 'bold 18px Arial',
+            fill: '#ffffff'
+        });
+        difficultyLabel.setOrigin(0.5);
+        this.difficultyShowcase.add(difficultyLabel);
+        
+        // Add current difficulty display
+        this.difficultyName = this.add.text(0, 5, currentDifficulty.name, {
+            font: 'bold 24px Arial',
+            fill: this.getDifficultyColor(currentDifficulty.id)
+        });
+        this.difficultyName.setOrigin(0.5);
+        this.difficultyShowcase.add(this.difficultyName);
+        
+        // Change difficulty button
+        const difficultyButtonBg = this.add.rectangle(0, 35, 160, 30, 0x660066, 0.8);
+        difficultyButtonBg.setStrokeStyle(2, 0xff00ff, 0.8);
+        this.difficultyShowcase.add(difficultyButtonBg);
+        
+        const difficultyButton = this.add.text(0, 35, 'CHANGE', {
+            font: 'bold 16px Arial',
+            fill: '#ffffff'
+        });
+        difficultyButton.setOrigin(0.5);
+        difficultyButton.setInteractive({ useHandCursor: true });
+        this.difficultyShowcase.add(difficultyButton);
+        
+        // Button hover effect
+        difficultyButton.on('pointerover', () => {
+            difficultyButton.setStyle({ fill: '#ff88ff' });
+            this.tweens.add({
+                targets: [difficultyButton, difficultyButtonBg],
+                scale: 1.05,
+                duration: 100
+            });
+        });
+        
+        difficultyButton.on('pointerout', () => {
+            difficultyButton.setStyle({ fill: '#ffffff' });
+            this.tweens.add({
+                targets: [difficultyButton, difficultyButtonBg],
+                scale: 1,
+                duration: 100
+            });
+        });
+        
+        // Add down-press effect
+        difficultyButton.on('pointerdown', () => {
+            this.tweens.add({
+                targets: difficultyButton,
+                scale: 0.09,
+                duration: 50
+            });
+        });
+        
+        // Toggle difficulty selection panel on click with sound
+        difficultyButton.on('pointerup', () => {
+            this.tweens.add({
+                targets: [difficultyButton, difficultyButtonBg],
+                scale: 0.1,
+                duration: 50
+            });
+            this.sound.play('button-sound', { volume: this.soundVolume });
+            this.toggleDifficultySelectionPanel();
+        });
+    }
+
+    // Helper method to get color for difficulty name based on difficulty
+    getDifficultyColor(difficultyId) {
+        switch(difficultyId) {
+            case 'easy':
+                return '#00ff00'; // Green for easy
+            case 'normal':
+                return '#ffff00'; // Yellow for normal
+            case 'hard':
+                return '#ff0000'; // Red for hard
+            default:
+                return '#ffffff'; // White as fallback
+        }
+    }
+
+    // Update difficulty showcase with newly selected difficulty
+    updateDifficultyShowcase() {
+        if (this.difficultyName) {
+            const currentDifficulty = this.difficulties[this.selectedDifficultyIndex];
+            this.difficultyName.setText(currentDifficulty.name);
+            this.difficultyName.setStyle({ 
+                fill: this.getDifficultyColor(currentDifficulty.id) 
+            });
+            
+            // Add pulse animation on update
+            this.tweens.add({
+                targets: this.difficultyName,
+                scale: { from: 1, to: 1.2 },
+                duration: 200,
+                yoyo: true
+            });
+        }
+    }
+
     // Override the scene's shutdown method to clean up all input events
     shutdown() {
         console.log('MainMenu shutdown');
@@ -1892,6 +2938,18 @@ export default class MainMenu extends Phaser.Scene {
         
         // Clean up timers and tweens
         this.tweens.killAll();
+        
+        // Clean up any active notifications
+        this.cleanupNotifications();
+        
+        // Make sure to destroy quest notification indicator
+        if (this.questNotification) {
+            this.questNotification.destroy();
+            this.questNotification = null;
+        }
+        
+        // Cleanup any leftover quest elements
+        this.cleanupQuestElements();
         
         // Call the parent shutdown method
         super.shutdown();
