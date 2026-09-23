@@ -16,7 +16,7 @@ Dodge bullet patterns, fight bosses, and build a stronger ship between waves.
 - When unlocked, **Shift** dashes, **Z** activates a forcefield, and **X** activates phase shift.
 - Survive timed waves and choose upgrades between them.
 
-Created for **Bullet Hell Jam 6**. The gameplay capture stages an existing late-wave configuration, with normal enemy behavior and damage.
+Created for **Bullet Hell Jam 6**.
 
 ## Development
 
