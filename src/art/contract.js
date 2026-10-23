@@ -81,6 +81,21 @@ export const CONTRACT = {
     card_dash: [32, 32, 1], card_forcefield: [32, 32, 1], card_phase: [32, 32, 1],
     card_speed: [32, 32, 1], card_heal: [32, 32, 1],
 
+    // --- pickups.js (owner: pickups/weapons) -----------------------------------------------------
+    // 2 frames (frame 1 = glint), animated. Lime capsules with a glyph = timed power-ups / repair.
+    gem_s: [7, 9, 2], gem_m: [9, 11, 2], gem_l: [11, 15, 2],
+    pickup_repair: [13, 13, 2], pickup_magnet: [13, 13, 2], pickup_bomb: [13, 13, 2],
+    pickup_shield: [13, 13, 2], pickup_rapid: [13, 13, 2], pickup_x2: [13, 13, 2],
+
+    // --- weapons.js (owner: pickups/weapons) -----------------------------------------------------
+    // player shots point UP (pool rotates them); cyan = friendly
+    wshot_pellet: [3, 5, 1], wshot_heavy: [5, 11, 1], wshot_lance: [3, 17, 1], wshot_missile: [5, 11, 1],
+    wshot_charge_s: [7, 7, 1], wshot_charge_m: [11, 11, 1], wshot_charge_l: [15, 15, 1],
+    drone: [11, 11, 2],             // orbiting gun drone, animated
+    card_blaster: [32, 32, 1], card_spread: [32, 32, 1], card_lance: [32, 32, 1], card_charge: [32, 32, 1],
+    card_missiles: [32, 32, 1], card_drones: [32, 32, 1],
+    card_splinter: [32, 32, 1], card_swarm: [32, 32, 1], card_overload: [32, 32, 1], card_hunter: [32, 32, 1],
+
     // --- ui.js (owner: art-ui) -------------------------------------------------------------------
     // nine-slice sources: corners are 8px, centre stretches
     ui_panel: [24, 24, 1], ui_panel_active: [24, 24, 1],

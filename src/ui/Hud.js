@@ -24,6 +24,7 @@ import { pxText, fmtNum, centerText } from './text.js';
 import { createPanel, TEXT, RAMPS } from './widgets.js';
 import AbilitySlot from './AbilitySlot.js';
 import { Banner, Toasts } from './Banner.js';
+import BuffBar from './BuffBar.js';
 
 const M = 4; // screen margin
 const HP_SEGS = 26, SEG_W = 4, SEG_H = 6;
@@ -184,6 +185,9 @@ export default class Hud {
     /** show / update the boss bar: { name, hp01, phase, phases, invuln, thresholds } (or null to hide). The object
      * may be kept and mutated by the caller every frame; the bar animates toward it (fills up on first show). */
     setBoss(info) { this.bossInfo = info || null; }
+
+    /** active timed power-ups: [{ id, key, t01, warn }] (see ui/BuffBar.js); created on first use */
+    setBuffs(list) { (this.buffBar || (this.buffBar = new BuffBar(this.scene, this.root))).set(list || []); }
 
     // -----------------------------------------------------------------------------------------------------------
     update(st) {

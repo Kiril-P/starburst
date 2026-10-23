@@ -36,7 +36,7 @@ export function shotsVsEnemies(shots, enemies, onHit) {
         if (!s.alive) continue;
         for (let j = 0; j < enemies.length; j++) {
             const e = enemies[j];
-            if (!e.alive) continue;
+            if (!e.alive || (s.hits && s.hits.length && s.hits.indexOf(e) >= 0)) continue;   // pierced already
             const dx = e.x - s.x, dy = e.y - s.y;
             const rr = e.r + s.r;
             if (dx * dx + dy * dy < rr * rr) { onHit(s, e); break; }

@@ -27,6 +27,7 @@ export default class Player {
         this.alive = true;
         this.controllable = true;
         this.fireTimer = 0;
+        this.fireRateMul = 1;             // weapon / rapid-fire multiplier, set every step by the Arsenal
         this.invuln = 0;
         this.levels = { dash: 0, forcefield: 0, phase: 0, thrusters: 0 };
         this.cd = { dash: 0, forcefield: 0, phase: 0 };            // ms until ready
@@ -83,7 +84,7 @@ export default class Player {
     get shielded() { return this.shieldT > 0; }
     /** can bullets / ramming hurt us right now? */
     get hittable() { return this.alive && this.invuln <= 0 && !this.dashing && !this.phasing && !this.shielded; }
-    get fireRate() { return this.stats.fireRate * PLAYER.fireRateScale; }
+    get fireRate() { return this.stats.fireRate * PLAYER.fireRateScale * this.fireRateMul; }
 
     /** apply a picked upgrade id (see systems/upgrades.js) */
     applyUpgrade(id) {
