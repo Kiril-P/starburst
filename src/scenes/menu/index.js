@@ -2,5 +2,7 @@
 import SettingsPanel from './SettingsPanel.js';
 import QuestsPanel from './QuestsPanel.js';
 import DifficultyPanel from './DifficultyPanel.js';
+import ControlsPanel from './ControlsPanel.js';
 
-export const MENU_SCENES = [SettingsPanel, QuestsPanel, DifficultyPanel];
+// ControlsPanel opens on top of SettingsPanel, so it must come after it (scenes draw in list order)
+export const MENU_SCENES = [SettingsPanel, QuestsPanel, DifficultyPanel, ControlsPanel];

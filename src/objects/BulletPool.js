@@ -5,6 +5,8 @@
 // grazed flag, age. Movement is polar so curving (spiral) and accelerating (needle curtain) patterns are cheap.
 import { W, H } from '../config.js';
 import { ENEMY_BULLET } from '../systems/tuning.js';
+import { save } from '../systems/Save.js';
+import { contrastTexture } from '../art/highContrast.js';
 
 export default class BulletPool {
     /** opts: { size, depth, cullMargin } */
@@ -14,6 +16,7 @@ export default class BulletPool {
         this.free = [];
         this.live = [];
         this.textureCache = new Map();
+        this.contrast = save.bulletContrast;   // Settings > ENEMY BULLETS, fixed for the run (only enemy bullet_* keys change)
         for (let i = 0; i < opts.size; i++) {
             const b = scene.add.image(-99, -99, 'px1').setDepth(opts.depth).setVisible(false).setActive(false);
             b.alive = false;
@@ -59,7 +62,8 @@ export default class BulletPool {
         let t = this.textureCache.get(style.key);
         if (!t) {
             const ok = this.scene.textures.exists(style.key);
-            t = ok ? { key: style.key, tint: null } : { key: style.base, tint: style.fallbackTint ?? null };
+            t = contrastTexture(this.scene.textures, style, this.contrast)
+                || (ok ? { key: style.key, tint: null } : { key: style.base, tint: style.fallbackTint ?? null });
             this.textureCache.set(style.key, t);
         }
         return t;

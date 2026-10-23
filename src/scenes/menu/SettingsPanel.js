@@ -1,4 +1,5 @@
-// SETTINGS overlay: master / music / sfx volume, screen shake, flash effects, glow, graphics quality, FPS counter. Everything
+// SETTINGS overlay: master / music / sfx volume, screen shake, flash effects, glow, graphics quality, FPS counter, plus the
+// accessibility rows from accessRows.js (CONTROLS sub-panel, aim, bullet contrast, assist). Everything
 // persists immediately via Save and music volume is applied live. Keyboard: UP/DOWN pick a row, LEFT/RIGHT adjust, ENTER/SPACE toggles.
 import { COLORS, PALETTE } from '../../art/palette.js';
 import { createSlider, createToggle, Button } from '../../ui/widgets.js';
@@ -6,12 +7,13 @@ import { save } from '../../systems/Save.js';
 import { sfx, uiSfx, setMasterVolume } from '../../systems/sfx.js';
 import OverlayScene from './OverlayScene.js';
 import { setMusicVolume } from './music.js';
-import { text, setTextKeep } from './helpers.js';
+import { text, setTextKeep, placeText } from './helpers.js';
 import { quality } from '../../systems/quality.js';
+import { ACCESS_ROWS } from './accessRows.js';
 
 const STEP = 0.1;
 const KEYMAP = { ArrowUp: 'up', w: 'up', ArrowDown: 'down', s: 'down', ArrowLeft: 'left', a: 'left', ArrowRight: 'right', d: 'right', Enter: 'ok', ' ': 'ok' };
-const ROW_H = 22;
+const ROW_H = 22;   // preferred; shrinks to fit when the panel holds more rows
 const pct = (v) => (v <= 0 ? 'OFF' : `${Math.round(v * 100)}%`);
 
 const QUALITIES = ['auto', 'high', 'low'];
@@ -29,11 +31,12 @@ const ROWS = [
         // choosing AUTO again forgets an earlier "this device is slow" verdict so it re-measures
         set: (v) => { save.quality = v; if (v === 'auto') save.autoLow = false; }
     },
-    { label: 'SHOW FPS', kind: 'toggle', get: () => save.showFps, set: (v) => { save.showFps = v; } }
+    { label: 'SHOW FPS', kind: 'toggle', get: () => save.showFps, set: (v) => { save.showFps = v; } },
+    ...ACCESS_ROWS
 ];
 
 export default class SettingsPanel extends OverlayScene {
-    constructor() { super('MenuSettings', 'SETTINGS', [300, 262]); }
+    constructor() { super('MenuSettings', 'SETTINGS', [300, 330]); }
 
     build(b) {
         this.rows = [];
@@ -42,12 +45,14 @@ export default class SettingsPanel extends OverlayScene {
         this.root.add(this.cursor);
         this.ctrlX = b.x + 132;
         this.sliderW = 96;
+        this.rowH = Math.min(ROW_H, Math.floor((b.h - 26) / ROWS.length));
         ROWS.forEach((def, i) => {
-            const y = b.y + 8 + i * ROW_H;
+            const y = b.y + 8 + i * this.rowH;
             const label = text(this, b.x + 8, y, def.label, { size: 8, origin: [0, 0.5], color: PALETTE[5] });
             const value = text(this, b.x + b.w - 8, y, '', { size: 8, origin: [1, 0.5], color: PALETTE.C });
-            const hit = this.add.zone(b.x + b.w / 2, y, b.w, ROW_H).setInteractive();
+            const hit = this.add.zone(b.x + b.w / 2, y, b.w, this.rowH).setInteractive();
             hit.on('pointerover', () => this.setFocus(i));
+            if (def.kind === 'link') hit.on('pointerdown', () => def.open(this));
             this.root.add([label, value, hit]);
             const row = { def, y, label, value, ctrl: null };
             this.rows.push(row);
@@ -63,11 +68,13 @@ export default class SettingsPanel extends OverlayScene {
     buildControl(row) {
         if (row.ctrl) row.ctrl.destroy();
         const { def } = row;
-        const v = def.get();
+        const v = def.get ? def.get() : null;
         if (def.kind === 'slider') {
             row.ctrl = createSlider(this, this.ctrlX + this.sliderW / 2, row.y, v, (nv) => this.change(row, Math.round(nv * 20) / 20, false), { w: this.sliderW });
         } else if (def.kind === 'choice') {
             row.ctrl = this.createChoice(row);
+        } else if (def.kind === 'link') {
+            row.ctrl = this.add.image(this.body.x + this.body.w - 8, row.y - 4, 'ui_arrow_r').setOrigin(1, 0);
         } else {
             row.ctrl = createToggle(this, this.ctrlX + 5, row.y, v, (nv) => this.change(row, nv, false));
         }
@@ -100,6 +107,11 @@ export default class SettingsPanel extends OverlayScene {
     }
 
     refreshValue(row) {
+        if (row.def.kind === 'link') {
+            setTextKeep(row.value, row.def.text());
+            placeText(row.value, row.ctrl.x - row.ctrl.width - 4, row.y);
+            return;
+        }
         if (row.def.kind === 'choice') {
             setTextKeep(row.ctrl.label, row.def.text());
             setTextKeep(row.value, '');
@@ -134,11 +146,11 @@ export default class SettingsPanel extends OverlayScene {
         g.clear();
         this.rows.forEach((r, j) => r.label.setColor(j === i ? PALETTE.w : PALETTE[5]));
         if (onBack) return;
-        const r = this.rows[i], b = this.body;
+        const r = this.rows[i], b = this.body, fh = this.rowH - 2, fy = r.y - (fh >> 1);
         // focus bar: dim fill + bright left notch
-        g.fillStyle(COLORS.n, 0.55).fillRect(b.x, r.y - 9, b.w, 18);
-        g.fillStyle(COLORS.C).fillRect(b.x, r.y - 9, 2, 18);
-        g.fillStyle(COLORS.c).fillRect(b.x + 2, r.y - 9, 1, 18);
+        g.fillStyle(COLORS.n, 0.55).fillRect(b.x, fy, b.w, fh);
+        g.fillStyle(COLORS.C).fillRect(b.x, fy, 2, fh);
+        g.fillStyle(COLORS.c).fillRect(b.x + 2, fy, 1, fh);
     }
 
     onKey(raw) {
@@ -154,7 +166,12 @@ export default class SettingsPanel extends OverlayScene {
             if (key === 'ok') this.close();
             return;
         }
-        const row = this.rows[this.focus], v = row.def.get();
+        const row = this.rows[this.focus];
+        if (row.def.kind === 'link') {
+            if (key === 'ok' || key === 'right') row.def.open(this);
+            return;
+        }
+        const v = row.def.get();
         if (row.def.kind === 'choice') {
             this.cycle(row, key === 'left' ? -1 : 1);
             sfx(this, 'button-sound', { vol: 0.5 });

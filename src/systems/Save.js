@@ -25,6 +25,18 @@ export const save = {
     get showFps() { return str('showFps', '0') === '1'; },
     set showFps(v) { set('showFps', v ? '1' : '0'); },
 
+    // accessibility / controls (see systems/bindings.js, systems/access.js)
+    get bindings() { try { return JSON.parse(localStorage.getItem('keyBindings') || 'null'); } catch (e) { return null; } },
+    set bindings(v) { set('keyBindings', JSON.stringify(v)); },
+    get aimMode() { return str('aimMode', 'move') === 'mouse' ? 'mouse' : 'move'; },   // 'move' | 'mouse'
+    set aimMode(v) { set('aimMode', v); },
+    get bulletContrast() { const v = str('bulletContrast', 'off'); return ['off', 'hc', 'cb'].includes(v) ? v : 'off'; },
+    set bulletContrast(v) { set('bulletContrast', v); },
+    get assist() { return str('assist', '0') === '1'; },
+    set assist(v) { set('assist', v ? '1' : '0'); },
+    /** runs played with assist mode must never be submitted to a leaderboard */
+    get leaderboardEligible() { return !this.assist; },
+
     get ship() { return str('selectedShip', 'normal'); },      // 'normal' | 'speedy' | 'tank'
     set ship(v) { set('selectedShip', v); },
     get difficulty() { return str('selectedDifficulty', 'normal'); }, // 'easy' | 'normal' | 'hard'

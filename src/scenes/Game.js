@@ -18,6 +18,7 @@ import Combo from '../systems/combo.js';
 import GameAudio from '../systems/gameAudio.js';
 import { freeze, thaw } from '../systems/scenePause.js';
 import { installDebug } from '../systems/debug.js';
+import { applyRunAccess } from '../systems/access.js';
 import Player from '../objects/Player.js';
 import BulletPool from '../objects/BulletPool.js';
 import WaveManager from '../objects/WaveManager.js';
@@ -68,6 +69,7 @@ export default class Game extends Phaser.Scene {
         this.lastPauseToggle = 0;
         this.input.keyboard.on('keydown-ESC', () => this.setPaused(!this.paused));
         this.events.once('shutdown', () => this.cleanup());
+        applyRunAccess(this);   // assist mode (before the first wave reads diff.bulletSpeed)
         this.waves.start(1);
         installDebug(this);
     }
