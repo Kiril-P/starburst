@@ -45,6 +45,11 @@ export default class Hud {
         this.banner = new Banner(scene);
         this.toasts = new Toasts(scene, 44);
         this.lastT = 0;
+        // lay everything out once so the HUD looks right even before the first update(); forget the HP so the
+        // first real update doesn't play a heal/damage animation
+        this.update({ hp: 1, maxHp: 1, score: 0, combo: 1, comboT01: 0, wave: 1, waveTimeLeft: null });
+        this.v.lit = undefined;
+        this.lastT = 0;
     }
 
     add(...objs) { this.root.add(objs); return objs[0]; }
