@@ -5,6 +5,7 @@ import enemies from './sprites/enemies.js';
 import fx from './sprites/fx.js';
 import icons from './sprites/icons.js';
 import ui from './sprites/ui.js';
+import bosses from './sprites/bosses.js';
 
-export const SPRITE_MODULES = { ships, projectiles, enemies, fx, icons, ui };
+export const SPRITE_MODULES = { ships, projectiles, enemies, fx, icons, ui, bosses };
 export const ALL_SPRITES = Object.values(SPRITE_MODULES).flat();

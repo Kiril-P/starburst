@@ -14,7 +14,7 @@
 //   // optional extras:
 //   sector,                    // defaults to one sector per 5 waves
 //   quest: { text, progress, goal } | null,   // bottom-right tracker
-//   boss: { name, hp01 } | null              // top-centre boss bar
+//   boss: { name, hp01, phase, phases, invuln, thresholds } | null   // top-centre boss bar (or hud.setBoss())
 // }
 // update() caches every value it shows and only touches game objects when something visible changed (no per-frame
 // allocations in the steady state).
@@ -27,6 +27,7 @@ import { Banner, Toasts } from './Banner.js';
 
 const M = 4; // screen margin
 const HP_SEGS = 26, SEG_W = 4, SEG_H = 6;
+const BOSS_W = 216; // fits between the wave panel and the score panel
 const TIERS = [[10, TEXT.magenta, RAMPS.magenta], [5, TEXT.amber, RAMPS.amber], [2, TEXT.cyan, RAMPS.cyan], [0, TEXT.dim, RAMPS.steel]];
 const tierOf = (combo) => TIERS.find((t) => combo >= t[0]);
 const pad2 = (n) => (n < 10 ? '0' + n : '' + n);
@@ -165,15 +166,24 @@ export default class Hud {
         this.add(this.quest);
     }
 
-    // --- top-centre: boss bar -----------------------------------------------------------------------------------
+    // --- top-centre: boss bar (fills the gap between the wave and score panels) --------------------------------
     buildBoss() {
         const s = this.scene;
+        const pw = BOSS_W, ph = 28, x0 = (W - pw) >> 1;
         this.boss = s.add.container(0, 0).setVisible(false);
-        this.bossName = pxText(s, W / 2, M + 2, '', { font: 'TITLE', color: TEXT.magenta });
+        this.boss.add(createPanel(s, x0 + (pw >> 1), M + (ph >> 1), pw, ph, { alpha: 0.85 }));
+        this.bossName = pxText(s, x0 + 9, M + 5, '', { font: 'TITLE', color: TEXT.magenta });
         this.bossG = s.add.graphics();
         this.boss.add([this.bossName, this.bossG]);
+        this.bossBar = { x: x0 + 9, y: M + 16, w: pw - 18 };
+        this.bossPips = x0 + pw - 9;
+        this.bossInfo = null;
         this.add(this.boss);
     }
+
+    /** show / update the boss bar: { name, hp01, phase, phases, invuln, thresholds } (or null to hide). The object
+     * may be kept and mutated by the caller every frame; the bar animates toward it (fills up on first show). */
+    setBoss(info) { this.bossInfo = info || null; }
 
     // -----------------------------------------------------------------------------------------------------------
     update(st) {
@@ -204,7 +214,7 @@ export default class Hud {
         const ab = st.abilities || {};
         for (const slot of this.slots) slot.update(ab[slot.name], dt);
         this.updateQuest(st.quest);
-        this.updateBoss(st.boss);
+        this.updateBoss(st.boss ?? this.bossInfo, dt);
     }
 
     updateScore(st, dt) {
@@ -299,25 +309,43 @@ export default class Hud {
         this.questG.clear().fillStyle(COLORS.n, 1).fillRect(x, y, w, 3).fillStyle(ramp[2], 1).fillRect(x, y, fw, 3).fillStyle(ramp[3], 1).fillRect(x, y, fw, 1);
     }
 
-    updateBoss(b) {
+    updateBoss(b, dt) {
         const v = this.v;
         const on = !!b;
-        if (on !== v.bOn) { v.bOn = on; this.boss.setVisible(on); v.bName = null; v.bw = -1; }
+        if (on !== v.bOn) { v.bOn = on; this.boss.setVisible(on); v.bName = null; v.bKey = -1; this.bossShown = 0; this.bossGhost = 0; this.bossHold = 0; }
         if (!on) return;
-        if (b.name !== v.bName) { v.bName = b.name; centerText(this.bossName.setText(b.name || 'WARNING'), W / 2); }
-        const BW = 200, x0 = (W - BW) >> 1, y0 = M + 13;
-        const fw = Math.round(BW * Math.min(1, Math.max(0, b.hp01 ?? 0)));
-        if (fw === v.bw) return;
-        v.bw = fw;
+        if (b.name !== v.bName) { v.bName = b.name; this.bossName.setText(b.name || 'WARNING'); }
+        // shown value chases the real one: fast fill-up on intro, a white-hot ghost trails damage
+        const target = Math.min(1, Math.max(0, b.hp01 ?? 0));
+        if (target < this.bossShown) { this.bossShown = target; this.bossHold = 350; }
+        else if (this.bossShown < target) this.bossShown = Math.min(target, this.bossShown + dt / 1100);
+        if (this.bossGhost < this.bossShown) this.bossGhost = this.bossShown;
+        else if (this.bossHold > 0) this.bossHold -= dt;
+        else this.bossGhost = Math.max(this.bossShown, this.bossGhost - dt / 900);
+        const { x, y, w } = this.bossBar;
+        const fw = Math.round(w * this.bossShown), gw = Math.round(w * this.bossGhost);
+        const blink = b.invuln && ((this.scene.game.loop.time / 180) | 0) & 1;
+        const key = fw * 4096 + gw * 8 + (b.invuln ? 2 : 0) + (blink ? 1 : 0) + (b.phase || 0) * 4096 * 1024;
+        if (key === v.bKey) return;
+        v.bKey = key;
+        const ramp = b.invuln ? RAMPS.steel : RAMPS.magenta;
         const g = this.bossG.clear();
-        g.fillStyle(COLORS.k, 1).fillRect(x0 - 2, y0 - 2, BW + 4, 9);
-        g.fillStyle(COLORS.m, 1).fillRect(x0 - 1, y0 - 1, BW + 2, 1).fillRect(x0 - 1, y0 + 5, BW + 2, 1).fillRect(x0 - 2, y0, 1, 5).fillRect(x0 + BW + 1, y0, 1, 5);
-        g.fillStyle(COLORS.p, 1).fillRect(x0, y0, BW, 5);
-        g.fillStyle(COLORS.M, 1).fillRect(x0, y0, fw, 5);
-        g.fillStyle(COLORS.q, 1).fillRect(x0, y0, fw, 1);
-        g.fillStyle(COLORS.m, 1).fillRect(x0, y0 + 4, fw, 1);
-        g.fillStyle(COLORS.k, 1);
-        for (let i = 1; i < 10; i++) g.fillRect(x0 + i * (BW / 10), y0, 1, 5); // tick every 10%
+        g.fillStyle(COLORS.k, 1).fillRect(x - 1, y - 1, w + 2, 8);
+        g.fillStyle(COLORS.p, 1).fillRect(x, y, w, 6);
+        if (gw > fw) g.fillStyle(COLORS.z, 1).fillRect(x + fw, y, gw - fw, 6);
+        g.fillStyle(ramp[2], 1).fillRect(x, y, fw, 6);
+        g.fillStyle(blink ? COLORS.w : ramp[3], 1).fillRect(x, y, fw, 1);
+        g.fillStyle(ramp[1], 1).fillRect(x, y + 4, fw, 2);
+        // amber ticks where the next phases begin
+        g.fillStyle(COLORS.A, 1);
+        for (const t of b.thresholds || []) g.fillRect(x + Math.round(w * t), y - 2, 1, 10);
+        // phase pips (right of the name): filled = phases reached
+        const n = b.phases || 1;
+        for (let i = 0; i < n; i++) {
+            const px = this.bossPips - (n - 1 - i) * 8 - 5, lit = i <= (b.phase || 0);
+            g.fillStyle(lit ? COLORS.M : COLORS.p, 1).fillRect(px + 1, M + 6, 3, 5).fillRect(px, M + 7, 5, 3);
+            if (lit) g.fillStyle(COLORS.q, 1).fillRect(px + 1, M + 7, 1, 1);
+        }
     }
 
     /** big centred banner, e.g. announce('WAVE 3', 'GET READY') */

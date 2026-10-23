@@ -30,6 +30,14 @@ export const CONTRACT = {
     meteor_m_0: [22, 22, 1], meteor_m_1: [22, 22, 1],
     meteor_l_0: [32, 32, 1], meteor_l_1: [32, 32, 1],
 
+    // --- bosses.js (owner: bosses) ----------------------------------------------------------------
+    // Face DOWN, origin centre. Idle frames animate (fps in bosses.js) except boss_prism (frames set by code).
+    boss_warden: [128, 70, 2],
+    boss_hive: [120, 64, 2],
+    boss_drone: [18, 16, 2],
+    boss_prism: [72, 72, 4],        // 0 open, 1 pulse, 2 charging (white-hot), 3 shut (armoured, invulnerable)
+    boss_prism_shard: [14, 24, 2],  // orbits the Prism (not rotated)
+
     // --- projectiles.js (owner: art-enemies) -----------------------------------------------------
     // default colour = magenta for orbs/rings, amber for needles, lime for shards. Variants listed.
     bullet_orb_s: [5, 5, 1],        // + _amber _lime _cyan
