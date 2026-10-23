@@ -11,7 +11,7 @@ import { pxText, centerText } from './text.js';
 import { MenuNav, TEXT, RAMPS, SLICE, nine, uiTween, uiDelay } from './widgets.js';
 import { sfx } from '../systems/sfx.js';
 
-const CW = 116, CH = 172, GAP = 12, CY = 198;
+const CW = 116, CH = 180, GAP = 12, CY = 198;
 const HUE = { card_dash: 'cyan', card_forcefield: 'cyan', card_phase: 'magenta', card_speed: 'lime', card_heal: 'lime' };
 const TAG_HUE = { NEW: 'cyan', UPGRADE: 'amber', HEAL: 'lime' };
 const CSS = { cyan: [PALETTE.c, PALETTE.C, PALETTE.b], magenta: [PALETTE.m, PALETTE.M, PALETTE.q], lime: [PALETTE.l, PALETTE.L, PALETTE.j], amber: [PALETTE.a, PALETTE.A, PALETTE.z] };
@@ -55,16 +55,16 @@ class Card extends Phaser.GameObjects.Container {
         const title = centerText(pxText(scene, 0, 0, option.title.toUpperCase(), { font: 'TITLE', color: this.css[1] }), 0, y0 + 72);
         this.face.add([ring, icon, title]);
         const scratch = pxText(scene, 0, 0, '', {});
-        wrap(scratch, option.desc ?? '', CW - 18).slice(0, 4).forEach((l, i) => {
-            this.face.add(centerText(pxText(scene, 0, 0, l, { color: TEXT.light }), 0, y0 + 92 + i * 11));
+        wrap(scratch, option.desc ?? '', CW - 16).slice(0, 4).forEach((l, i) => {
+            this.face.add(centerText(pxText(scene, 0, 0, l, { color: TEXT.light }), 0, y0 + 92 + i * 10));
         });
         scratch.destroy();
-        const divider = scene.add.rectangle(x0 + 12, y0 + CH - 46, CW - 24, 1, this.ramp[0]).setOrigin(0, 0);
+        const divider = scene.add.rectangle(x0 + 12, y0 + CH - 44, CW - 24, 1, this.ramp[0]).setOrigin(0, 0);
         this.face.add(divider);
         if (option.tag) {
             const th = TAG_HUE[option.tag] ?? 'cyan';
             const tag = pxText(scene, 0, 0, option.tag, { color: CSS[th][1], spacing: 1 });
-            centerText(tag, 0, y0 + CH - 36);
+            centerText(tag, 0, y0 + CH - 34);
             this.face.add(tag);
         }
         // SELECT pill shown on the focused card
@@ -73,9 +73,9 @@ class Card extends Phaser.GameObjects.Container {
         // drawn in the card's hue (the button frames are cyan-only): chamfered 2px corners, highlight top row
         const pg = scene.add.graphics(), px = -(pw >> 1), py = -8, r = this.ramp;
         pg.fillStyle(r[2], 1).fillRect(px + 2, py, pw - 4, 16).fillRect(px + 1, py + 1, pw - 2, 14).fillRect(px, py + 2, pw, 12);
-        pg.fillStyle(r[1], 1).fillRect(px + 2, py + 2, pw - 4, 12);
-        pg.fillStyle(r[3], 1).fillRect(px + 3, py + 2, pw - 6, 1);
-        pg.fillStyle(r[0], 1).fillRect(px + 3, py + 13, pw - 6, 1);
+        pg.fillStyle(r[0], 1).fillRect(px + 2, py + 2, pw - 4, 12);
+        pg.fillStyle(r[1], 1).fillRect(px + 2, py + 2, pw - 4, 1);
+        pg.fillStyle(r[3], 1).fillRect(px + 3, py, pw - 6, 1);
         this.pill.add(pg);
         this.pill.add(centerText(pxText(scene, 0, 0, 'SELECT', { font: 'TITLE', color: TEXT.white }), 0, 0));
         this.pill.setVisible(false);
