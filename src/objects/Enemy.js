@@ -1,5 +1,8 @@
 // One pooled enemy sprite; its behaviour comes from ENEMY_TYPES. The WaveManager reuses dead instances.
 // Hit radius is from the type table (not the sprite size) so art can change without changing gameplay.
+// Optional type hooks (enemyTypes2.js): init(e, opts) after spawn, think(e, dt, c) replaces the default
+// move + fire step, armor(e, shot) -> damage multiplier (0 = deflected). Formation paths (formations.js) set
+// e.path = fn(e, ms) which drives x/y until it returns false; then the enemy carries on straight down.
 import Phaser from 'phaser';
 import { W, H, DEPTH } from '../config.js';
 import { ENEMY_TYPES } from './enemyTypes.js';
@@ -37,6 +40,9 @@ export default class Enemy extends Phaser.GameObjects.Sprite {
         this.shots = 0;
         this.flash = 0;
         this.startX = x;
+        this.path = null;
+        this.frameMs = 0;
+        this.vx = 0; this.vy = 0;
         this.setPosition(x, y).setActive(true).setVisible(true).setAlpha(1).setRotation(0).clearTint();
 
         if (t.meteor) {
@@ -54,13 +60,15 @@ export default class Enemy extends Phaser.GameObjects.Sprite {
         if (this.scene.anims.exists(t.key)) this.play({ key: t.key, startFrame: Math.floor(Math.random() * 2) });
         else this.stop();
         this.speed = t.speed;
-        this.move = pickWeighted(t.moves);
-        this.amplitude = rand(t.amplitude[0], t.amplitude[1]);
-        this.freq = rand(t.frequency[0], t.frequency[1]);
+        // think-driven types (enemyTypes2/3) have no v1 move weights
+        this.move = t.moves ? pickWeighted(t.moves) : 0;
+        this.amplitude = t.amplitude ? rand(t.amplitude[0], t.amplitude[1]) : 0;
+        this.freq = t.frequency ? rand(t.frequency[0], t.frequency[1]) : 1;
         this.nextFire = opts.firstAttackMs;
         // hover: enter, park in the upper third and paint patterns, then leave
         this.hover = opts.canHover && t.hoverFromTier !== undefined && opts.tier >= t.hoverFromTier;
         if (this.hover) { this.hoverY = rand(40, H * 0.38); this.hoverMs = 7000; this.nextFire = 900; }
+        if (t.init) t.init(this, opts);
         return this;
     }
 
@@ -68,14 +76,17 @@ export default class Enemy extends Phaser.GameObjects.Sprite {
         const s = dt / 1000;
         this.age += dt;
         if (this.flash > 0 && (this.flash -= dt) <= 0) this.clearTint();
-        if (this.type.meteor) {
+        if (this.frameMs > 0 && (this.frameMs -= dt) <= 0) this.setFrame(0);   // e.g. shield flash -> idle
+        if (this.type.think) {
+            this.type.think(this, dt, c);
+        } else if (this.type.meteor) {
             this.x += this.vx * s;
             this.y += this.vy * s;
             this.rotation += this.spin * s;
         } else {
             this.moveStep(s);
             // only shoot while fully on screen and not in the bottom quarter (would be unfair point-blank)
-            if (this.y > 6 && this.y < H * 0.78) {
+            if (this.y > 6 && this.y < H * 0.78 && this.x > 4 && this.x < W - 4) {
                 this.nextFire -= dt;
                 if (this.nextFire <= 0) {
                     this.nextFire += this.type.fireRate * c.fireRateMod;
@@ -85,10 +96,17 @@ export default class Enemy extends Phaser.GameObjects.Sprite {
                 }
             }
         }
+        if (this.path) return true;   // formation paths may start off-screen; they always end (formations.js)
         return this.y < H + 30 && this.y > -60 && this.x > -40 && this.x < W + 40;   // false = escaped
     }
 
     moveStep(s) {
+        if (this.path) {
+            // scripted formation flight; may start off-screen at the sides, so no edge clamp while on the path
+            if (this.path(this, this.age) !== false) return;
+            this.path = null;
+            this.move = 0; this.hover = false; this.startX = this.x;
+        }
         const t = this.age / 1000;
         if (this.hover && this.hoverMs > 0) {
             if (this.y < this.hoverY) this.y += Math.max(18, this.speed * 2.2 * (1 - this.y / this.hoverY)) * s;   // ease in
@@ -103,9 +121,14 @@ export default class Enemy extends Phaser.GameObjects.Sprite {
         if (this.x < half) this.x = half; else if (this.x > W - half) this.x = W - half;
     }
 
-    /** Returns true if this hit killed it. */
-    damage(amount) {
+    /** Returns true if this hit killed it. src = the player shot (lets armoured types deflect by hit angle). */
+    damage(amount, src) {
         if (!this.alive) return false;
+        if (src && this.type.armor) {
+            const m = this.type.armor(this, src);
+            if (m === 0) return false;
+            amount *= m;
+        }
         this.hp -= amount;
         this.flash = FLASH_MS;
         this.setTintFill(0xffffff);
@@ -116,5 +139,11 @@ export default class Enemy extends Phaser.GameObjects.Sprite {
         this.alive = false;
         this.stop();
         this.setActive(false).setVisible(false);
+        if (this.gfx) this.gfx.clear();   // sniper laser
+    }
+
+    destroy(fromScene) {
+        if (this.gfx) { this.gfx.destroy(); this.gfx = null; }
+        super.destroy(fromScene);
     }
 }

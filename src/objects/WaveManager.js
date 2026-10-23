@@ -7,6 +7,9 @@ import { WAVES } from '../systems/tuning.js';
 import { WAVE_TABLE, BOSS_EVERY } from './waves.js';
 import { resolveType } from './enemyTypes.js';
 import Enemy from './Enemy.js';
+import Formations from './formations.js';
+import { applySector, sectorBiome, sectorInfo, isSectorStart } from './sectors.js';
+import SectorBanner from '../fx/SectorBanner.js';
 
 const rand = (a, b) => a + Math.random() * (b - a);
 
@@ -26,9 +29,11 @@ export default class WaveManager {
         this.pool = [];
         this.live = [];
         this.spawners = [];
+        this.formations = new Formations(this);
+        this.banner = new SectorBanner(scene);
     }
 
-    get biome() { const b = WAVES.biomeByWave; return this.wave <= b.length ? b[this.wave - 1] : b[b.length - 2 + (this.wave % 2)]; }
+    get biome() { return sectorBiome(this.wave); }   // one backdrop per sector (sectors.js)
 
     get isBoss() { return this.wave > 0 && this.wave % BOSS_EVERY === 0; }
 
@@ -40,12 +45,12 @@ export default class WaveManager {
         const base = WAVE_TABLE[Math.min(wave, last) - 1];
         const extra = Math.max(0, wave - last);
         const spawnF = Math.pow(WAVES.endlessSpawnFactor, extra) * this.diff.enemySpawn;
-        return {
+        return applySector({
             duration: base.duration * WAVES.durationScale,
             max: Math.round(base.max * WAVES.maxActiveScale * this.diff.maxEnemies),
             spawns: base.spawns.map(([type, every]) => ({ type, every: every * spawnF })),
             bulletSpeed: 1 + extra * WAVES.endlessBulletSpeedStep
-        };
+        }, wave, spawnF);
     }
 
     start(wave) {
@@ -56,6 +61,7 @@ export default class WaveManager {
         this.timeLeft = this.cfg.duration;
         if (this.isBoss) { this.state = 'boss'; this.spawners = []; }
         this.hooks.onIntro(wave, this.cfg);
+        if (isSectorStart(wave)) this.banner.show(wave, sectorInfo(wave));
     }
 
     /** the boss is dead: continue with the usual clear -> upgrade -> next wave flow */
@@ -75,7 +81,8 @@ export default class WaveManager {
     beginSpawning() {
         this.state = 'active';
         // v1 staggers each enemy type's first spawn by 800ms
-        this.spawners = this.cfg.spawns.map((s, i) => ({ type: s.type, every: s.every, next: i * WAVES.staggerMs }));
+        this.spawners = this.cfg.spawns.map((s, i) => ({ type: s.type, every: s.every, next: i * WAVES.staggerMs + (s.type.startsWith('f:') ? s.every * 0.5 : 0) }));
+        if (this.cfg.opener) this.formations.launch(this.cfg.opener, true);   // every wave opens with a set piece
         this.hooks.onStart(this.wave);
     }
 
@@ -90,8 +97,9 @@ export default class WaveManager {
                     if ((sp.next -= dt) > 0) continue;
                     const j = sp.every * WAVES.spawnJitter;
                     sp.next += Math.max(WAVES.minSpawnMs, sp.every + rand(-j, j));
-                    if (this.live.length < this.cfg.max) this.spawnGroup(resolveType(sp.type));
+                    if (this.room() > 0) this.spawnGroup(resolveType(sp.type));
                 }
+                this.formations.update(dt);
                 if (this.timeLeft <= 0) {
                     this.timeLeft = 0;
                     this.state = 'cleared';
@@ -124,9 +132,19 @@ export default class WaveManager {
         }
     }
 
+    /** free slots under the wave's max-active cap; minor enemies (mines, split pods) don't take a slot */
+    room() {
+        let n = 0;
+        for (const e of this.live) if (e.alive && !e.type.minor) n++;
+        return this.cfg.max - n;
+    }
+
+    resolve(name) { return resolveType(name); }
+
     spawnGroup(typeName) {
+        if (typeName.startsWith('f:')) { this.formations.launch(typeName.slice(2)); return; }
         const m = WAVES.spawnMarginX, gap = WAVES.formationSpacing;
-        const formation = typeName === 'basic' && this.live.length + 3 <= this.cfg.max && Math.random() < WAVES.formationChance[this.tier];
+        const formation = typeName === 'basic' && this.room() >= 3 && Math.random() < WAVES.formationChance[this.tier];
         const x = formation ? rand(m + gap, W - m - gap) : rand(m, W - m);
         const lead = this.spawn(typeName, x, -20);
         if (!formation) return;
@@ -138,19 +156,21 @@ export default class WaveManager {
         }
     }
 
-    spawn(typeName, x, y) {
+    /** extra: per-type spawn options (e.g. kamikaze { delay }) */
+    spawn(typeName, x, y, extra) {
         let e = this.pool.find((p) => !p.alive && !p.active);
         if (!e) { e = new Enemy(this.scene); this.pool.push(e); }
         const fa = WAVES.firstAttackMs;
         let hovering = 0;
         for (const o of this.live) if (o.alive && o.hover && o.hoverMs > 0) hovering++;
-        e.spawn(typeName, x, y, { hpMod: this.diff.enemyHealth, tier: this.tier, firstAttackMs: rand(fa[0], fa[1]), canHover: hovering < WAVES.maxHovering });
+        e.spawn(typeName, x, y, { hpMod: this.diff.enemyHealth, tier: this.tier, firstAttackMs: rand(fa[0], fa[1]), canHover: hovering < WAVES.maxHovering, ...extra });
         this.live.push(e);
         return e;
     }
 
     /** Remove every enemy, calling fn(e) first (wave-clear explosions). */
     clearEnemies(fn) {
+        this.formations.clear();
         for (const e of this.live) { if (e.alive) { if (fn) fn(e); e.despawn(); } }
         this.live.length = 0;
     }
@@ -158,5 +178,5 @@ export default class WaveManager {
     /** seconds left in the wave timer, or null when no wave is running */
     get secondsLeft() { return this.state === 'active' ? Math.ceil(this.timeLeft / 1000) : this.state === 'intro' ? Math.ceil(this.cfg.duration / 1000) : null; }
 
-    destroy() { for (const e of this.pool) e.destroy(); this.pool.length = 0; this.live.length = 0; }
+    destroy() { this.banner.destroy(); for (const e of this.pool) e.destroy(); this.pool.length = 0; this.live.length = 0; }
 }

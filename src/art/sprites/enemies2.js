@@ -64,17 +64,19 @@ const SNIPER = [
 
 // ---- kamikaze: small spiked drone with a red eye ------------------------------------------------------------
 const KAMIKAZE = [
-    '.....q',
-    '....kM',
-    '..kkVm',
-    '.kVxVp',
-    '.kxVpr',
-    'qMVprR',
-    '.kVppr',
-    '.kVvpm',
-    '..kkvm',
-    '....kM',
-    '.....q'
+    '.q.....',
+    'qMk.kkk',
+    '.kMkVxx',
+    '..kVxVV',
+    '.kVxVpp',
+    '.kxVprr',
+    '.kxVrRw',
+    '.kVVprr',
+    '.kVvVpp',
+    '..kvvVV',
+    '.kMkvvv',
+    'qMk.kkk',
+    '.q.....'
 ];
 
 // ---- shield carrier: twin armoured pods around a steel bay; magenta energy arc in front (below) -----------
@@ -189,11 +191,11 @@ const PULSE = { q: 'M', M: 'q', w: 'q' };
 
 export default [
     { key: 'enemy_sniper', frames: [lit(SNIPER), lit(swap(SNIPER, { a: 'A', A: 'z', z: 'w', M: 'q' }))] },   // 1 = charging (set by code)
-    { key: 'enemy_kamikaze', fps: 10, frames: [lit(KAMIKAZE), lit(swap(KAMIKAZE, { R: 'w', r: 'R', q: 'M' }))] },
+    { key: 'enemy_kamikaze', fps: 10, frames: [lit(KAMIKAZE), lit(swap(KAMIKAZE, { w: 'z', R: 'w', r: 'R', q: 'M', M: 'q' }))] },
     { key: 'enemy_shield', frames: [carrier(false), carrier(true)] },                                        // 1 = shield flash
     { key: 'enemy_turret', frames: [0, 1, 2, 3].map(turret) },                                               // barrel angle 0/22/45/67deg
     { key: 'enemy_minelayer', fps: 4, frames: [lit(LAYER), lit(swap(LAYER, { A: 'z', y: 'a', M: 'q' }))] },
-    { key: 'enemy_mine', frames: [swap(MINE, { a: '3' }), swap(MINE, { y: 'A' }), swap(MINE, { y: 'w', a: 'R' })] },
+    { key: 'enemy_mine', frames: [swap(MINE, { a: '3' }), swap(MINE, { y: 'A', a: 'A' }), swap(MINE, { y: 'w', a: 'R', 5: 'z' })] },
     { key: 'enemy_splitter', fps: 6, frames: [splitter(), swap(splitter(), PULSE)] },
     { key: 'enemy_splitter_s', fps: 8, frames: [POD, swap(POD, PULSE)] }
 ];

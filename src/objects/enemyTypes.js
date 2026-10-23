@@ -4,6 +4,8 @@
 // Colour coding (STYLE.md): basic/circular = magenta orbs & rings, spread = amber needles, meteors = lime shards.
 import { SPEED_SCALE, ENEMY_BULLET, SCORE } from '../systems/tuning.js';
 import { aimed, fan, ring, curtain, burst, style, angleTo, DEG, TAU } from './patterns.js';
+import { TYPES_2 } from './enemyTypes2.js';
+import { TYPES_3 } from './enemyTypes3.js';
 
 const ORB_S = style('orbS', 'magenta');
 const ORB_M = style('orbM', 'magenta');
@@ -75,6 +77,9 @@ export const ENEMY_TYPES = {
     meteor_m: { meteor: 'm', radius: 8, hp: 30, score: SCORE.meteor_m, speed: 55 * SPEED_SCALE, explosion: 'm', shake: 1, shards: [0, 4, 6, 8] },
     meteor_l: { meteor: 'l', radius: 12, hp: 60, score: SCORE.meteor_l, speed: 40 * SPEED_SCALE, explosion: 'l', shake: 2, big: true, shards: [3, 6, 9, 12], splitInto: 'meteor_s' }
 };
+
+// v2 enemies (sniper, kamikaze, shield, turret, minelayer, mine, splitter, splitter_s) live in their own files
+Object.assign(ENEMY_TYPES, TYPES_2, TYPES_3);
 
 /** Shard burst for a broken meteor. */
 export function meteorShards(e, c, tier) {

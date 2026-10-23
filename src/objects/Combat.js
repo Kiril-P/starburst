@@ -24,7 +24,7 @@ export default class Combat {
         const g = this.g;
         g.shots.kill(s);
         g.impacts.play(s.x, s.y - 2);
-        if (e.damage(s.damage)) this.killEnemy(e, true);
+        if (e.damage(s.damage, s)) this.killEnemy(e, true);
         else g.fx.hitSpark(s.x, s.y - 2, COLORS.C);
     }
 
@@ -59,6 +59,7 @@ export default class Combat {
                 }
             }
         }
+        if (t.onKill) t.onKill(e, g, byPlayer, x, y);   // splitters break apart (enemyTypes2.js)
     }
 
     ram(e) {

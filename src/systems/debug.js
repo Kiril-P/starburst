@@ -6,6 +6,7 @@
 import { W } from '../config.js';
 import { ring, style } from '../objects/patterns.js';
 import { BOSS_EVERY } from '../objects/waves.js';
+import { installEnemyDebug } from '../objects/enemyDebug.js';
 
 export function installDebug(scene) {
     if (!import.meta.env.DEV) return;
@@ -36,4 +37,5 @@ export function installDebug(scene) {
             };
         }
     };
+    installEnemyDebug(g, window.__dbg);   // formation / sector / biome / zoo helpers
 }

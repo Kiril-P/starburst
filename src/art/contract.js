@@ -33,7 +33,7 @@ export const CONTRACT = {
     // --- enemies2.js (owner: enemies/biomes) -----------------------------------------------------
     // Face DOWN. Frames with no fps are chosen by code (see comments in enemies2.js).
     enemy_sniper: [15, 22, 2],      // 0 idle, 1 charging
-    enemy_kamikaze: [11, 11, 2],
+    enemy_kamikaze: [13, 13, 2],
     enemy_shield: [31, 20, 2],      // 0 idle, 1 shield flash (blocked shot)
     enemy_turret: [25, 25, 4],      // barrel rotation steps of 22.5deg (4-way symmetric)
     enemy_minelayer: [29, 15, 2],
