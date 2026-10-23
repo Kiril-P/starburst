@@ -16,10 +16,10 @@ import { createBestRun, createShipInfo } from './menu/InfoPanels.js';
 import { DIFFICULTY_INFO } from './menu/data.js';
 import { playTitleMusic, fadeOutTitleMusic, audioLocked } from './menu/music.js';
 import { text, navButton, fmt } from './menu/helpers.js';
-import { setRunMode, isShipUnlocked, SHIP_UNLOCKS } from '../systems/meta.js';
+import { setRunMode, isShipUnlocked } from '../systems/meta.js';
 import { ACHIEVEMENTS, unlockedCount } from '../systems/achievements.js';
 import { topRuns } from '../systems/leaderboard.js';
-import { createCredits, shipInfoFor } from './menu/metaUi.js';
+import { createCredits, shipInfoFor, lockFooter, denyLocked } from './menu/metaUi.js';
 import { wipeTo } from './cine/wipe.js';
 
 // layout (native px)
@@ -115,10 +115,7 @@ export default class MainMenu extends Phaser.Scene {
             .setDepth(DEPTH.HUD).setVisible(false);
     }
 
-    updateFooter() {
-        this.footerSub.setText(isShipUnlocked(save.ship) ? 'ENTER TO START' : 'LOCKED  -  SEE HANGAR');
-        this.footerSub.x = Math.round(STAGE_CX - this.footerSub.width / 2);
-    }
+    updateFooter() { lockFooter(this.footerSub, STAGE_CX); }
 
     /** UI elements that slide/fade in on reveal and out on START. */
     get chrome() { return [...this.buttons, this.bestRun, this.shipInfo.container, this.footer, this.credits]; }
@@ -222,18 +219,9 @@ export default class MainMenu extends Phaser.Scene {
         wipeTo(this, 'Hangar');
     }
 
-    /** locked ship: refuse with a buzz + nudge the player toward the hangar */
-    denyLocked() {
-        sfx(this, 'button-sound', { vol: 0.5, rate: 0.6 });
-        const u = SHIP_UNLOCKS[save.ship];
-        this.cameras.main.shake(120, 0.004 * save.screenShake);
-        this.btn.HANGAR.setValue(u ? `${fmt(u.cost)} CR` : '', PALETTE.R);
-        this.time.delayedCall(1200, () => this.btn.HANGAR.setValue('', PALETTE.R));
-    }
-
     startGame(mode = 'normal') {
         if (this.starting) return;
-        if (!isShipUnlocked(save.ship)) { this.denyLocked(); return; }
+        if (!isShipUnlocked(save.ship)) { denyLocked(this, this.btn.HANGAR); return; }
         setRunMode(mode);
         this.starting = true;
         this.input.keyboard.enabled = false;

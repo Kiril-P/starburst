@@ -48,6 +48,19 @@ tools/qa.mjs             smoke + leak test of every flow (see docs/QA.md)
 - **Music** (`systems/music.js`, Web Audio, never `scene.sound` for music): `playMusic(key,{fadeIn,fadeOut,restart,intensity})` crossfades, `stopMusic(ms)`, `setMusicVolume(v)`, `duck(reason,on)` (`pause|upgrade|gameover|launch`), `setIntensity(0..1)`, `setBossMode(bool)` — all no-op safe. In Game, `this.audio` (GameAudio) handles duck/intensity automatically from scene state and also exposes `setBossMode(on)` and `bossWarning()` (siren).
 - **Reactivity** (`systems/audioReact.js`): `getBass()`, `getLevel()`, `getPulse()` (0..1 beat envelope), `onBeat(cb)` → unsubscribe fn. Dev: `window.__audio` exposes these modules for console checks.
 - **Save** (`systems/Save.js`) — the only place that touches localStorage.
+- **Seeded RNG** (`systems/rng.js`) — for anything a Daily Run should reproduce, draw from a named stream instead of
+  `Math.random`: `const rnd = rngStream('mySystem')` at module level, then `rnd()`. Unseeded (normal runs) it *is*
+  `Math.random`; `seedRun(seed)` (done by `scenes/run/RunMeta.js` for Daily Runs) re-seeds every stream. Streams already
+  used: `spawns` (WaveManager), `enemies` (Enemy.spawn), `upgrades` (rollOptions). Also `createRng(seed)` for a local
+  generator, `dateKey()`, `dailySeed()`. Keep cosmetic randomness (particles, sfx) on `Math.random`.
+- **Meta layer** — `systems/meta.js` (credits, hangar upgrades `applyMeta(player)`, ship unlocks, run mode
+  `setRunMode('normal'|'daily')`), `achievements.js` (`checkAchievements(run)`, `onUnlock(fn)`), `leaderboard.js`
+  (top 10 per mode), `runResult.js` (`settleRun` once per GameOver). In-run hook: `Game.create` makes
+  `this.run = new RunMeta(this)` (applies upgrades, polls achievements, sector-complete recap after bosses, death
+  moment) and calls `this.run.update(dt)`. Player gets `grazeBonus` (read in `collisions.js`).
+- **Scene changes** — use `wipeTo(scene, key, data, { edge })` (`scenes/cine/wipe.js`): the shared pixel wipe drawn by
+  the always-on `Wipe` scene. Extra scenes: `Intro` (first launch only, `save.seenIntro`), `Hangar`, `SectorComplete`
+  (over the paused Game), overlays `MenuAchievements`, `MenuRecords`. Dev: `window.__meta` (`systems/metaDebug.js`).
 
 ## Rules
 1. Pixel-perfect: integer positions, scale 1, `roundPixels`. Text only via `pxText`. Colours from `COLORS`/`PALETTE`.
