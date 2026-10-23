@@ -2,5 +2,7 @@
 import SettingsPanel from './SettingsPanel.js';
 import QuestsPanel from './QuestsPanel.js';
 import DifficultyPanel from './DifficultyPanel.js';
+import AchievementsPanel from './AchievementsPanel.js';
+import RecordsPanel from './RecordsPanel.js';
 
-export const MENU_SCENES = [SettingsPanel, QuestsPanel, DifficultyPanel];
+export const MENU_SCENES = [SettingsPanel, QuestsPanel, DifficultyPanel, AchievementsPanel, RecordsPanel];

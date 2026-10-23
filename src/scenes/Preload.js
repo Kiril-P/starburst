@@ -5,6 +5,7 @@ import { bakeAll } from '../art/bake.js';
 import { bakePlaceholders } from '../art/placeholder.js';
 import { pxText } from '../ui/text.js';
 import { installAudio } from '../systems/sfx.js';
+import { save } from '../systems/Save.js';
 
 // Every audio key used by the game. Files live in public/assets/audio.
 const MUSIC = { 'title-music': 'title.mp3', 'main-music': 'main.mp3' };
@@ -44,6 +45,6 @@ export default class Preload extends Phaser.Scene {
         installAudio(this.game);   // synth sfx, limiter, music bus, reactivity
         const dev = import.meta.env.DEV ? new URLSearchParams(location.search).get('scene') : null;
         this.scene.launch('SysOverlay');   // FPS counter, gamepad bridge, touch controls, auto-pause
-        this.scene.start(dev || 'MainMenu');
+        this.scene.start(dev || (save.seenIntro ? 'MainMenu' : 'Intro'));   // story crawl on first launch only
     }
 }

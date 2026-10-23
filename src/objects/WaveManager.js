@@ -8,7 +8,10 @@ import { WAVE_TABLE, BOSS_EVERY } from './waves.js';
 import { resolveType } from './enemyTypes.js';
 import Enemy from './Enemy.js';
 
-const rand = (a, b) => a + Math.random() * (b - a);
+import { rngStream } from '../systems/rng.js';
+
+const rnd = rngStream('spawns');    // seeded in Daily Runs (systems/rng.js), Math.random otherwise
+const rand = (a, b) => a + rnd() * (b - a);
 
 export default class WaveManager {
     /**
@@ -90,7 +93,7 @@ export default class WaveManager {
                     if ((sp.next -= dt) > 0) continue;
                     const j = sp.every * WAVES.spawnJitter;
                     sp.next += Math.max(WAVES.minSpawnMs, sp.every + rand(-j, j));
-                    if (this.live.length < this.cfg.max) this.spawnGroup(resolveType(sp.type));
+                    if (this.live.length < this.cfg.max) this.spawnGroup(resolveType(sp.type, rnd));
                 }
                 if (this.timeLeft <= 0) {
                     this.timeLeft = 0;
@@ -126,7 +129,7 @@ export default class WaveManager {
 
     spawnGroup(typeName) {
         const m = WAVES.spawnMarginX, gap = WAVES.formationSpacing;
-        const formation = typeName === 'basic' && this.live.length + 3 <= this.cfg.max && Math.random() < WAVES.formationChance[this.tier];
+        const formation = typeName === 'basic' && this.live.length + 3 <= this.cfg.max && rnd() < WAVES.formationChance[this.tier];
         const x = formation ? rand(m + gap, W - m - gap) : rand(m, W - m);
         const lead = this.spawn(typeName, x, -20);
         if (!formation) return;

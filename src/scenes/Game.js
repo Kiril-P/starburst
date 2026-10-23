@@ -18,6 +18,8 @@ import Combo from '../systems/combo.js';
 import GameAudio from '../systems/gameAudio.js';
 import { freeze, thaw } from '../systems/scenePause.js';
 import { installDebug } from '../systems/debug.js';
+import RunMeta from './run/RunMeta.js';
+import { wipeTo } from './cine/wipe.js';
 import Player from '../objects/Player.js';
 import BulletPool from '../objects/BulletPool.js';
 import WaveManager from '../objects/WaveManager.js';
@@ -39,7 +41,8 @@ export default class Game extends Phaser.Scene {
         this.time.timeScale = 1;
         this.time.paused = false;
         this.tweens.timeScale = 1;
-        this.diff = currentDifficulty();
+        this.run = new RunMeta(this);   // meta layer: run mode/seed, hangar upgrades, achievements, cinematics
+        this.diff = this.run.diff ?? currentDifficulty();
         this.bg = new Background(this, { biome: 0 });
         this.fx = new Fx(this);
         this.hud = new Hud(this);
@@ -121,7 +124,7 @@ export default class Game extends Phaser.Scene {
             onUpgrade: (wave, done) => {
                 if (this.dying) return;
                 this.player.controllable = false;
-                this.upgradeScreen = new UpgradeScreen(this, rollOptions(this.player.levels), (opt) => {
+                this.upgradeScreen = new UpgradeScreen(this, rollOptions(this.player.levels, this.run.upgradeRng), (opt) => {
                     this.upgradeScreen = null;
                     this.player.applyUpgrade(opt.id);
                     this.player.controllable = true;
@@ -143,6 +146,7 @@ export default class Game extends Phaser.Scene {
     update(time, delta) {
         const raw = Math.min(delta, 50);
         if (this.paused) return;
+        this.run.update(raw);
         this.fx.update(raw);
         const sim = raw * (this.time.paused ? 0 : this.time.timeScale);
         const n = Math.ceil(sim / STEP_MS);
@@ -224,7 +228,7 @@ export default class Game extends Phaser.Scene {
     quit() {
         thaw(this, this.frozen);
         this.audio.stop();
-        this.scene.start('MainMenu');
+        wipeTo(this, 'MainMenu');
     }
 
     startDeath() {
@@ -247,12 +251,13 @@ export default class Game extends Phaser.Scene {
     gameOver() {
         this.dying = false;
         this.audio.stop();
-        this.scene.start('GameOver', { score: this.combat.score, wave: this.waves.wave, stats: { ...this.combat.stats } });
+        wipeTo(this, 'GameOver', { score: this.combat.score, wave: this.waves.wave, stats: { ...this.combat.stats } });
     }
 
     cleanup() {
         this.input.keyboard.off('keydown-ESC');
         this.audio.destroy();
+        this.run.destroy();
         for (const k of ['bosses', 'pauseMenu', 'hud', 'fx', 'bg']) this[k]?.destroy();
         this.upgradeScreen?.destroy();
         this.waves.destroy();
