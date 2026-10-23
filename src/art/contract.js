@@ -63,12 +63,12 @@ export const CONTRACT = {
     // nine-slice sources: corners are 8px, centre stretches
     ui_panel: [24, 24, 1], ui_panel_active: [24, 24, 1],
     ui_button: [24, 24, 1], ui_button_hover: [24, 24, 1], ui_button_press: [24, 24, 1], ui_button_disabled: [24, 24, 1],
-    ui_card: [24, 24, 1], ui_card_hover: [24, 24, 1],
+    ui_card: [24, 24, 1], ui_card_hover: [24, 24, 1],   // + _magenta _lime _amber (cyan is the base)
     ui_bar_frame: [24, 8, 1],       // horizontal nine-slice (8px end caps)
-    ui_bar_fill: [2, 6, 1],         // tile / stretch horizontally
-    ui_cursor: [12, 12, 1],
+    ui_bar_fill: [2, 6, 1],         // tile / stretch horizontally; greyscale (tintable) + _cyan _lime _amber _magenta _red
+    ui_cursor: [12, 12, 1],         // mouse pointer, hotspot top-left (0,0)
     ui_logo: [224, 40, 1],          // STARBURST wordmark
-    ui_logo_flare: [24, 24, 4],     // little lens-flare twinkle, animated, placed on the logo
+    ui_logo_flare: [24, 24, 4],     // little lens-flare twinkle, animated (fps 8), centre it on LOGO_FLARE (export of sprites/ui.js, logo-local px)
     ui_arrow_l: [8, 8, 1], ui_arrow_r: [8, 8, 1],
     ui_check_off: [10, 10, 1], ui_check_on: [10, 10, 1],
     ui_knob: [8, 12, 1]
