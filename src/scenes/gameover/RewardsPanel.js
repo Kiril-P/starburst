@@ -63,7 +63,7 @@ export default class RewardsPanel {
         if (ach.length) {
             g.fillStyle(COLORS.n).fillRect(L, cy + 2, PW - 20, 1);
             cy += 7;
-            add(pxText(scene, L, cy, ach.length === 1 ? 'ACHIEVEMENT' : `${ach.length} ACHIEVEMENTS`, { color: PALETTE.L }));
+            add(pxText(scene, L, cy, ach.length === 1 ? ach[0].title : `${ach.length} ACHIEVEMENTS`, { color: PALETTE.L }));
             cy += 11;
             ach.slice(0, MAX_BADGES).forEach((a, i) => {
                 const b = add(scene.add.image(L + i * 21, cy, `ach_${a.id}`).setOrigin(0, 0).setVisible(false));

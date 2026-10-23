@@ -25,7 +25,7 @@ export default class RunMeta {
         this.upgradeRng = rngStream('upgrades');
         this.diff = this.daily ? { id: 'normal', ...DIFFICULTY.normal } : currentDifficulty();
         beginSession();
-        this.toast = new AchievementToast(game, { y: 40 });
+        this.toast = new AchievementToast(game, { y: 64 });   // under the HUD score + combo panels
         this.offUnlock = onUnlock((a) => this.toast.show(a));
         this.started = false;
         this.checkT = CHECK_MS;

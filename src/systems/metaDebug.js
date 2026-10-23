@@ -14,6 +14,9 @@ import { currentSeed } from './rng.js';
 export function installMetaDebug(game) {
     if (!import.meta.env.DEV || window.__meta) return;
     const start = (key) => {
+        const target = game.scene.getScene(key);
+        // restarting a running scene must go through restart(): a stop + start in one queue leaves it half torn down
+        if (target.sys.isActive()) { target.scene.restart(); return; }
         const active = game.scene.getScenes(true).filter((s) => !['SysOverlay', 'Wipe'].includes(s.sys.settings.key));
         active.forEach((s) => s.scene.stop());
         game.scene.start(key);
