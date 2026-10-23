@@ -5,17 +5,17 @@
 export const CONTRACT = {
     // --- ships.js (owner: art-ships) -------------------------------------------------------------
     // frame 0 = straight, 1 = banking left, 2 = banking right. Nose points UP. Origin centre.
-    ship_normal: [24, 28, 3],
-    ship_speedy: [20, 28, 3],
-    ship_tank: [30, 30, 3],
+    ship_normal: [25, 28, 3],     // odd widths: centre column = nose / hitbox centre
+    ship_speedy: [21, 28, 3],
+    ship_tank: [31, 30, 3],
     // large menu showcase versions (single frame, more detail)
     ship_normal_big: [64, 64, 1],
     ship_speedy_big: [64, 64, 1],
     ship_tank_big: [64, 64, 1],
     // engine flames, point DOWN, animated loop (fps 14). Place with origin (0.5, 0) just under the ship's tail.
-    flame_normal: [12, 14, 4],
-    flame_speedy: [10, 16, 4],
-    flame_tank: [16, 14, 4],
+    flame_normal: [13, 14, 4],    // odd widths so the jets line up with the nozzles
+    flame_speedy: [11, 16, 4],
+    flame_tank: [17, 14, 4],
     shield_ring: [44, 44, 4],       // forcefield bubble, animated loop
     pshot_basic: [3, 9, 1],         // player bullet, points up
     pshot_muzzle: [9, 9, 3],        // muzzle flash, plays once
