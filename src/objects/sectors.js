@@ -8,6 +8,8 @@
 // Spawner entries 'f:<formation>[:<enemy>]' launch a formation (formations.js) instead of a single enemy.
 import { BOSS_EVERY } from './waves.js';
 
+const RESERVE = 4;
+
 export const SECTORS = [
     { name: 'NEBULA', sub: 'THE VIOLET DRIFT', biome: 0, color: '#8b62e0' },
     { name: 'ASTEROID FIELD', sub: 'ROCKS INBOUND', biome: 5, color: '#9aaad0' },
@@ -69,7 +71,10 @@ export function applySector(cfg, wave, spawnF) {
     cfg.sector = sectorOf(wave);
     if (w >= theme.plan.length) return cfg;   // boss wave: nothing spawns
     const plan = theme.plan[w];
-    for (const s of cfg.spawns) s.every *= theme.mul[s.type] ?? 1;
+    for (const s of cfg.spawns) { s.every *= theme.mul[s.type] ?? 1; s.filler = true; }
+    // the v1 filler may not take the last few slots: late waves spawn it so fast it would starve the sector's
+    // own enemies and formations of room (WaveManager checks this reserve)
+    cfg.reserve = RESERVE;
     // new enemies are not hit by the endless interval shrink as hard: they are already the escalation
     const f = Math.sqrt(spawnF);
     for (const [type, every] of plan.add) cfg.spawns.push({ type, every: every * f });

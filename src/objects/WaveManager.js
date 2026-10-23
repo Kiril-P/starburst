@@ -81,7 +81,7 @@ export default class WaveManager {
     beginSpawning() {
         this.state = 'active';
         // v1 staggers each enemy type's first spawn by 800ms
-        this.spawners = this.cfg.spawns.map((s, i) => ({ type: s.type, every: s.every, next: i * WAVES.staggerMs + (s.type.startsWith('f:') ? s.every * 0.5 : 0) }));
+        this.spawners = this.cfg.spawns.map((s, i) => ({ type: s.type, every: s.every, filler: !!s.filler, next: i * WAVES.staggerMs + (s.type.startsWith('f:') ? s.every * 0.5 : 0) }));
         if (this.cfg.opener) this.formations.launch(this.cfg.opener, true);   // every wave opens with a set piece
         this.hooks.onStart(this.wave);
     }
@@ -97,7 +97,7 @@ export default class WaveManager {
                     if ((sp.next -= dt) > 0) continue;
                     const j = sp.every * WAVES.spawnJitter;
                     sp.next += Math.max(WAVES.minSpawnMs, sp.every + rand(-j, j));
-                    if (this.room() > 0) this.spawnGroup(resolveType(sp.type));
+                    if (this.room() > (sp.filler ? this.cfg.reserve || 0 : 0)) this.spawnGroup(resolveType(sp.type));
                 }
                 this.formations.update(dt);
                 if (this.timeLeft <= 0) {

@@ -2,6 +2,8 @@
 // max active enemies). v2 adds meteors from wave 3 as a light extra hazard. Tuning knobs that adapt this
 // table to 640x360 (duration/max-active scale, pattern tiers, endless mode) live in systems/tuning.js.
 // Every BOSS_EVERY-th wave is a boss fight instead of a timed wave (objects/bosses/).
+// On top of this table: sectors.js layers each sector's enemy mix, opener formation and pace onto every wave
+// (WaveManager.config), and formations.js holds the scripted set pieces (V, sweep, pincer, circle-in, swarm, ...).
 export const BOSS_EVERY = 5;
 
 export const WAVE_TABLE = [
