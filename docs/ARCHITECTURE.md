@@ -41,6 +41,9 @@ tools/render-sprites.mjs LOOK at sprites;  tools/shot.mjs headless screenshots o
 - **Scenes** — `scene.start('Game')` reads `save.ship` and `save.difficulty`; Game ends with `scene.start('GameOver', ...)`.
 - **Textures** — only keys in `src/art/contract.js`. Static sprite: `add.image(x,y,key)`; multi-frame: `add.sprite(x,y,key,frameIndex)` or `.play(key)` for ones with `fps` (animations are registered under the same key as the texture). Variants: `bullet_orb_m_amber`.
 - **Audio keys** (all loaded in Preload): music `title-music`, `main-music`; sfx `button-sound player-shoot enemy-shoot enemy-death player-death player-damaged thruster-hum wave-complete dash dash-alt forcefield phase-shift`. Play with `sfx(scene,key,{vol,rate,jitter})` from `systems/sfx.js`; music volume from `save.musicVolume`.
+- **Synth SFX keys** (generated at boot by `systems/synthSfx.js`, play exactly like samples): `graze combo-up combo-lost pickup level-up upgrade ui-hover ui-select ui-back warning boss-explosion shield-break shield-hit wave-start`. `sfx()` applies per-key cooldowns, voice caps and pitch jitter (table in `sfx.js`); menus use `uiSfx(scene,'hover'|'select'|'back')`.
+- **Music** (`systems/music.js`, Web Audio, never `scene.sound` for music): `playMusic(key,{fadeIn,fadeOut,restart,intensity})` crossfades, `stopMusic(ms)`, `setMusicVolume(v)`, `duck(reason,on)` (`pause|upgrade|gameover|launch`), `setIntensity(0..1)`, `setBossMode(bool)` — all no-op safe. In Game, `this.audio` (GameAudio) handles duck/intensity automatically from scene state and also exposes `setBossMode(on)` and `bossWarning()` (siren).
+- **Reactivity** (`systems/audioReact.js`): `getBass()`, `getLevel()`, `getPulse()` (0..1 beat envelope), `onBeat(cb)` → unsubscribe fn. Dev: `window.__audio` exposes these modules for console checks.
 - **Save** (`systems/Save.js`) — the only place that touches localStorage.
 
 ## Rules
