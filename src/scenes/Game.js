@@ -127,7 +127,7 @@ export default class Game extends Phaser.Scene {
                     this.player.controllable = true;
                     this.announceUpgrade(opt);
                     done();
-                });
+                }, this.waves.isBoss ? { title: 'BOSS DESTROYED' } : undefined);
             },
             onEscape: () => {}
         };

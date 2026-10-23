@@ -64,6 +64,8 @@ export default class BossDirector {
         g.fx.shake(1, 2400);
         g.fx.flash(COLORS.r, 0.18, 300);
         g.bg.pulse(0.8);
+        g.audio.bossWarning();
+        g.audio.setBossMode(true);
         g.audio.play('forcefield', { vol: 0.7, rate: 0.5 });
         g.audio.play('wave-complete', { vol: 0.5, rate: 0.6 });
         return true;
@@ -152,6 +154,7 @@ export default class BossDirector {
         this.clearBullets(true);
         // the brood dies with its mother: drones pop (and still score)
         for (const e of [...g.waves.live]) if (e.alive) g.combat.killEnemy(e, true);
+        g.audio.setBossMode(false);
         g.hud.setBoss(null);
     }
 
@@ -201,6 +204,7 @@ export default class BossDirector {
     /** remove the current boss (wave skip / after its death) */
     clear() {
         if (!this.boss) return;
+        this.g.audio.setBossMode(false);
         this.boss.destroy();
         this.boss = null;
         this.g.hud.setBoss(null);
