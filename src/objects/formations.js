@@ -102,9 +102,9 @@ const DEFS = {
         return out;
     },
     // two turrets dropping into the side thirds (station decks)
-    turrets(f, type, tier) {
+    turrets() {
         const out = [];
-        const xs = tier >= 2 ? [W * 0.2, W * 0.5, W * 0.8] : [W * 0.28, W * 0.72];
+        const xs = [W * 0.28, W * 0.72];   // two at most: three spinning turrets at once is a wall, not a pattern
         xs.forEach((x, i) => out.push({ at: i * 700, type: 'turret', x: Math.round(x + rand(-20, 20)), y: -16 }));
         return out;
     },
