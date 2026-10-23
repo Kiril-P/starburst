@@ -48,7 +48,9 @@ export default class ShipShowcase {
         const under = s.add.graphics().setDepth(DEPTH.HUD);
         // generous click target: the ring's square
         const hit = s.add.zone(x, this.y, RING_R * 2, RING_R * 2 + 24).setInteractive({ useHandCursor: true });
-        const slot = { id, info, x, ship, flame, glow, label, under, hit, y: this.y + DROP, hover: false, phase: i * 1.7 };
+        // locked ships (systems/meta.js) show as dark silhouettes with a padlock
+        const lock = s.add.image(0, 0, 'icon_lock').setOrigin(0, 0).setDepth(DEPTH.PLAYER + 1).setVisible(false);
+        const slot = { id, info, x, ship, flame, glow, label, under, hit, lock, locked: false, y: this.y + DROP, hover: false, phase: i * 1.7 };
         hit.on('pointerover', () => { slot.hover = true; });
         hit.on('pointerout', () => { slot.hover = false; });
         hit.on('pointerdown', () => onPick && onPick(i));
@@ -60,8 +62,8 @@ export default class ShipShowcase {
         this.slots.forEach((sl, j) => {
             const on = j === i;
             sl.label.setColor(on ? sl.info.accentCss : PALETTE[4]);
-            sl.flame.setVisible(on);
-            sl.glow.setVisible(on);
+            sl.flame.setVisible(on && !sl.locked);
+            sl.glow.setVisible(on && !sl.locked);
             sl.under.clear();
             if (on) {
                 // little underline with a centre pip, like the concept
@@ -77,6 +79,12 @@ export default class ShipShowcase {
 
     get current() { return this.slots[this.index]; }
 
+    /** mark ships as locked: flags[i] true = silhouette + padlock, no engine */
+    setLocked(flags) {
+        this.slots.forEach((sl, i) => { sl.locked = !!flags[i]; sl.lock.setVisible(sl.locked); });
+        this.select(this.index, true);
+    }
+
     update(dt) {
         this.t += dt;
         for (const [j, sl] of this.slots.entries()) {
@@ -87,8 +95,9 @@ export default class ShipShowcase {
             if (this.launching) continue;   // launch() owns positions/alpha from here on
             const by = sl.y + bob(this.t, on ? 1600 : 2200, on ? 2 : 1, sl.phase);
             this.placeShip(sl, by);
-            sl.ship.setTint(on || sl.hover ? 0xffffff : DIM_TINT);
-            sl.ship.setAlpha(on ? 1 : sl.hover ? 0.95 : 0.8);
+            sl.ship.setTint(sl.locked ? COLORS[2] : on || sl.hover ? 0xffffff : DIM_TINT);
+            sl.ship.setAlpha(sl.locked ? 1 : on ? 1 : sl.hover ? 0.95 : 0.8);
+            if (sl.locked) sl.lock.setPosition(Math.round(sl.x - sl.lock.width / 2), Math.round(by - sl.lock.height / 2));
         }
         this.drawRing(dt);
     }
@@ -168,6 +177,6 @@ export default class ShipShowcase {
 
     destroy() {
         this.ring.destroy(); this.ringGlow.destroy();
-        this.slots.forEach((sl) => [sl.ship, sl.flame, sl.glow, sl.label, sl.under, sl.hit].forEach((o) => o.destroy()));
+        this.slots.forEach((sl) => [sl.ship, sl.flame, sl.glow, sl.label, sl.under, sl.hit, sl.lock].forEach((o) => o.destroy()));
     }
 }

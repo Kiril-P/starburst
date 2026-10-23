@@ -12,7 +12,10 @@ import Formations from './formations.js';
 import { applySector, sectorBiome, sectorInfo, isSectorStart } from './sectors.js';
 import SectorBanner from '../fx/SectorBanner.js';
 
-const rand = (a, b) => a + Math.random() * (b - a);
+import { rngStream } from '../systems/rng.js';
+
+const rnd = rngStream('spawns');    // seeded in Daily Runs (systems/rng.js), Math.random otherwise
+const rand = (a, b) => a + rnd() * (b - a);
 
 export default class WaveManager {
     /**
@@ -98,7 +101,7 @@ export default class WaveManager {
                     if ((sp.next -= dt) > 0) continue;
                     const j = sp.every * WAVES.spawnJitter;
                     sp.next += Math.max(WAVES.minSpawnMs, sp.every + rand(-j, j));
-                    if (this.room() > (sp.filler ? this.cfg.reserve || 0 : 0)) this.spawnGroup(resolveType(sp.type));
+                    if (this.room() > (sp.filler ? this.cfg.reserve || 0 : 0)) this.spawnGroup(resolveType(sp.type, rnd));
                 }
                 this.formations.update(dt);
                 if (this.timeLeft <= 0) {
@@ -147,7 +150,7 @@ export default class WaveManager {
         const cap = ENEMY_TYPES[typeName].maxAlive;
         if (cap && this.live.reduce((k, e) => k + (e.alive && e.typeName === typeName), 0) >= cap) return;
         const m = WAVES.spawnMarginX, gap = WAVES.formationSpacing;
-        const formation = typeName === 'basic' && this.room() >= 3 && Math.random() < WAVES.formationChance[this.tier];
+        const formation = typeName === 'basic' && this.room() >= 3 && rnd() < WAVES.formationChance[this.tier];
         const x = formation ? rand(m + gap, W - m - gap) : rand(m, W - m);
         const lead = this.spawn(typeName, x, -20);
         if (!formation) return;

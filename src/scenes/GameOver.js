@@ -12,6 +12,9 @@ import { save } from '../systems/Save.js';
 import { sfx } from '../systems/sfx.js';
 import { playMusic, duck } from '../systems/music.js';
 import { addBuildSummary } from '../ui/buildSummary.js';
+import { settleRun } from '../systems/runResult.js';
+import RewardsPanel, { REWARDS_X } from './gameover/RewardsPanel.js';
+import { wipeTo } from './cine/wipe.js';
 
 const PW = 248, ROW = 17, ROW_BIG = 26, PX = (W - PW) >> 1, PY = 100;
 const rowsH = (n) => ROW_BIG + (n - 1) * ROW;
@@ -24,6 +27,7 @@ export default class GameOver extends Phaser.Scene {
         const wave = Math.max(1, data.wave || 1);
         const stats = data.stats || {};
         const best = save.recordRun(score, wave);
+        this.result = settleRun(data);   // meta: bank credits, leaderboard, achievements (systems/runResult.js)
         this.newBest = (best.newBestScore && score > 0) || best.newBestWave;
         this.skipped = false;
         this.leaving = false;   // scene instances are reused: a previous visit's leave() must not lock the buttons
@@ -44,6 +48,7 @@ export default class GameOver extends Phaser.Scene {
         this.buildPanel(rows);
         this.buildButtons();
         addBuildSummary(this, data.build);
+        this.rewards = new RewardsPanel(this, REWARDS_X, PY, this.result);
 
         this.input.keyboard.on('keydown', this.skip, this);
         this.input.on('pointerdown', this.skip, this);
@@ -200,6 +205,7 @@ export default class GameOver extends Phaser.Scene {
         this.buttons.forEach((b, i) => b.setAlpha(1).setY(this.buttonY + i * 28));
         this.hint.setAlpha(1);
         if (this.newBest) this.revealBest();
+        this.rewards?.finish();
         // the key that skipped shouldn't also press a button
         uiDelay(this, 120, () => this.nav.setEnabled(true));
     }
@@ -209,8 +215,7 @@ export default class GameOver extends Phaser.Scene {
         this.leaving = true;
         // to the menu: crossfade into the title theme now (MainMenu keeps it); a retry restarts the main track itself
         if (target === 'MainMenu') playMusic('title-music', { fadeIn: 900, fadeOut: 900 });
-        this.cameras.main.fadeOut(180, 7, 11, 26);
-        this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start(target));
+        wipeTo(this, target);
     }
 
     update(t, dt) { this.bg.update(dt, 0.6); }

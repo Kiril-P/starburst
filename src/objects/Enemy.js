@@ -7,13 +7,16 @@ import Phaser from 'phaser';
 import { W, H, DEPTH } from '../config.js';
 import { ENEMY_TYPES } from './enemyTypes.js';
 
-const rand = (a, b) => a + Math.random() * (b - a);
+import { rngStream } from '../systems/rng.js';
+
+const rnd = rngStream('enemies');   // seeded in Daily Runs (systems/rng.js), Math.random otherwise
+const rand = (a, b) => a + rnd() * (b - a);
 const FLASH_MS = 70;
 
 function pickWeighted(weights) {
     let total = 0;
     for (const w of weights) total += w;
-    let r = Math.random() * total;
+    let r = rnd() * total;
     for (let i = 0; i < weights.length; i++) { r -= weights[i]; if (r < 0) return i; }
     return 0;
 }

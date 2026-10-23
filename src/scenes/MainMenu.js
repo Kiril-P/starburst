@@ -1,5 +1,6 @@
-// Title screen: logo, ship showcase/select, nav column (START / QUESTS / SETTINGS / DIFFICULTY), best run, and the
-// START launch sequence. Panels open as overlay scenes (scenes/menu/*Panel.js) on top of this one.
+// Title screen: logo, ship showcase/select, nav column (START / DAILY RUN / HANGAR / ACHIEVEMENTS / RECORDS / QUESTS /
+// SETTINGS / DIFFICULTY), best run, credits, and the START launch sequence. Panels open as overlay scenes
+// (scenes/menu/*Panel.js) on top of this one; the HANGAR is its own scene (scenes/Hangar.js).
 import Phaser from 'phaser';
 import { W, H, DEPTH, SHIPS } from '../config.js';
 import { COLORS, PALETTE } from '../art/palette.js';
@@ -12,13 +13,18 @@ import TitleLogo from './menu/TitleLogo.js';
 import ShipShowcase from './menu/ShipShowcase.js';
 import SkyFx from './menu/SkyFx.js';
 import { createBestRun, createShipInfo } from './menu/InfoPanels.js';
-import { DIFFICULTY_INFO, SHIP_INFO } from './menu/data.js';
+import { DIFFICULTY_INFO } from './menu/data.js';
 import { playTitleMusic, fadeOutTitleMusic, audioLocked } from './menu/music.js';
-import { text, navButton } from './menu/helpers.js';
+import { text, navButton, fmt } from './menu/helpers.js';
 import { addBossGalleryEntry } from './menu/BossGallery.js';
+import { setRunMode, isShipUnlocked } from '../systems/meta.js';
+import { ACHIEVEMENTS, unlockedCount } from '../systems/achievements.js';
+import { topRuns } from '../systems/leaderboard.js';
+import { createCredits, shipInfoFor, lockFooter, denyLocked } from './menu/metaUi.js';
+import { wipeTo } from './cine/wipe.js';
 
 // layout (native px)
-const NAV = { x: 16, w: 160, h: 22, y: 130, step: 26 };
+const NAV = { x: 16, w: 160, h: 20, y: 100, step: 22 };
 const SHIP_XS = [282, 404, 526];
 const SHIP_Y = 172;
 const STAGE_CX = 404;            // centre of the ship stage (right of the nav column)
@@ -43,14 +49,17 @@ export default class MainMenu extends Phaser.Scene {
         this.logo = new TitleLogo(this, W / 2, 40);
         const shipIdx = Math.max(0, SHIPS.indexOf(save.ship));
         this.ships = new ShipShowcase(this, SHIP_XS, SHIP_Y, shipIdx, (i) => this.onShipClick(i));
+        this.ships.setLocked(SHIPS.map((id) => !isShipUnlocked(id)));
         this.freshQuests = syncQuests(save).map((q) => q.id);
 
         this.buildNav();
         addBossGalleryEntry(this);   // BOSSES button + [B] (owned by the bosses module)
-        this.bestRun = createBestRun(this, NAV.x, 236, NAV.w, 62, save);
+        this.bestRun = createBestRun(this, NAV.x, NAV.y + NAV.step * this.buttons.length - 3, NAV.w, 62, save);
         this.shipInfo = createShipInfo(this, STAGE_CX, 258, 300);
-        this.shipInfo.show(SHIP_INFO[SHIPS[shipIdx]]);
+        this.shipInfo.show(shipInfoFor(SHIPS[shipIdx]));
+        this.credits = createCredits(this, W - 8, 8);
         this.buildFooter();
+        this.updateFooter();
         this.corner = text(this, W - 6, H - 5, 'V2.0', { size: 8, origin: [1, 1], color: PALETTE[2] }).setDepth(DEPTH.HUD);
 
         this.flash = this.add.rectangle(0, 0, W, H, COLORS.w, 0).setOrigin(0).setDepth(DEPTH.MODAL + 10);
@@ -70,8 +79,13 @@ export default class MainMenu extends Phaser.Scene {
         const quests = evaluateQuests(save);
         const done = quests.filter((q) => q.done).length;
         const diff = DIFFICULTY_INFO[save.difficulty] ?? DIFFICULTY_INFO.normal;
+        const daily = topRuns('daily')[0];
         const defs = [
-            ['START', () => this.startGame(), { double: true, labelColor: PALETTE.b }],
+            ['START', () => this.startGame('normal'), { double: true, labelColor: PALETTE.b }],
+            ['DAILY RUN', () => this.startGame('daily'), { value: daily ? fmt(daily.score) : 'NEW', valueColor: PALETTE.A, labelColor: PALETTE.z }],
+            ['HANGAR', () => this.openHangar(), {}],
+            ['ACHIEVEMENTS', () => this.openOverlay('MenuAchievements'), { value: `${unlockedCount()}/${ACHIEVEMENTS.length}`, valueColor: PALETTE[4] }],
+            ['RECORDS', () => this.openOverlay('MenuRecords'), {}],
             ['QUESTS', () => this.openOverlay('MenuQuests', { fresh: this.freshQuests }), { value: `${done}/${quests.length}`, valueColor: PALETTE[4] }],
             ['SETTINGS', () => this.openOverlay('MenuSettings'), {}],
             ['DIFFICULTY', () => this.openOverlay('MenuDifficulty'), { value: diff.name, valueColor: diff.css }]
@@ -82,7 +96,8 @@ export default class MainMenu extends Phaser.Scene {
             b.homeX = b.x;
             return b;
         });
-        if (this.freshQuests.length) this.buttons[1].setValue('NEW', PALETTE.A);
+        this.btn = Object.fromEntries(defs.map(([label], i) => [label, this.buttons[i]]));
+        if (this.freshQuests.length) this.btn.QUESTS.setValue('NEW', PALETTE.A);
     }
 
     buildFooter() {
@@ -102,8 +117,10 @@ export default class MainMenu extends Phaser.Scene {
             .setDepth(DEPTH.HUD).setVisible(false);
     }
 
+    updateFooter() { lockFooter(this.footerSub, STAGE_CX); }
+
     /** UI elements that slide/fade in on reveal and out on START. */
-    get chrome() { return [...this.buttons, this.bestRun, this.shipInfo.container, this.footer]; }
+    get chrome() { return [...this.buttons, this.bestRun, this.shipInfo.container, this.footer, this.credits]; }
 
     // ---- attract / reveal ---------------------------------------------------------------------------------------
     enterAttract() {
@@ -129,7 +146,7 @@ export default class MainMenu extends Phaser.Scene {
         if (withLogo) this.logo.intro(0);
         this.chrome.forEach((o) => o.setVisible(true));
         this.buttons.forEach((b, i) => this.slideIn(b, b.homeX, 120 + i * 60));
-        [this.bestRun, this.shipInfo.container, this.footer].forEach((o, i) => {
+        [this.bestRun, this.shipInfo.container, this.footer, this.credits].forEach((o, i) => {
             o.setAlpha(0);
             this.tweens.add({ targets: o, alpha: 1, duration: 300, delay: 360 + i * 80 });
         });
@@ -161,7 +178,7 @@ export default class MainMenu extends Phaser.Scene {
     onShipClick(i) {
         if (this.starting || this.attract || this.overlayOpen) return;
         // clicking the already-selected ship launches, like pressing ENTER
-        if (i === this.ships.index) this.startGame();
+        if (i === this.ships.index) this.startGame('normal');
         else this.selectShip(i);
     }
 
@@ -169,7 +186,8 @@ export default class MainMenu extends Phaser.Scene {
         if (i === this.ships.index) return;
         save.ship = SHIPS[i];
         this.ships.select(i);
-        this.shipInfo.show(SHIP_INFO[SHIPS[i]]);
+        this.shipInfo.show(shipInfoFor(SHIPS[i]));
+        this.updateFooter();
         sfx(this, 'button-sound', { vol: 0.6, rate: 1.2 });
     }
 
@@ -187,19 +205,26 @@ export default class MainMenu extends Phaser.Scene {
             });
             if (key === 'MenuDifficulty') {
                 const d = DIFFICULTY_INFO[save.difficulty] ?? DIFFICULTY_INFO.normal;
-                this.buttons[3].setValue(d.name, d.css);
+                this.btn.DIFFICULTY.setValue(d.name, d.css);
             }
             if (key === 'MenuQuests' && this.freshQuests.length) {
                 this.freshQuests = [];
                 const q = evaluateQuests(save);
-                this.buttons[1].setValue(`${q.filter((x) => x.done).length}/${q.length}`, PALETTE[4]);
+                this.btn.QUESTS.setValue(`${q.filter((x) => x.done).length}/${q.length}`, PALETTE[4]);
             }
         });
     }
 
     // ---- START ------------------------------------------------------------------------------------------------
-    startGame() {
+    openHangar() {
+        this.starting = true;   // blocks other menu input during the wipe
+        wipeTo(this, 'Hangar');
+    }
+
+    startGame(mode = 'normal') {
         if (this.starting) return;
+        if (!isShipUnlocked(save.ship)) { denyLocked(this, this.btn.HANGAR); return; }
+        setRunMode(mode);
         this.starting = true;
         this.input.keyboard.enabled = false;
         this.input.enabled = false;

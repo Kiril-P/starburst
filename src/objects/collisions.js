@@ -22,7 +22,7 @@ export function bulletsVsPlayer(pool, player, h) {
         if (d2 < rr * rr) {
             if (hittable) { h.onHit(b); return; }
         } else if (hittable && !b.grazed) {
-            const g = rr + PLAYER.grazeRadius;
+            const g = rr + PLAYER.grazeRadius + (player.grazeBonus || 0);   // grazeBonus: hangar upgrade (systems/meta.js)
             if (d2 < g * g) { b.grazed = true; h.onGraze(b); }
         }
     }

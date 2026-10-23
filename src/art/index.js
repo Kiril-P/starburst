@@ -10,6 +10,7 @@ import enemies2 from './sprites/enemies2.js';
 import pickups from './sprites/pickups.js';
 import weapons from './sprites/weapons.js';
 import bosses2 from './sprites/bosses2.js';
+import badges from './sprites/badges.js';
 
-export const SPRITE_MODULES = { ships, projectiles, enemies, fx, icons, ui, bosses, bosses2, enemies2, pickups, weapons };
+export const SPRITE_MODULES = { ships, projectiles, enemies, fx, icons, ui, bosses, bosses2, enemies2, pickups, weapons, badges };
 export const ALL_SPRITES = Object.values(SPRITE_MODULES).flat();
