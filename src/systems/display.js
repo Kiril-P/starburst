@@ -4,6 +4,7 @@
 // the integer size would waste too much space (small windows, phones). Re-evaluated on resize and fullscreen changes.
 import Phaser from 'phaser';
 import { W, H } from '../config.js';
+import { installRotateHint } from './rotateHint.js';
 
 const MIN_FILL = 0.85;   // integer zoom must reach this fraction of the FIT size, otherwise FIT wins
 
@@ -33,5 +34,6 @@ export function installPixelScaling(game) {
     sm.on(Phaser.Scale.Events.ENTER_FULLSCREEN, later);
     sm.on(Phaser.Scale.Events.LEAVE_FULLSCREEN, later);
     game.events.once(Phaser.Core.Events.READY, apply);
+    installRotateHint(game);   // phones held upright: ask to rotate (and pause a running round)
     return apply;
 }

@@ -6,8 +6,11 @@ import Phaser from 'phaser';
 import { W, H, DEPTH } from '../config.js';
 import { PLAYER, SHIPS, ABILITIES, SPEED_SCALE, DIAGONAL_FACTOR } from '../systems/tuning.js';
 import { COLORS } from '../art/palette.js';
+import { GameInput } from '../systems/bindings.js';
+import MouseAim from '../systems/mouseAim.js';
+import { save } from '../systems/Save.js';
+import { touchWanted } from '../ui/TouchControls.js';
 
-const K = Phaser.Input.Keyboard.KeyCodes;
 // v1 lerped velocity by pct/100 every frame at 60fps; convert to a per-second exponential rate
 const rate = (pct) => -Math.log(1 - Math.min(pct, 99) / 100) * 60;
 const GHOSTS = 10;
@@ -43,22 +46,17 @@ export default class Player {
             phase: { unlocked: false, cooldown01: 0, active: false, key: 'X' }
         };
         this.createSprites(scene);
-        this.keys = scene.input.keyboard.addKeys({
-            left: K.LEFT, right: K.RIGHT, up: K.UP, down: K.DOWN, fire: K.SPACE, dash: K.SHIFT, ff: K.Z, phase: K.X
-        });
-        // WASD moves too: each direction reads as down if either its arrow or its letter is held
-        // (gamepad / touch arrive as virtual arrow keys, see systems/virtualKeys.js)
-        const alt = scene.input.keyboard.addKeys({ left: K.A, right: K.D, up: K.W, down: K.S });
-        for (const d of ['left', 'right', 'up', 'down']) {
-            const a = this.keys[d], b = alt[d];
-            this.keys[d] = { get isDown() { return a.isDown || b.isDown; } };
-        }
+        // rebindable keys (Settings > CONTROLS) + gamepad / touch by action, see systems/bindings.js
+        this.input = new GameInput();
+        this.keys = this.input.keys;   // { left, right, up, down, fire, ... }.isDown
+        for (const id of ['dash', 'forcefield', 'phase']) this.hudAbilities[id].key = this.input.label(id === 'forcefield' ? 'shield' : id);
         // presses are queued from key events (not polled with JustDown) so a tap shorter than a frame still counts
         this.queued = { dash: false, forcefield: false, phase: false, fire: false };
-        this.keys.dash.on('down', () => { this.queued.dash = true; });
-        this.keys.ff.on('down', () => { this.queued.forcefield = true; });
-        this.keys.phase.on('down', () => { this.queued.phase = true; });
-        this.keys.fire.on('down', () => { this.queued.fire = true; });
+        this.input.onPress('dash', () => { this.queued.dash = true; });
+        this.input.onPress('shield', () => { this.queued.forcefield = true; });
+        this.input.onPress('phase', () => { this.queued.phase = true; });
+        this.input.onPress('fire', () => { this.queued.fire = true; });
+        this.mouse = save.aimMode === 'mouse' && !touchWanted() ? new MouseAim(scene, this) : null;
     }
 
     createSprites(scene) {
@@ -111,9 +109,10 @@ export default class Player {
         if (this.controllable) {
             for (const id of ['dash', 'forcefield', 'phase']) if (q[id]) { q[id] = false; this.tryAbility(id); }
         } else q.dash = q.forcefield = q.phase = q.fire = false;
+        this.mouseAiming = !!this.mouse && this.controllable && this.mouse.update();
         this.move(s);
         this.fireTimer -= dt;
-        if (this.controllable && (this.keys.fire.isDown || q.fire) && this.fireTimer <= 0) {
+        if (this.controllable && (this.keys.fire.isDown || q.fire || (this.mouseAiming && this.mouse.firing)) && this.fireTimer <= 0) {
             q.fire = false;
             this.fireTimer = this.fireRate;
             const nose = this.ship.height / 2 - 1;
@@ -159,7 +158,7 @@ export default class Player {
             const ctl = this.controllable;
             let tx = ctl ? (k.left.isDown ? -1 : k.right.isDown ? 1 : 0) : 0;
             let ty = ctl ? (k.up.isDown ? -1 : k.down.isDown ? 1 : 0) : 0;
-            if (tx || ty) this.aim = Math.atan2(ty, tx);
+            if ((tx || ty) && !this.mouseAiming) this.aim = Math.atan2(ty, tx);
             const sp = this.speed * (tx && ty ? DIAGONAL_FACTOR * Math.SQRT1_2 : 1);
             this.vx = this.approach(this.vx, tx * sp, s);
             this.vy = this.approach(this.vy, ty * sp, s);
@@ -252,6 +251,8 @@ export default class Player {
     }
 
     destroy() {
+        this.input.destroy();
+        this.mouse?.destroy();
         for (const o of [this.ship, this.flame, this.dot, this.shield, ...this.ghosts]) o.destroy();
     }
 }

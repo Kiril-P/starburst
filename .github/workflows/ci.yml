@@ -1,0 +1,58 @@
+# Build + static checks + headless smoke test on every push / PR.
+# The smoke test drives the real game in Chrome with SwiftShader WebGL (no GPU needed), see tools/smoke.mjs.
+# The built game (relative base, works from any sub-path: itch.io, GitHub Pages, a /play/starburst/ folder) is
+# uploaded as the `starburst-dist` artifact, ready to zip for itch.io or copy to a web server.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # preinstalled on GitHub's ubuntu images; puppeteer-core never downloads its own browser
+      CHROME_PATH: /usr/bin/google-chrome
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Static checks (syntax, sprite maps, texture contract, manifest)
+        run: npm run check
+
+      - name: Production build
+        run: npm run build
+
+      - name: Bundle size report
+        run: du -sh dist dist/assets && ls -l dist/assets/*.js
+
+      - name: Smoke test (dev build via __dbg hooks, then production bundle + service worker)
+        run: npm run test:smoke:prod
+
+      - name: Upload smoke screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-screenshots
+          path: tmp/smoke/
+          if-no-files-found: ignore
+
+      - name: Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: starburst-dist
+          path: dist/

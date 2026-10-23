@@ -17,7 +17,15 @@ function dispatch(type, action) {
     const e = new KeyboardEvent(type, { key, code, keyCode, which: keyCode, bubbles: true, cancelable: true });
     // older engines ignore keyCode in the init dict; Phaser matches on keyCode
     if (e.keyCode !== keyCode) Object.defineProperty(e, 'keyCode', { get: () => keyCode });
+    // tag it so systems/bindings.js maps it by *action* (pad A always fires) instead of by the rebindable key
+    e.virtualAction = action;
     window.dispatchEvent(e);
+}
+
+/** is `action` held by any pad / touch source? (read by systems/bindings.js) */
+export function virtualDown(action) {
+    const set = held.get(action);
+    return !!set && set.size > 0;
 }
 
 /** press/release `action` on behalf of `source` (e.g. 'pad0', 'touch-stick') */
