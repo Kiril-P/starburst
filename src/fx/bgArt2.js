@@ -101,7 +101,7 @@ export function sunTexture(scene) {
     const tex = scene.textures.createCanvas(key, SUN * SUN_FRAMES, SUN);
     const img = tex.context.createImageData(SUN * SUN_FRAMES, SUN), px = new Uint32Array(img.data.buffer);
     const n = noise2(831), c = (SUN - 1) / 2, TW = SUN * SUN_FRAMES;
-    const flareH = [0, 0, 10, 22, 18];
+    const flareH = [0, 0, 16, 32, 28];
     const fa = Math.PI * 1.1;                      // prominence site: the visible (left) limb, a little above centre
     for (let f = 0; f < SUN_FRAMES; f++) {
         for (let y = 0; y < SUN; y++) for (let x = 0; x < SUN; x++) {
@@ -110,7 +110,7 @@ export function sunTexture(scene) {
             if (d < SUN_R) {
                 // limb darkening + granulation; the core is amber, white-hot only in small cells
                 const g = fbm(n, x / SUN, y / SUN, 12, 12, 3);
-                const v = 0.35 + 0.5 * Math.sqrt(1 - (d / SUN_R) ** 2) + (g - 0.5) * 0.5;
+                const v = 0.34 + 0.5 * Math.sqrt(1 - (d / SUN_R) ** 2) + (g - 0.5) * 0.45;
                 ch = ['y', 'a', 'A', 'z'][ditherLevel(v, 3, x, y, 1)];
             } else {
                 // corona: flickering tongues, a different phase per frame so the edge shimmers
@@ -123,9 +123,10 @@ export function sunTexture(scene) {
                 const h = flareH[f];
                 if (h) {
                     const da = Math.atan2(Math.sin(a - fa), Math.cos(a - fa)) * SUN_R;    // arc distance along the limb
-                    const lx = da / 12, ly = (d - SUN_R) / h;                               // loop: ellipse of half-width 12
-                    const e = Math.abs(Math.hypot(lx, ly) - 1);
-                    if (ly > 0 && e < 0.16) ch = f === 4 && (x + y) & 1 ? 'a' : e < 0.07 ? 'z' : 'A';
+                    const lx = da / 18, ly = (d - SUN_R + 2) / h;                           // loop: half-ellipse 18px wide
+                    const r = Math.hypot(lx, ly), e = Math.abs(r - 1);
+                    if (ly > 0 && e < 0.13) ch = f === 4 && (x + y) & 1 ? 'a' : e < 0.05 ? 'z' : 'A';
+                    else if (ly > 0 && r < 1 && !ch && ditherLevel(0.3 * (1 - r), 1, x, y)) ch = 'y';   // hot gas under the arch
                 }
             }
             if (ch) px[y * TW + f * SUN + x] = LUT[ch];

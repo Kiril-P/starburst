@@ -8,6 +8,7 @@
 import Phaser from 'phaser';
 import { W, H, DEPTH } from '../config.js';
 import { COLORS } from '../art/palette.js';
+import { quality } from '../systems/quality.js';
 import { TILE_H } from './bgArt.js';
 import { beltTexture, deckFarTexture, deckNearTexture, sunTexture, hazeTexture, HAZE_H, SUN_R } from './bgArt2.js';
 
@@ -58,7 +59,8 @@ function makeSolar(scene) {
     let t = 0, shimmer = 0, flareWait = rand(3000, 6000), flareStep = -1, flareT = 0, hazeOff = 0;
     return {
         objs: [sun, halo, haze, ...embers],
-        alphaOf: (o) => (o === halo ? 0.22 : o === haze ? 0.4 : o.blendMode === ADD && o !== sun ? 0.8 : 1),
+        // LOW graphics: skip the purely cosmetic full-screen haze and the embers (fill-rate on weak GPUs)
+        alphaOf: (o) => (o === halo ? 0.22 : quality.low && o !== sun ? 0 : o === haze ? 0.4 : o.blendMode === ADD && o !== sun ? 0.8 : 1),
         update(s, dt) {   // the sun is far away: it never scrolls
             t += s;
             // corona shimmer between frames 0/1, interrupted now and then by a flare (frames 2-4) + halo swell
@@ -137,6 +139,6 @@ export default class BiomeLayers {
 
     _applyAlpha(set) {
         const a = set.alpha;
-        for (const o of set.objs) o.setAlpha(a * (set.alphaOf ? set.alphaOf(o) : 1)).setVisible(a > 0);
+        for (const o of set.objs) { const k = a * (set.alphaOf ? set.alphaOf(o) : 1); o.setAlpha(k).setVisible(k > 0); }
     }
 }
