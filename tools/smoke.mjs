@@ -82,7 +82,7 @@ async function step(name, fn) {
     }
 }
 
-// menu rows: START 0, QUESTS 1, SETTINGS 2, DIFFICULTY 3
+// menu rows: START 0, DAILY 1, HANGAR 2, ACHIEVEMENTS 3, RECORDS 4, QUESTS 5, SETTINGS 6, DIFFICULTY 7
 async function openMenuItem(i, sceneKey) {
     for (let j = 0; j < i; j++) await key('ArrowDown');
     await key('Enter');
@@ -96,10 +96,10 @@ async function closePanel(sceneKey, upBy) {
 }
 
 await step('boot to main menu', async () => { await inScene('MainMenu', 15000); await sleep(800); await page.screenshot({ path: path.join(outDir, '01-menu.png') }); });
-await step('quests panel', async () => { await openMenuItem(1, 'MenuQuests'); await closePanel('MenuQuests', 1); });
-await step('difficulty panel', async () => { await openMenuItem(3, 'MenuDifficulty'); await closePanel('MenuDifficulty', 3); });
+await step('quests panel', async () => { await openMenuItem(5, 'MenuQuests'); await closePanel('MenuQuests', 5); });
+await step('difficulty panel', async () => { await openMenuItem(7, 'MenuDifficulty'); await closePanel('MenuDifficulty', 7); });
 await step('settings + controls rebinding', async () => {
-    await openMenuItem(2, 'MenuSettings');
+    await openMenuItem(6, 'MenuSettings');
     // walk down to the CONTROLS row by label (rows may be added above it)
     const row = await ev(() => __game.scene.getScene('MenuSettings').rows.findIndex((r) => r.def.label === 'CONTROLS'));
     if (row < 0) throw new Error('no CONTROLS row in Settings');
@@ -121,7 +121,7 @@ await step('settings + controls rebinding', async () => {
     await key('Escape'); await gone('MenuSettings');
     await ev(() => localStorage.removeItem('keyBindings'));
     await sleep(150);
-    for (let j = 0; j < 2; j++) await key('ArrowUp');
+    for (let j = 0; j < 6; j++) await key('ArrowUp');
 });
 await step('start game', async () => { await key('Enter'); await inScene('Game', 10000); await until(() => !!(window.__dbg && __dbg.scene.player), 'player'); });
 await step('player fires', async () => {

@@ -39,5 +39,6 @@ export function seedRandom(seed, clear) {
     if (clear && !sessionStorage.getItem('__smokeInit')) {
         sessionStorage.setItem('__smokeInit', '1');
         localStorage.clear();
+        localStorage.setItem('seenIntro', '1');   // the first-launch story crawl would hold the menu back
     }
 }
