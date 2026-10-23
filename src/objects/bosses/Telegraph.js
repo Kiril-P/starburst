@@ -19,6 +19,7 @@ export default class Telegraph {
         const it = this.spare.pop() || {};
         it.kind = kind; it.ms = ms; it.total = ms;
         it.x = o.x ?? 0; it.y = o.y ?? 0; it.a = o.a ?? Math.PI / 2; it.len = o.len ?? LONG; it.w = o.w ?? 0; it.r = o.r ?? 0;
+        it.g0 = o.g0 ?? -1; it.g1 = o.g1 ?? -1;   // wall: safe gap between these distances along the line
         it.follow = o.follow || null;   // follow(it): update x/y/a every frame (rotating beams, tracking boss)
         this.items.push(it);
         return it;
@@ -28,6 +29,8 @@ export default class Telegraph {
     line(ms, o) { return this._add('line', ms, o); }
     /** vertical danger lane centred on x, w px wide, from y down to the bottom */
     lane(ms, o) { return this._add('lane', ms, o); }
+    /** bullet wall along angle a from (x,y): dotted danger line with a bracketed safe gap from g0 to g1 px */
+    wall(ms, o) { return this._add('wall', ms, o); }
     /** shrinking target ring */
     ring(ms, o) { return this._add('ring', ms, o); }
 
@@ -48,6 +51,7 @@ export default class Telegraph {
             g.fillStyle(col, 1);
             if (it.kind === 'line') this.dots(g, it.x, it.y, it.a, it.len, late ? 2 : 4);
             else if (it.kind === 'lane') this.lane_(g, it, late);
+            else if (it.kind === 'wall') this.wall_(g, it, late);
             else this.ring_(g, it, late);
         }
     }
@@ -59,6 +63,20 @@ export default class Telegraph {
             const px = Math.round(x + c * d), py = Math.round(y + s * d);
             if (px < -2 || px > W + 2 || py < -2 || py > H + 2) { if (d > 40) break; continue; }
             g.fillRect(px, py, 1, 1);
+        }
+    }
+
+    wall_(g, it, late) {
+        const c = Math.cos(it.a), s = Math.sin(it.a), step = late ? 2 : 3;
+        for (let d = 0; d < it.len; d += step) {
+            if (d > it.g0 && d < it.g1) continue;
+            g.fillRect(Math.round(it.x + c * d), Math.round(it.y + s * d), 1, 1);
+        }
+        // brackets at both gap edges: short ticks across the line, so the opening reads at a glance
+        for (const d of [it.g0, it.g1]) {
+            if (d < 0) continue;
+            const bx = it.x + c * d, by = it.y + s * d;
+            for (let k = -4; k <= 4; k++) g.fillRect(Math.round(bx - s * k), Math.round(by + c * k), 1, 1);
         }
     }
 

@@ -40,6 +40,10 @@ export const save = {
     get bossesDefeated() { return num('bossesDefeated', 0); },
     set bossesDefeated(v) { set('bossesDefeated', v); },
 
+    // boss gallery: { [bossId]: { seen, kills, best (ms) } } (objects/bosses/roster.js)
+    get bossLog() { try { return JSON.parse(localStorage.getItem('bossLog') || '{}'); } catch (e) { return {}; } },
+    set bossLog(v) { set('bossLog', JSON.stringify(v)); },
+
     get completedTasks() { try { return JSON.parse(localStorage.getItem('completedTasks') || '[]'); } catch (e) { return []; } },
     set completedTasks(v) { set('completedTasks', JSON.stringify(v)); },
 

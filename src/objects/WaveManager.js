@@ -1,10 +1,11 @@
 // Timed waves, v1 rules: survive the timer; each enemy type spawns on its own jittered interval while
 // the number of active enemies is below the wave's max. Then: wave clear -> upgrade pick -> next wave.
-// Every BOSS_EVERY-th wave has no timer or spawners: state 'boss' waits for bossDefeated() (BossDirector).
+// Boss waves (bosses/roster.js isBossWave) have no timer or spawners: state 'boss' waits for bossDefeated() (BossDirector).
 // Driven by simulation dt (no scene timers) so pause / hit-stop / slow-mo freeze it naturally.
 import { W } from '../config.js';
 import { WAVES } from '../systems/tuning.js';
 import { WAVE_TABLE, BOSS_EVERY } from './waves.js';
+import { isBossWave } from './bosses/roster.js';   // main bosses every 5th wave + mid-bosses (waves 3, 8, 13 ...)
 import { resolveType, ENEMY_TYPES } from './enemyTypes.js';
 import Enemy from './Enemy.js';
 import Formations from './formations.js';
@@ -35,7 +36,7 @@ export default class WaveManager {
 
     get biome() { return sectorBiome(this.wave); }   // one backdrop per sector (sectors.js)
 
-    get isBoss() { return this.wave > 0 && this.wave % BOSS_EVERY === 0; }
+    get isBoss() { return isBossWave(this.wave); }
 
     get tier() { const t = WAVES.tierByWave; return t[Math.min(this.wave, t.length) - 1] ?? 0; }
 
