@@ -187,7 +187,7 @@ export default class UpgradeScreen {
         this.nav.setEnabled(false);
         this.cards.forEach((c) => { c.enabled = false; c.disableInteractive(); });
         card.setFocused(true);
-        sfx(this.scene, 'wave-complete', { vol: 0.6, rate: 1.3 });
+        sfx(this.scene, 'upgrade', { vol: 0.7 });
         this.onPick && this.onPick(card.option);
 
         const { scene } = this;

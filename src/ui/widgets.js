@@ -16,7 +16,7 @@
 import Phaser from 'phaser';
 import { pxText, centerText } from './text.js';
 import { PALETTE, COLORS } from '../art/palette.js';
-import { sfx } from '../systems/sfx.js';
+import { uiSfx } from '../systems/sfx.js';
 import { uiDelay } from './anim.js';
 
 export { onUiStep, uiTween, uiDelay } from './anim.js';
@@ -110,7 +110,7 @@ export class Button extends Phaser.GameObjects.Container {
         this.setSize(w, h).setInteractive({ useHandCursor: true });
         this.on('pointerover', () => {
             this.hovered = true;
-            if (this.enabled && opts.hoverSfx !== false) sfx(scene, 'button-sound', { vol: 0.25, rate: 1.5 });
+            if (this.enabled && opts.hoverSfx !== false) uiSfx(scene, 'hover');
             this.emit('hover', this);
             this.refresh();
         });
@@ -133,7 +133,7 @@ export class Button extends Phaser.GameObjects.Container {
     }
 
     click() {
-        sfx(this.scene, 'button-sound', { vol: 0.8 });
+        uiSfx(this.scene, 'select');
         this.onClick && this.onClick(this);
     }
 
@@ -238,7 +238,7 @@ export class MenuNav {
 
     focus(i, withSfx = true) {
         this.i = i;
-        if (withSfx) sfx(this.scene, 'button-sound', { vol: 0.25, rate: 1.5 });
+        if (withSfx) uiSfx(this.scene, 'hover');
         this.refresh();
         this.opts.onChange && this.opts.onChange(i, this.buttons[i]);
     }
@@ -313,7 +313,7 @@ export function createSlider(scene, x, y, value, onChange, opts = {}) {
         if (changed && !silent && onChange) onChange(v);
         return c;
     };
-    c.nudge = (d) => { c.setValue(c.value + d / steps); sfx(scene, 'button-sound', { vol: 0.25, rate: 1.2 + c.value * 0.6 }); return c; };
+    c.nudge = (d) => { c.setValue(c.value + d / steps); uiSfx(scene, 'hover', { rate: 0.8 + c.value * 0.6 }); return c; };
     const fromPointer = (p) => {
         const local = c.getWorldTransformMatrix().applyInverse(p.x, p.y);
         c.setValue((local.x + (w >> 1) - 4) / span);
@@ -322,7 +322,7 @@ export function createSlider(scene, x, y, value, onChange, opts = {}) {
     hit.on('pointerdown', (p) => { dragging = true; fromPointer(p); });
     hit.on('pointermove', (p) => { if (dragging && p.isDown) fromPointer(p); });
     scene.input.on('pointerup', () => {
-        if (dragging) sfx(scene, 'button-sound', { vol: 0.4 });
+        if (dragging) uiSfx(scene, 'select', { vol: 0.5 });
         dragging = false;
     });
     c.value = -1;
@@ -354,7 +354,7 @@ export function createToggle(scene, x, y, value, onChange, opts = {}) {
         if (!silent && onChange) onChange(c.value);
         return c;
     };
-    c.toggle = () => { sfx(scene, 'button-sound', { vol: 0.6 }); return c.setValue(!c.value); };
+    c.toggle = () => { uiSfx(scene, 'select'); return c.setValue(!c.value); };
     hit.on('pointerdown', () => c.toggle());
     return c;
 }

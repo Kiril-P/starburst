@@ -96,7 +96,7 @@ export default class Combat {
         this.stats.maxCombo = Math.max(this.stats.maxCombo, g.combo.mult);
         // spark on the near side of the bullet, between it and the ship
         g.fx.grazeSpark((b.x + g.player.x) / 2, (b.y + g.player.y) / 2);
-        g.audio.throttled('button-sound', JUICE.sfxThrottleMs, { vol: 0.18, rate: 1.7, jitter: 150 });
+        g.audio.throttled('graze', JUICE.sfxThrottleMs, { vol: 0.4, rate: 1 + Math.min(0.5, g.combo.mult * 0.03) });
     }
 
     /** Forcefield / wave clear: every enemy bullet becomes a spark (+ points when `reward`). */

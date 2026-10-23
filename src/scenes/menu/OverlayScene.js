@@ -6,7 +6,7 @@ import Phaser from 'phaser';
 import { W, H, DEPTH } from '../../config.js';
 import { COLORS, PALETTE } from '../../art/palette.js';
 import { createPanel } from '../../ui/widgets.js';
-import { sfx } from '../../systems/sfx.js';
+import { uiSfx } from '../../systems/sfx.js';
 import { text } from './helpers.js';
 
 export default class OverlayScene extends Phaser.Scene {
@@ -54,7 +54,7 @@ export default class OverlayScene extends Phaser.Scene {
             targets: p, v: 1, duration: 180, ease: 'Cubic.easeOut',
             onUpdate: () => { this.root.setAlpha(p.v); this.root.y = Math.round((1 - p.v) * 8); }
         });
-        sfx(this, 'button-sound', { vol: 0.5, rate: 1.15 });
+        uiSfx(this, 'select', { rate: 1.15 });
     }
 
     inside(p) {
@@ -68,7 +68,7 @@ export default class OverlayScene extends Phaser.Scene {
     close() {
         if (this.closing) return;
         this.closing = true;
-        sfx(this, 'button-sound', { vol: 0.4, rate: 0.9 });
+        uiSfx(this, 'back');
         this.input.keyboard.enabled = false;
         this.input.enabled = false;
         const p = { v: 1 };
