@@ -6,6 +6,7 @@
 import puppeteer from 'puppeteer-core';
 import fs from 'node:fs';
 import path from 'node:path';
+import { findChrome, chromeArgs } from './lib/browser.mjs';
 
 const a = process.argv.slice(2);
 const get = (n, d) => { const i = a.indexOf(n); return i < 0 ? d : a[i + 1]; };
@@ -16,10 +17,8 @@ const js = get('--eval', '');
 const thenWait = parseInt(get('--then-wait', '1500'), 10);
 const [vw, vh] = get('--size', '1280x720').split('x').map(Number);
 
-const chrome = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const browser = await puppeteer.launch({
-    executablePath: chrome, headless: 'new',
-    args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required', `--window-size=${vw},${vh}`]
+    executablePath: findChrome(), headless: 'new', args: chromeArgs(vw, vh)
 });
 const page = await browser.newPage();
 await page.setViewport({ width: vw, height: vh });
