@@ -43,6 +43,13 @@ export default class Player {
         this.keys = scene.input.keyboard.addKeys({
             left: K.LEFT, right: K.RIGHT, up: K.UP, down: K.DOWN, fire: K.SPACE, dash: K.SHIFT, ff: K.Z, phase: K.X
         });
+        // WASD moves too: each direction reads as down if either its arrow or its letter is held
+        // (gamepad / touch arrive as virtual arrow keys, see systems/virtualKeys.js)
+        const alt = scene.input.keyboard.addKeys({ left: K.A, right: K.D, up: K.W, down: K.S });
+        for (const d of ['left', 'right', 'up', 'down']) {
+            const a = this.keys[d], b = alt[d];
+            this.keys[d] = { get isDown() { return a.isDown || b.isDown; } };
+        }
         // presses are queued from key events (not polled with JustDown) so a tap shorter than a frame still counts
         this.queued = { dash: false, forcefield: false, phase: false, fire: false };
         this.keys.dash.on('down', () => { this.queued.dash = true; });

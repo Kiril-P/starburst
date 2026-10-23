@@ -14,9 +14,12 @@ src/art/placeholder.js   auto labelled placeholder for contract keys that aren't
 src/art/sprites/*.js     pixel art (ships, projectiles, enemies, fx, icons, ui)
 src/fx/Fx.js, Background.js
 src/ui/text.js (pxText), widgets.js, Hud.js, UpgradeScreen.js
-src/systems/Save.js (persistence), sfx.js (play sounds), + gameplay systems
+src/systems/Save.js (persistence), sfx.js (play sounds), quality.js (graphics quality), display.js (pixel scaling),
+                         virtualKeys.js + gamepad.js (pad/touch -> key presses), + gameplay systems
+src/scenes/SysOverlay.js always-on top scene: FPS counter, gamepad bridge, touch controls, auto-pause on blur
 src/objects/             Player, Enemy types, bullets, WaveManager (gameplay)
 tools/render-sprites.mjs LOOK at sprites;  tools/shot.mjs headless screenshots of the running game
+tools/qa.mjs             smoke + leak test of every flow (see docs/QA.md)
 ```
 
 ## Module ownership (do NOT edit files you don't own; ask via your final report if you need something changed)

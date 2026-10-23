@@ -6,6 +6,7 @@
 import Phaser from 'phaser';
 import { W, H, DEPTH } from '../config.js';
 import { COLORS as C } from '../art/palette.js';
+import { save } from '../systems/Save.js';
 import { BIOMES, TILE_H, gradientTexture, nebulaTexture, starTexture, planetKey, bakeProps, streakKey, STREAK_COUNT, ROCK_KEYS } from './bgArt.js';
 
 const SPEED = { far: 4, starsFar: 7, planet: 2.5, near: 13, starsNear: 22 };   // px/s at intensity 1
@@ -108,7 +109,10 @@ export default class Background {
     }
 
     /** brief brightness pulse for beats / big hits, strength 0..1 */
-    pulse(strength = 0.5) { this.pulseV = Math.min(1, Math.max(this.pulseV, strength)); }
+    pulse(strength = 0.5) {
+        if (!save.flashEffects) strength *= 0.3;   // reduced-flash setting: keep a hint of the beat, lose the strobe
+        this.pulseV = Math.min(1, Math.max(this.pulseV, strength));
+    }
 
     destroy() {
         for (const set of this.sets) { set.grad.destroy(); set.far.destroy(); set.near.destroy(); }
@@ -204,7 +208,8 @@ export default class Background {
             tw.y = Math.round(d.fy);
             // mostly a dim dot; now and then flares through the cross frames
             const ph = (t * d.rate + d.phase) % 1;
-            tw.setFrame(ph < 0.78 ? 0 : ph < 0.83 ? 1 : ph < 0.9 ? 2 : ph < 0.95 ? 3 : 1);
+            const f = ph < 0.78 ? 0 : ph < 0.83 ? 1 : ph < 0.9 ? 2 : ph < 0.95 ? 3 : 1;
+            if (tw.frame.name !== f) tw.setFrame(f);   // setFrame re-sizes + emits every call: only when it changes
         }
     }
 

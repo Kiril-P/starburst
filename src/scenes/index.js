@@ -5,5 +5,7 @@ import MainMenu from './MainMenu.js';
 import Game from './Game.js';
 import GameOver from './GameOver.js';
 import { MENU_SCENES } from './menu/index.js';
+import SysOverlay from './SysOverlay.js';
 
-export const SCENES = [Boot, Preload, MainMenu, Game, GameOver, ...MENU_SCENES];
+// SysOverlay must stay last: scenes render in list order and it draws above everything (FPS, touch controls)
+export const SCENES = [Boot, Preload, MainMenu, Game, GameOver, ...MENU_SCENES, SysOverlay];

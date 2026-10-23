@@ -113,20 +113,21 @@ export default [
         key: 'hitbox_dot',
         fps: 6,
         frames: [
-            // dark navy corners keep it legible over the silver hull, not just over space
+            // white-hot core inside a 1px near-black ring: the ring separates it from the cyan cockpit, the silver hull
+            // and every bullet colour, so the true hitbox stays readable in dense fields (QA pass)
             [
-                '.nCn.',
-                'nCwCn',
-                'CwwwC',
-                'nCwCn',
-                '.nCn.'
+                '.kkk.',
+                'kbwbk',
+                'kwwwk',
+                'kbwbk',
+                '.kkk.'
             ],
             [
-                '.nnn.',
-                'ncCcn',
-                'nCwCn',
-                'ncCcn',
-                '.nnn.'
+                '.kkk.',
+                'kCbCk',
+                'kbwbk',
+                'kCbCk',
+                '.kkk.'
             ]
         ]
     }

@@ -18,6 +18,12 @@ export const save = {
     set flashEffects(v) { set('flashEffects', v ? '1' : '0'); },
     get glow() { return str('glow', '1') === '1'; },           // optional bloom post-FX
     set glow(v) { set('glow', v ? '1' : '0'); },
+    get quality() { const q = str('quality', 'auto'); return ['auto', 'high', 'low'].includes(q) ? q : 'auto'; },  // see systems/quality.js
+    set quality(v) { set('quality', v); },
+    get autoLow() { return str('autoLow', '0') === '1'; },     // AUTO quality measured a slow device on a previous run
+    set autoLow(v) { set('autoLow', v ? '1' : '0'); },
+    get showFps() { return str('showFps', '0') === '1'; },
+    set showFps(v) { set('showFps', v ? '1' : '0'); },
 
     get ship() { return str('selectedShip', 'normal'); },      // 'normal' | 'speedy' | 'tank'
     set ship(v) { set('selectedShip', v); },

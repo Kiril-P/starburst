@@ -25,6 +25,7 @@ export default class GameOver extends Phaser.Scene {
         const best = save.recordRun(score, wave);
         this.newBest = (best.newBestScore && score > 0) || best.newBestWave;
         this.skipped = false;
+        this.leaving = false;   // scene instances are reused: a previous visit's leave() must not lock the buttons
         this.anims = [];
 
         this.musicDuck();

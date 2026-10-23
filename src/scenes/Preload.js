@@ -43,6 +43,7 @@ export default class Preload extends Phaser.Scene {
         bakePlaceholders(this);
         installAudio(this.game);   // synth sfx, limiter, music bus, reactivity
         const dev = import.meta.env.DEV ? new URLSearchParams(location.search).get('scene') : null;
+        this.scene.launch('SysOverlay');   // FPS counter, gamepad bridge, touch controls, auto-pause
         this.scene.start(dev || 'MainMenu');
     }
 }

@@ -9,6 +9,7 @@ import { pxText } from '../ui/text.js';
 import Particles from './particles.js';
 import TimeControl from './timeControl.js';
 import { addBloom, removeBloom } from './bloom.js';
+import { quality, AutoQuality } from '../systems/quality.js';
 
 // per explosion size: sprite fps, glow, shockwave scale, debris/spark counts, shake [px, ms]
 const SIZES = {
@@ -38,7 +39,11 @@ export default class Fx {
         this.flashRect = null; this.flashA = 0; this.flashMs = 0; this.flashLeft = 0;
         this.bloom = false;
         this.stepped = false;
-        this.setGlow(save.glow);
+        this.density = quality.particleScale;   // LOW quality: fewer sparks/debris per effect
+        this.p.setDensity(this.density);
+        this.setGlow(quality.bloom);
+        // AUTO quality: if this device can't hold the frame rate, drop bloom + particle density mid-run
+        this.autoQ = new AutoQuality(() => { this.setGlow(false); this.density = 0.5; this.p.setDensity(0.5); });
         scene.events.on('postupdate', this._tick, this);
         scene.events.once('shutdown', this.destroy, this);
     }
@@ -102,6 +107,7 @@ export default class Fx {
     }
 
     debris(x, y, count = 6, tint = 0x9aaad0) {
+        count = Math.ceil(count * this.density);
         for (let i = 0; i < count; i++) {
             const r = this.p.sprite(DEBRIS[(Math.random() * 4) | 0], 0, x, y, DEPTH.FX - 1, false);   // emerges from under the fireball
             if (!r) return;
@@ -166,7 +172,7 @@ export default class Fx {
         this.p.step(dt * this.clock.scale);
     }
 
-    /** turn the subtle bloom post-FX on/off (WebGL only; the preference itself lives in save.glow) */
+    /** turn the subtle bloom post-FX on/off (WebGL only; the preference lives in save.glow + save.quality) */
     setGlow(on) {
         try {
             const cam = this.scene.cameras.main;
@@ -198,6 +204,7 @@ export default class Fx {
 
     /** spray of square pixels that cool down along a colour ramp */
     _burst(x, y, count, speed, ramp, key = 'px1', life = 380) {
+        count = Math.ceil(count * this.density);
         for (let i = 0; i < count; i++) {
             const r = this.p.sprite(i % 3 === 0 && key === 'px1' ? 'px2' : key, 0, x, y, DEPTH.FX_TOP, true);
             if (!r) return;
@@ -218,7 +225,8 @@ export default class Fx {
 
     /** real-time housekeeping, runs after the scene's update every frame */
     _tick() {
-        const dt = this.scene.game.loop.delta;
+        const loop = this.scene.game.loop, dt = loop.delta;
+        this.autoQ.sample(loop.rawDelta ?? dt);
         this.clock.tick();
         if (!this.stepped) this.p.step(dt * this.clock.scale);
         this.stepped = false;
