@@ -107,7 +107,7 @@ export default class Arsenal {
             if (L < d.levels.length) card(`w:${k}`, L ? `${d.title} LV${L + 1}` : d.title, d.levels[L].desc, d.icon, L ? 'UPGRADE' : 'NEW', 2);
         }
         for (const [k, d] of Object.entries(SYNERGIES)) {
-            if (!this.syn[k] && d.needs.every((n) => this.lv[n] >= SYNERGY_MIN)) card(`syn:${k}`, d.title, d.desc, d.icon, 'SYNERGY', 1, 'amber', true);
+            if (!this.syn[k] && d.needs.every((n) => this.lv[n] >= SYNERGY_MIN)) card(`syn:${k}`, d.title, `${d.needs.map((n) => (PRIMARY[n] || SECONDARY[n]).title).join(' + ')}: ${d.desc}`, d.icon, 'SYNERGY', 1, 'amber', true);
         }
         return out;
     }
@@ -118,6 +118,7 @@ export default class Arsenal {
         const line = (k, d, kind) => out.push({ id: k, title: d.title, icon: d.icon, lv: this.lv[k] ?? 1, max: d.levels ? d.levels.length : 1, kind });
         line(this.primary, PRIMARY[this.primary], 'primary');
         for (const [k, d] of Object.entries(SECONDARY)) if (this.lv[k]) line(k, d, 'secondary');
+        for (const [k, d] of Object.entries(PRIMARY)) if (this.lv[k] && k !== this.primary) line(k, d, 'reserve');   // owned, holstered
         for (const [k, d] of Object.entries(SYNERGIES)) if (this.syn[k]) line(k, d, 'synergy');
         return out;
     }

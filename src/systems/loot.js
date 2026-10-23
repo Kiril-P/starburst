@@ -34,12 +34,12 @@ export const LOOT = {
 
 export const PICKUP_MOTION = {
     drag: 3.2,                // per second, on the spawn burst
-    fall: 22,                 // px/s drift toward the bottom once the burst settles
+    fall: 40,                 // px/s drift toward the bottom once the burst settles
     floorY: 50,               // stop drifting this far above the bottom edge (stays reachable above the HUD)
     magnetR: 34,              // gems/repairs fly to the ship inside this radius (anything, when MAGNET is on)
     capsuleMagnetR: 18,
     magnetSpeed: 340,
     collectR: 10,
-    lifeMs: { gem: 9000, repair: 12000, buff: 12000, bomb: 12000 },
+    lifeMs: { gem: 10000, repair: 12000, buff: 12000, bomb: 12000 },
     blinkMs: 2500
 };
