@@ -21,6 +21,9 @@ This is the single source of truth for how everything looks. If a decision isn't
 | **Violet** `u v V x` | space, nebula, rock |
 | **Steel** `1–6` + white `w` | ship hulls, metal, text |
 
+## Ship class accents
+All player ships are silver/steel hulls (ramp `1–6`) with a class accent: **normal = cyan** (balanced), **speedy = lime** (slim, swept, fast), **tank = amber** (wide, armoured, heavy plating). Engine flames, thruster particles and the HUD portrait use the accent colour. Cyan remains the colour of player *bullets/shields* for every class.
+
 ## Light and shape
 - Light comes from the **upper-left**. Hull ramp: highlight upper-left edges (5,6), mid (3,4) body, shade (1,2) lower-right.
 - Ships/enemies/meteors get a **1px dark outline** (`k`) *except* where an emissive part (engine, cannon glow, crystal) breaks the silhouette. Emissive pixels are the brightest ramp step + a single dark-ramp pixel halo ring around them.

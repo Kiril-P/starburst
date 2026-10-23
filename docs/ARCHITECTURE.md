@@ -26,7 +26,7 @@ tools/render-sprites.mjs LOOK at sprites;  tools/shot.mjs headless screenshots o
 | art-enemies | `src/art/sprites/enemies.js`, `src/art/sprites/projectiles.js` |
 | art-ui | `src/art/sprites/icons.js`, `src/art/sprites/ui.js` |
 | fx-bg | `src/art/sprites/fx.js`, `src/fx/*` |
-| ui | `src/ui/widgets.js`, `src/ui/Hud.js`, `src/ui/UpgradeScreen.js`, `src/scenes/GameOver.js` (and `src/ui/text.js` if it needs a fix) |
+| ui | `src/ui/widgets.js`, `src/ui/Hud.js`, `src/ui/UpgradeScreen.js`, `src/ui/PauseMenu.js`, `src/scenes/GameOver.js` (and `src/ui/text.js` if it needs a fix) |
 | menu | `src/scenes/MainMenu.js` + any new menu scenes (Settings, Quests, ...) + `src/systems/quests.js`; registers extra scenes in `src/scenes/index.js` |
 | gameplay | `src/scenes/Game.js`, `src/objects/*`, `src/systems/{difficulty,upgrades,combo,...}.js` |
 | lead (me) | config, palette, bake, contract (art agents may edit *their own* lines in `contract.js` if a size changes), Save, Preload, docs, tools |
