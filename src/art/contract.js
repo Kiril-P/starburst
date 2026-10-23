@@ -30,6 +30,17 @@ export const CONTRACT = {
     meteor_m_0: [22, 22, 1], meteor_m_1: [22, 22, 1],
     meteor_l_0: [32, 32, 1], meteor_l_1: [32, 32, 1],
 
+    // --- enemies2.js (owner: enemies/biomes) -----------------------------------------------------
+    // Face DOWN. Frames with no fps are chosen by code (see comments in enemies2.js).
+    enemy_sniper: [15, 22, 2],      // 0 idle, 1 charging
+    enemy_kamikaze: [11, 11, 2],
+    enemy_shield: [31, 20, 2],      // 0 idle, 1 shield flash (blocked shot)
+    enemy_turret: [25, 25, 4],      // barrel rotation steps of 22.5deg (4-way symmetric)
+    enemy_minelayer: [29, 15, 2],
+    enemy_mine: [9, 9, 3],          // 0 unarmed, 1 armed, 2 hot
+    enemy_splitter: [21, 21, 2],
+    enemy_splitter_s: [11, 11, 2],
+
     // --- bosses.js (owner: bosses) ----------------------------------------------------------------
     // Face DOWN, origin centre. Idle frames animate (fps in bosses.js) except boss_prism (frames set by code).
     boss_warden: [128, 70, 2],
