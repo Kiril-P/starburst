@@ -41,6 +41,7 @@ export default class Preload extends Phaser.Scene {
         bakeAll(this, ALL_SPRITES);
         bakePlaceholders(this);
         const dev = import.meta.env.DEV ? new URLSearchParams(location.search).get('scene') : null;
+        this.scene.launch('SysOverlay');   // FPS counter, gamepad bridge, touch controls, auto-pause
         this.scene.start(dev || 'MainMenu');
     }
 }
