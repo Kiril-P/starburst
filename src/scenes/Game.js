@@ -23,6 +23,7 @@ import BulletPool from '../objects/BulletPool.js';
 import WaveManager from '../objects/WaveManager.js';
 import Combat from '../objects/Combat.js';
 import Impacts from '../objects/Impacts.js';
+import BossDirector from '../objects/bosses/BossDirector.js';
 import { Sequencer } from '../objects/patterns.js';
 import { bulletsVsPlayer, shotsVsEnemies, playerVsEnemies } from '../objects/collisions.js';
 
@@ -51,6 +52,7 @@ export default class Game extends Phaser.Scene {
         this.combat = new Combat(this);
         this.player = new Player(this, W / 2, H - 76, save.ship, this.playerHooks());
         this.waves = new WaveManager(this, this.diff, this.waveHooks());
+        this.bosses = new BossDirector(this);
         this.enemyCtx = {
             pool: this.enemyBullets, seq: this.seq, px: 0, py: 0, speed: 1, density: this.diff.patternDensity,
             damage: ENEMY_BULLET.damage * this.diff.enemyDamage, fireRateMod: 1,
@@ -103,9 +105,9 @@ export default class Game extends Phaser.Scene {
     waveHooks() {
         return {
             onIntro: (wave, cfg) => {
-                this.hud.announce(`WAVE ${wave}`, `SURVIVE ${Math.round(cfg.duration / 1000)}S`);
                 this.bg.setBiome(this.waves.biome);
                 this.enemyCtx.speed = TIER_BULLET_SPEED[this.waves.tier] * cfg.bulletSpeed * this.diff.bulletSpeed;
+                if (!this.bosses.intro(wave)) this.hud.announce(`WAVE ${wave}`, `SURVIVE ${Math.round(cfg.duration / 1000)}S`);
             },
             onStart: () => {},
             onClear: (wave) => {
@@ -113,7 +115,7 @@ export default class Game extends Phaser.Scene {
                 this.waves.clearEnemies((e) => this.combat.killEnemy(e, false));
                 this.combat.cancelBullets(false);
                 this.fx.flash(COLORS.A, 0.25, 400);
-                this.hud.announce(`WAVE ${wave} CLEAR`, 'NICE FLYING');
+                if (!this.waves.isBoss) this.hud.announce(`WAVE ${wave} CLEAR`, 'NICE FLYING');   // bosses get their own banner
                 if (wave > save.highestWaveCompleted) save.highestWaveCompleted = wave;
             },
             onUpgrade: (wave, done) => {
@@ -159,6 +161,7 @@ export default class Game extends Phaser.Scene {
         this.enemyCtx.px = p.x;
         this.enemyCtx.py = p.y;
         this.waves.update(dt, this.enemyCtx);
+        this.bosses.update(dt);
         this.seq.update(dt);
         this.enemyBullets.update(dt);
         this.shots.update(dt);
@@ -167,6 +170,11 @@ export default class Game extends Phaser.Scene {
         if (!this.dying) {
             bulletsVsPlayer(this.enemyBullets, p, this.collideHooks || (this.collideHooks = { onHit: (b) => this.combat.bulletHit(b), onGraze: (b) => this.combat.graze(b) }));
             playerVsEnemies(p, enemies, (e) => this.combat.ram(e));
+        }
+        const boss = this.bosses.targets;   // boss hit circles behave like enemies that never die from Combat
+        if (boss.length) {
+            shotsVsEnemies(this.shots, boss, (s, e) => this.combat.shotHit(s, e));
+            if (!this.dying) playerVsEnemies(p, boss, (e) => this.combat.ram(e));
         }
         this.combo.update(dt);
     }
@@ -245,7 +253,7 @@ export default class Game extends Phaser.Scene {
     cleanup() {
         this.input.keyboard.off('keydown-ESC');
         this.audio.destroy();
-        for (const k of ['pauseMenu', 'hud', 'fx', 'bg']) this[k]?.destroy();
+        for (const k of ['bosses', 'pauseMenu', 'hud', 'fx', 'bg']) this[k]?.destroy();
         this.upgradeScreen?.destroy();
         this.waves.destroy();
         this.enemyBullets.destroy();

@@ -1,9 +1,10 @@
 // Timed waves, v1 rules: survive the timer; each enemy type spawns on its own jittered interval while
 // the number of active enemies is below the wave's max. Then: wave clear -> upgrade pick -> next wave.
+// Every BOSS_EVERY-th wave has no timer or spawners: state 'boss' waits for bossDefeated() (BossDirector).
 // Driven by simulation dt (no scene timers) so pause / hit-stop / slow-mo freeze it naturally.
 import { W } from '../config.js';
 import { WAVES } from '../systems/tuning.js';
-import { WAVE_TABLE } from './waves.js';
+import { WAVE_TABLE, BOSS_EVERY } from './waves.js';
 import { resolveType } from './enemyTypes.js';
 import Enemy from './Enemy.js';
 
@@ -29,6 +30,8 @@ export default class WaveManager {
 
     get biome() { const b = WAVES.biomeByWave; return this.wave <= b.length ? b[this.wave - 1] : b[b.length - 2 + (this.wave % 2)]; }
 
+    get isBoss() { return this.wave > 0 && this.wave % BOSS_EVERY === 0; }
+
     get tier() { const t = WAVES.tierByWave; return t[Math.min(this.wave, t.length) - 1] ?? 0; }
 
     /** effective config for a wave number (1-based), including endless scaling past the authored table */
@@ -51,7 +54,16 @@ export default class WaveManager {
         this.state = 'intro';
         this.timer = WAVES.introMs;
         this.timeLeft = this.cfg.duration;
+        if (this.isBoss) { this.state = 'boss'; this.spawners = []; }
         this.hooks.onIntro(wave, this.cfg);
+    }
+
+    /** the boss is dead: continue with the usual clear -> upgrade -> next wave flow */
+    bossDefeated() {
+        if (this.state !== 'boss') return;
+        this.state = 'cleared';
+        this.timer = WAVES.clearToUpgradeMs;
+        this.hooks.onClear(this.wave);
     }
 
     /** debug: jump straight to a wave */

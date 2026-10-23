@@ -1,5 +1,5 @@
 // Bullet pattern library. Every function fires into a BulletPool; angles in radians (0 = right, PI/2 = down).
-// Instant patterns: aimed, fan, ring, curtain, burst. Timed patterns (streams, spirals) are built with
+// Instant patterns: aimed, fan, ring, curtain, burst, lance. Timed patterns (streams, spirals) are built with
 // Sequencer.run(), which calls a step function N times at an interval while following its owner.
 import { COLORS } from '../art/palette.js';
 
@@ -72,6 +72,12 @@ export function burst(pool, x, y, o, rnd = Math.random) {
         const sp = o.speedMin + rnd() * (o.speedMax - o.speedMin);
         pool.spawn(x, y, rnd() * TAU, sp, o.style, o);
     }
+}
+
+/** A lance: count bullets on one heading with speeds speed..speedMax, so they fly as a stretching line (boss beams). */
+export function lance(pool, x, y, angle, o) {
+    const n = o.count;
+    for (let i = 0; i < n; i++) pool.spawn(x, y, angle, o.speed + ((o.speedMax - o.speed) * i) / Math.max(1, n - 1), o.style, o);
 }
 
 /**

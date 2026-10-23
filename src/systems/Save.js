@@ -29,6 +29,9 @@ export const save = {
     get highestWaveCompleted() { return num('highestWaveCompleted', 0); },
     set highestWaveCompleted(v) { set('highestWaveCompleted', v); },
 
+    get bossesDefeated() { return num('bossesDefeated', 0); },
+    set bossesDefeated(v) { set('bossesDefeated', v); },
+
     get completedTasks() { try { return JSON.parse(localStorage.getItem('completedTasks') || '[]'); } catch (e) { return []; } },
     set completedTasks(v) { set('completedTasks', JSON.stringify(v)); },
 
