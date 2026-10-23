@@ -11,9 +11,11 @@ Dodge bullet patterns, fight bosses, and build a stronger ship between waves.
 
 ## How to play
 
-- **Arrow keys** move your ship.
-- **Space** fires; press again for each shot.
+- **Arrow keys** or **WASD** move your ship.
+- **Space** fires (hold).
 - When unlocked, **Shift** dashes, **Z** activates a forcefield, and **X** activates phase shift.
+- **Esc** pauses, **F** toggles fullscreen.
+- **Gamepad**: stick/D-pad move, A/RT fire, LB/RB dash, X forcefield, Y phase shift, B/Start pause. Touch screens get on-screen controls.
 - Survive timed waves and choose upgrades between them.
 
 Created for **Bullet Hell Jam 6**.
