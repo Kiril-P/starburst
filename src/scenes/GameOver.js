@@ -10,6 +10,7 @@ import { Button, MenuNav, TEXT, nine, uiTween, uiDelay, onUiStep } from '../ui/w
 import { pxText, centerText, fmtNum } from '../ui/text.js';
 import { save } from '../systems/Save.js';
 import { sfx } from '../systems/sfx.js';
+import { playMusic, duck } from '../systems/music.js';
 
 const PW = 248, ROW = 17, ROW_BIG = 26, PX = (W - PW) >> 1, PY = 100;
 const rowsH = (n) => ROW_BIG + (n - 1) * ROW;
@@ -46,13 +47,7 @@ export default class GameOver extends Phaser.Scene {
     }
 
     /** Duck the gameplay music instead of cutting it: the run is over, the mood drops. */
-    musicDuck() {
-        for (const m of this.sound.getAll('main-music')) {
-            if (!m.isPlaying) continue;
-            const from = m.volume, to = save.musicVolume * 0.35;
-            uiTween(this, { ms: 900, ease: 'linear', onUpdate: (v) => m.setVolume(from + (to - from) * v) });
-        }
-    }
+    musicDuck() { duck('gameover', true, 900); }
 
     buildTitle(wave) {
         const y = 52;
@@ -209,11 +204,8 @@ export default class GameOver extends Phaser.Scene {
     leave(target) {
         if (this.leaving) return;
         this.leaving = true;
-        this.sound.stopByKey('main-music');
-        // MainMenu's music helper picks up a title theme that is already playing, so starting it here is safe
-        if (target === 'MainMenu' && this.cache.audio.exists('title-music') && !this.sound.getAll('title-music').some((s) => s.isPlaying)) {
-            this.sound.add('title-music', { loop: true, volume: save.musicVolume }).play();
-        }
+        // to the menu: crossfade into the title theme now (MainMenu keeps it); a retry restarts the main track itself
+        if (target === 'MainMenu') playMusic('title-music', { fadeIn: 900, fadeOut: 900 });
         this.cameras.main.fadeOut(180, 7, 11, 26);
         this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start(target));
     }

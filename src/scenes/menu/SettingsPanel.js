@@ -1,9 +1,9 @@
-// SETTINGS overlay: music / sfx volume, screen shake, flash effects, glow. Everything persists immediately via Save
+// SETTINGS overlay: master / music / sfx volume, screen shake, flash effects, glow. Everything persists immediately via Save
 // and music volume is applied live. Keyboard: UP/DOWN pick a row, LEFT/RIGHT adjust, ENTER/SPACE toggles.
 import { COLORS, PALETTE } from '../../art/palette.js';
 import { createSlider, createToggle, Button } from '../../ui/widgets.js';
 import { save } from '../../systems/Save.js';
-import { sfx } from '../../systems/sfx.js';
+import { sfx, uiSfx, setMasterVolume } from '../../systems/sfx.js';
 import OverlayScene from './OverlayScene.js';
 import { setMusicVolume } from './music.js';
 import { text, setTextKeep } from './helpers.js';
@@ -15,6 +15,7 @@ const pct = (v) => (v <= 0 ? 'OFF' : `${Math.round(v * 100)}%`);
 
 // Row definitions: kind 'slider' (0..1) or 'toggle' (bool).
 const ROWS = [
+    { label: 'MASTER', kind: 'slider', get: () => save.masterVolume, set: (v, sc) => { setMasterVolume(sc, v); sc.previewSfx(); } },
     { label: 'MUSIC', kind: 'slider', get: () => save.musicVolume, set: (v, sc) => { save.musicVolume = v; setMusicVolume(sc, v); } },
     { label: 'SOUND FX', kind: 'slider', get: () => save.soundVolume, set: (v, sc) => { save.soundVolume = v; sc.previewSfx(); } },
     { label: 'SCREEN SHAKE', kind: 'slider', get: () => save.screenShake, set: (v) => { save.screenShake = v; } },
@@ -23,7 +24,7 @@ const ROWS = [
 ];
 
 export default class SettingsPanel extends OverlayScene {
-    constructor() { super('MenuSettings', 'SETTINGS', [300, 196]); }
+    constructor() { super('MenuSettings', 'SETTINGS', [300, 218]); }
 
     build(b) {
         this.rows = [];
@@ -106,7 +107,7 @@ export default class SettingsPanel extends OverlayScene {
         const n = this.rows.length + 1;
         if (key === 'up' || key === 'down') {
             this.setFocus((this.focus + (key === 'up' ? n - 1 : 1)) % n);
-            sfx(this, 'button-sound', { vol: 0.25, rate: 1.5 });
+            uiSfx(this, 'hover');
             return;
         }
         if (this.focus === this.rows.length) {
@@ -119,7 +120,7 @@ export default class SettingsPanel extends OverlayScene {
             if (d) this.change(row, Math.round(Math.min(1, Math.max(0, v + d)) * 10) / 10, true);
         } else {
             this.change(row, !v, true);
-            sfx(this, 'button-sound', { vol: 0.5 });
+            uiSfx(this, 'select');
         }
     }
 }

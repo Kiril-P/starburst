@@ -4,6 +4,8 @@ const str = (k, d) => localStorage.getItem(k) || d;
 const set = (k, v) => { try { localStorage.setItem(k, String(v)); } catch (e) { /* storage unavailable */ } };
 
 export const save = {
+    get masterVolume() { return num('masterVolume', 1); },
+    set masterVolume(v) { set('masterVolume', v); },
     get musicVolume() { return num('musicVolume', 0.7); },
     set musicVolume(v) { set('musicVolume', v); },
     get soundVolume() { return num('soundVolume', 0.8); },

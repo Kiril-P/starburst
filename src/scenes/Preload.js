@@ -4,6 +4,7 @@ import { ALL_SPRITES } from '../art/index.js';
 import { bakeAll } from '../art/bake.js';
 import { bakePlaceholders } from '../art/placeholder.js';
 import { pxText } from '../ui/text.js';
+import { installAudio } from '../systems/sfx.js';
 
 // Every audio key used by the game. Files live in public/assets/audio.
 const MUSIC = { 'title-music': 'title.mp3', 'main-music': 'main.mp3' };
@@ -40,6 +41,7 @@ export default class Preload extends Phaser.Scene {
         try { await Promise.all([document.fonts.load('8px "Press Start 2P"'), document.fonts.load('8px "Silkscreen"')]); } catch (e) { /* ignore */ }
         bakeAll(this, ALL_SPRITES);
         bakePlaceholders(this);
+        installAudio(this.game);   // synth sfx, limiter, music bus, reactivity
         const dev = import.meta.env.DEV ? new URLSearchParams(location.search).get('scene') : null;
         this.scene.start(dev || 'MainMenu');
     }
