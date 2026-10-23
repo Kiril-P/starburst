@@ -21,3 +21,18 @@ export function pxText(scene, x, y, str, o = {}) {
     t.setOrigin(ox, oy);
     return t;
 }
+
+/** 128450 -> '128,450' (score readouts). */
+export function fmtNum(n) {
+    return Math.floor(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+/**
+ * Centre a text object (origin 0,0) on (cx, cy) with integer top-left, so odd widths don't land on half pixels.
+ * Call again after setText() if the width changed.
+ */
+export function centerText(t, cx, cy) {
+    t.setOrigin(0, 0);
+    t.setPosition(Math.round(cx - t.width / 2), cy === undefined ? t.y : Math.round(cy - t.height / 2));
+    return t;
+}
