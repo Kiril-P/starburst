@@ -128,7 +128,7 @@ export default class Starburst extends Boss {
     // --- signature ---------------------------------------------------------------------------------------------
     /** charge (white-hot core inside a closing amber ring), then breathing spiral arms + rings with an aimed gap */
     supernova() {
-        const charge = 1500, dur = 6400, every = 110, arms = 8;
+        const charge = 1500, dur = 6400, every = 95, arms = 10;
         this.charging = true;
         this.warn.ring(charge, { r: 110, follow: (it) => { it.x = this.x; it.y = this.y; } });
         this.g.fx.flash(COLORS.A, 0.12, 200);

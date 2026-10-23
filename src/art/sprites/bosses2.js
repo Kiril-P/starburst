@@ -112,6 +112,10 @@ function colossus() {
     }
     for (const x of [21, 35]) p.glow(x + 0.5, 3.5, 1.5, ['m', 'M', 'q']).glow(128 - x - 0.5, 3.5, 1.5, ['m', 'M', 'q']);
     p.fill(mirror(cx, rect(56, 64, 3, 6)), 'm');
+    // panel seams + rivets so the big hull doesn't read as one flat slab
+    p.fill(mirror(cx, rect(8, 50, 6, 1)), '2').fill(mirror(cx, rect(14, 64, 14, 1)), '2').fill(mirror(cx, rect(44, 10, 1, 6)), '2');
+    for (const [x, y] of [[12, 20], [6, 34], [8, 46], [16, 60], [40, 70], [52, 14], [40, 64]]) p.set(x, y, '6').set(127 - x, y, '5');
+    p.fill(mirror(cx, rect(50, 2, 4, 3)), '1');
     return finish(p);
 }
 function colossusCore(f) {
@@ -145,10 +149,10 @@ function starburst(nova) {
         return da < w0 * (1 - d / len) + 0.6;
     };
     const diag = (len, w0) => (x, y) => rayP(len, w0)(c + ((x - c) + (y - c)) * Math.SQRT1_2, c + ((y - c) - (x - c)) * Math.SQRT1_2);
-    p.plate(diag(40, 9), RAMP.hull);
-    p.plate(rayP(52, 12), RAMP.steel);
+    p.plate(diag(42, 14), RAMP.hull);
+    p.plate(rayP(52, 19), RAMP.steel);
     // crystal cores down each ray
-    p.plate(union(rayP(48, 4), diag(36, 3)), nova ? RAMP.amber : RAMP.magenta, { bevel: 1 });
+    p.plate(union(rayP(49, 6), diag(38, 4)), nova ? RAMP.amber : RAMP.magenta, { bevel: 1 });
     p.plate(ellipse(c, c, 26, 26), RAMP.hull);
     p.plate(ring(c, c, 17, 23), RAMP.violet, { bevel: 1 });
     for (let k = 0; k < 8; k++) { const a = (k + 0.5) * (TAU / 8); p.glow(c + Math.cos(a) * 20, c + Math.sin(a) * 20, 1.5, ['m', 'M', 'q']); }
