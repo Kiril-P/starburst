@@ -1,32 +1,28 @@
 import Phaser from 'phaser';
-import Boot from './scenes/Boot.js';
-import Preload from './scenes/Preload.js';
-import MainMenu from './scenes/MainMenu.js';
-import Game from './scenes/Game.js';
-import GameOver from './scenes/GameOver.js';
+import '@fontsource/press-start-2p';
+import '@fontsource/silkscreen';
+import { W, H } from './config.js';
+import { SCENES } from './scenes/index.js';
 
-// Game configuration
 const config = {
     type: Phaser.AUTO,
     parent: 'game',
-    width: 800,
-    height: 600,
-    backgroundColor: '#000',
+    width: W,
+    height: H,
+    backgroundColor: '#070b1a',
+    pixelArt: true,       // nearest-neighbour everywhere, no antialiasing
+    roundPixels: true,
     scale: {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH
     },
     physics: {
         default: 'arcade',
-        arcade: {
-            gravity: { y: 0 },
-            debug: false
-        }
+        arcade: { gravity: { y: 0 }, debug: false }
     },
-    scene: [Boot, Preload, MainMenu, Game, GameOver]
+    scene: SCENES
 };
 
-// Create the game instance
 const game = new Phaser.Game(config);
 
 if (import.meta.env.DEV) {
