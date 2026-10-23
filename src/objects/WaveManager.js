@@ -1,3 +1,4 @@
+import Phaser from 'phaser';
 import Enemy, { BasicEnemy, SpreadEnemy, CircularEnemy } from './Enemy.js';
 
 export default class WaveManager {
@@ -491,10 +492,9 @@ export default class WaveManager {
     
     createBulletFadeEffect(x, y) {
         // Create a small particle effect for bullet fade
-        const particles = this.scene.add.particles('particle');
         
         // Create a subtle particle effect
-        const emitter = particles.createEmitter({
+        const emitter = this.scene.add.particles(0, 0, 'particle', {
             x: x,
             y: y,
             speed: { min: 10, max: 30 },
@@ -507,20 +507,19 @@ export default class WaveManager {
         });
         
         // Single burst
-        emitter.explode(3, x, y);
+        emitter.explode(3);
         
         // Destroy particles after effect completes
         this.scene.time.delayedCall(300, () => {
-            particles.destroy();
+            emitter.destroy();
         });
     }
     
     createEnemyDestructionEffect(x, y) {
         // Create a particle effect for enemy destruction
-        const particles = this.scene.add.particles('particle');
         
         // Create particle emitter for explosion effect
-        const emitter = particles.createEmitter({
+        const emitter = this.scene.add.particles(0, 0, 'particle', {
             x: x,
             y: y,
             speed: { min: 50, max: 150 },
@@ -540,7 +539,7 @@ export default class WaveManager {
         
         // Destroy the particles after they fade out
         this.scene.time.delayedCall(600, () => {
-            particles.destroy();
+            emitter.destroy();
         });
     }
     

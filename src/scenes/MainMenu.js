@@ -1,3 +1,4 @@
+import Phaser from 'phaser';
 export default class MainMenu extends Phaser.Scene {
     constructor() {
         super('MainMenu');
@@ -1762,10 +1763,7 @@ export default class MainMenu extends Phaser.Scene {
         // Add special particle effect for high scores
         if (additionalEffects) {
             // Add particles around the score
-            const particles = this.add.particles('particle');
-            const emitter = particles.createEmitter({
-                x: 0,
-                y: 15,
+            const particles = this.add.particles(0, 15, 'particle', {
                 speed: { min: 20, max: 40 },
                 angle: { min: 0, max: 360 },
                 scale: { start: 0.6, end: 0 },
@@ -2111,8 +2109,7 @@ export default class MainMenu extends Phaser.Scene {
         this.bgLayers.near.add(meteor);
         
         // Add trail effect with particles
-        const particles = this.add.particles('particle');
-        const emitter = particles.createEmitter({
+        const particles = this.add.particles(0, 0, 'particle', {
             speed: 10,
             scale: { start: size * 0.5, end: 0 },
             alpha: { start: 0.5, end: 0 },
@@ -2121,7 +2118,7 @@ export default class MainMenu extends Phaser.Scene {
             blendMode: 'ADD'
         });
         
-        emitter.startFollow(meteor);
+        particles.startFollow(meteor);
         this.bgLayers.near.add(particles);
         
         // Calculate trajectory endpoint

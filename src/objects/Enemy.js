@@ -1,3 +1,4 @@
+import Phaser from 'phaser';
 export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     constructor(scene, x, y, texture = 'enemy-basic') {
         super(scene, x, y, texture);
@@ -160,10 +161,9 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     
     createExplosionEffect() {
         // Create a particle explosion
-        const particles = this.scene.add.particles('particle');
         
         // Configure the emitter
-        const emitter = particles.createEmitter({
+        const emitter = this.scene.add.particles(0, 0, 'particle', {
             x: this.x,
             y: this.y,
             speed: { min: 50, max: 200 },
@@ -173,7 +173,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
             blendMode: 'ADD',
             tint: [ 0xff0000, 0xff6600, 0xffff00 ],
             quantity: 20,
-            on: false
+            emitting: false
         });
         
         // Emit all particles at once then destroy
@@ -195,7 +195,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
         
         // Destroy particles after animation completes
         this.scene.time.delayedCall(500, () => {
-            particles.destroy();
+            emitter.destroy();
         });
         
         // Add optional screen shake for larger enemies

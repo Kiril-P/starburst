@@ -1,3 +1,4 @@
+import Phaser from 'phaser';
 import Player from '../objects/Player.js';
 import WaveManager from '../objects/WaveManager.js';
 import UI from '../objects/UI.js';
@@ -584,9 +585,7 @@ export default class Game extends Phaser.Scene {
         const phaseEffect = this.add.circle(x, y, 15, 0x8080ff, 0.5);
         phaseEffect.setBlendMode(Phaser.BlendModes.ADD);
         
-        // Add some particle effects
-        const particles = this.add.particles('particle');
-        const emitter = particles.createEmitter({
+        const emitter = this.add.particles(0, 0, 'particle', {
             x: x,
             y: y,
             speed: { min: 20, max: 40 },
@@ -613,16 +612,14 @@ export default class Game extends Phaser.Scene {
                 phaseEffect.destroy();
                 // Give particles time to fade out before destroying
                 this.time.delayedCall(300, () => {
-                    particles.destroy();
+                    emitter.destroy();
                 });
             }
         });
     }
 
     createBulletHitEffect(x, y) {
-        // Create a small particle burst at hit location
-        const particles = this.add.particles('particle');
-        const emitter = particles.createEmitter({
+        const emitter = this.add.particles(0, 0, 'particle', {
             x: x,
             y: y,
             speed: { min: 50, max: 150 },
@@ -635,11 +632,11 @@ export default class Game extends Phaser.Scene {
         });
         
         // One-time emission then destroy
-        emitter.explode();
+        emitter.explode(5);
         
         // Remove particles after they're done
         this.time.delayedCall(300, () => {
-            particles.destroy();
+            emitter.destroy();
         });
     }
 

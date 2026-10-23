@@ -1,3 +1,4 @@
+import Phaser from 'phaser';
 import Boot from './scenes/Boot.js';
 import Preload from './scenes/Preload.js';
 import MainMenu from './scenes/MainMenu.js';
@@ -7,9 +8,14 @@ import GameOver from './scenes/GameOver.js';
 // Game configuration
 const config = {
     type: Phaser.AUTO,
+    parent: 'game',
     width: 800,
     height: 600,
     backgroundColor: '#000',
+    scale: {
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_BOTH
+    },
     physics: {
         default: 'arcade',
         arcade: {
@@ -21,4 +27,8 @@ const config = {
 };
 
 // Create the game instance
-const game = new Phaser.Game(config); 
+const game = new Phaser.Game(config);
+
+if (import.meta.env.DEV) {
+    window.__game = game; // debugging handle, dev only
+}

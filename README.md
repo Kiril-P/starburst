@@ -20,10 +20,12 @@ Created for **Bullet Hell Jam 6**.
 
 ## Development
 
-Built with JavaScript and Phaser 3.55.2. Serve the repository over HTTP:
+Built with JavaScript, Phaser 3.90 and Vite. Phaser is bundled locally, so it works offline.
 
 ```sh
-python3 -m http.server 8000
+npm install
+npm run dev      # dev server with hot reload
+npm run build    # production build in dist/
 ```
 
-Open `http://localhost:8000`. Phaser loads from jsDelivr, so the current build requires an internet connection. Game scenes live in `js/scenes/`; player, enemies, and wave logic live in `js/objects/`.
+Game scenes live in `src/scenes/`; player, enemies, and wave logic live in `src/objects/`. Static assets are in `public/assets/`.

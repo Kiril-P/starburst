@@ -1,3 +1,4 @@
+import Phaser from 'phaser';
 export default class Preload extends Phaser.Scene {
     constructor() {
         super('Preload');
@@ -54,8 +55,8 @@ export default class Preload extends Phaser.Scene {
         });
 
         // Preload audio
-        this.load.audio('title-music', 'assets/audio/title.wav');
-        this.load.audio('main-music', 'assets/audio/main.wav');
+        this.load.audio('title-music', 'assets/audio/title.mp3');
+        this.load.audio('main-music', 'assets/audio/main.mp3');
     }
 
     create() {

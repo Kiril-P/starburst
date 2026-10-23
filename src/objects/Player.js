@@ -1,3 +1,4 @@
+import Phaser from 'phaser';
 export default class Player extends Phaser.Physics.Arcade.Sprite {
     constructor(scene, x, y) {
         // Load the selected ship type from localStorage
@@ -212,9 +213,6 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         }
         
     createTrail() {
-        // Create a particle manager
-        this.particles = this.scene.add.particles('particle');
-        
         // Set trail color based on ship type
         let trailTint = 0x00aaff; // Default blue
         let trailScale = 0.6; // Default size
@@ -249,9 +247,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         };
         
         // Create emitter configuration
-        this.trailEmitter = this.particles.createEmitter({
-            x: this.x,
-            y: this.y,
+        this.trailEmitter = this.scene.add.particles(0, 0, 'particle', {
             speed: { min: 10, max: 30 },
             angle: { min: 0, max: 360 },
             scale: { start: trailScale, end: 0 },
@@ -260,7 +256,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
             tint: trailTint,
             alpha: { start: 0.6, end: 0 },
             quantity: 1,
-            on: false // Start turned off
+            emitting: false // Start turned off
         });
     }
     
@@ -303,13 +299,13 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
             this.trailEmitter.setQuantity(quantity);
             
             // Start emitting if not already active
-            if (!this.trailEmitter.on) {
-                this.trailEmitter.on = true;
+            if (!this.trailEmitter.emitting) {
+                this.trailEmitter.start();
             }
         } else {
             // Stop emitting when player is still
-            if (this.trailEmitter && this.trailEmitter.on) {
-                this.trailEmitter.on = false;
+            if (this.trailEmitter && this.trailEmitter.emitting) {
+                this.trailEmitter.stop();
             }
         }
     }
@@ -642,7 +638,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         
         // Make sure trail emitter is stopped
         if (this.trailEmitter) {
-            this.trailEmitter.on = false;
+            this.trailEmitter.stop();
         }
     }
     
@@ -650,13 +646,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     destroy() {
         // Clean up trail emitter
         if (this.trailEmitter) {
-            this.trailEmitter.on = false;
+            this.trailEmitter.destroy();
             this.trailEmitter = null;
-        }
-        
-        if (this.particles) {
-            this.particles.destroy();
-            this.particles = null;
         }
         
         // Call the parent destroy method
@@ -739,12 +730,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     
     createPhaseShiftEffect() {
         // Create a ghost/phase effect
-        const phaseParticles = this.scene.add.particles('particle');
-        
-        // Create a ghostly trail
-        const emitter = phaseParticles.createEmitter({
-            x: this.x,
-            y: this.y,
+        const phaseParticles = this.scene.add.particles(0, 0, 'particle', {
             follow: this,
             scale: { start: 0.8, end: 0 },
             alpha: { start: 0.5, end: 0 },
@@ -883,7 +869,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         // If we have available upgrades, add a random one
         if (this.availableUpgrades.length > 0) {
             // Use a proper seeded random for more variety
-            const seed = Date.now();
+            let seed = Date.now();
             const random = () => {
                 // Simple PRNG to avoid any predictability
                 const x = Math.sin(seed++) * 10000;
