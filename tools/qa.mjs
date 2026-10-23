@@ -29,32 +29,38 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const key = async (k, hold = 60) => { await page.keyboard.down(k); await sleep(hold); await page.keyboard.up(k); };
 const shot = (f) => page.screenshot({ path: path.join(outDir, f) });
 const ev = (fn) => page.evaluate(fn);
-const active = () => ev(() => __game.scene.getScenes(true).map((s) => s.sys.settings.key).filter((k) => k !== 'SysOverlay'));
+const active = () => ev(() => __game.scene.getScenes(true).map((s) => s.sys.settings.key).filter((k) => k !== 'SysOverlay' && k !== 'Wipe'));
 const expect = async (scene, step) => { const s = await active(); if (!s.includes(scene)) problems.push(`${step}: expected ${scene}, active = ${s.join(',')}`); };
 const stats = () => ev(() => {
     const g = __game, n = (e) => e.eventNames().reduce((t, k) => t + e.listenerCount(k), 0);
     const out = { textures: Object.keys(g.textures.list).length, sounds: g.sound.sounds.length, gameEvents: n(g.events) };
     for (const s of g.scene.getScenes(true)) {
         const k = s.sys.settings.key;
-        if (k === 'SysOverlay') continue;
+        if (k === 'SysOverlay' || k === 'Wipe') continue;
         Object.assign(out, { scene: k, children: s.children.list.length, tweens: s.tweens.getTweens().length, sceneEvents: n(s.events), keyListeners: n(s.input.keyboard) });
     }
     out.heapMB = Math.round(performance.memory.usedJSHeapSize / 1e6);
     return out;
 });
 
-await page.evaluateOnNewDocument(() => localStorage.clear());
+// fresh profile, but skip the first-launch story crawl (checked separately below)
+await page.evaluateOnNewDocument(() => { if (!sessionStorage.getItem('qaInit')) { localStorage.clear(); localStorage.setItem('seenIntro', '1'); sessionStorage.setItem('qaInit', '1'); } });
 await page.goto(base + '/', { waitUntil: 'load' });
 await sleep(3500);
 await expect('MainMenu', 'boot'); await shot('01-menu.png');
 await key('ArrowRight'); await sleep(400); await shot('02-ship-select.png'); await key('ArrowLeft');
-for (const [i, name] of [[1, 'quests'], [2, 'settings'], [3, 'difficulty']]) {
+for (const [i, name] of [[3, 'achievements'], [4, 'records'], [5, 'quests'], [6, 'settings'], [7, 'difficulty']]) {
     for (let j = 0; j < i; j++) await key('ArrowDown');
     await key('Enter'); await sleep(700); await shot(`03-${name}.png`);
     await key('Escape'); await sleep(600);
     for (let j = 0; j < i; j++) await key('ArrowUp');
 }
 await expect('MainMenu', 'after panels');
+// hangar: open (nav index 2), buy nothing, back (settle first: arrows pressed while a panel closes are dropped)
+await sleep(300);
+for (let j = 0; j < 2; j++) await key('ArrowDown');
+await key('Enter'); await sleep(1200); await expect('Hangar', 'hangar'); await shot('04-hangar.png');
+await key('Escape'); await sleep(1200); await expect('MainMenu', 'after hangar');
 
 const rows = [];
 for (let i = 0; i < loops; i++) {

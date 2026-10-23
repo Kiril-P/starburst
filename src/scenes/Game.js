@@ -251,7 +251,7 @@ export default class Game extends Phaser.Scene {
     gameOver() {
         this.dying = false;
         this.audio.stop();
-        wipeTo(this, 'GameOver', { score: this.combat.score, wave: this.waves.wave, stats: { ...this.combat.stats } });
+        wipeTo(this, 'GameOver', { score: this.combat.score, wave: this.waves.wave, stats: { ...this.combat.stats } }, { edge: COLORS.r });
     }
 
     cleanup() {

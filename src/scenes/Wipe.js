@@ -5,6 +5,7 @@
 import Phaser from 'phaser';
 import { W, H } from '../config.js';
 import { COLORS } from '../art/palette.js';
+import { installMetaDebug } from '../systems/metaDebug.js';
 
 const BAND = 8;
 const ROWS = Math.ceil(H / BAND);
@@ -17,6 +18,7 @@ export default class Wipe extends Phaser.Scene {
     create() {
         this.g = this.add.graphics();
         this.job = null;
+        installMetaDebug(this.game);   // dev: window.__meta (Wipe is always running, so install it once here)
     }
 
     get busy() { return !!this.job; }
