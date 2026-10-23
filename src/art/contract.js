@@ -44,12 +44,15 @@ export const CONTRACT = {
     px1: [1, 1, 1], px2: [2, 2, 1], px3: [3, 3, 1],   // white squares, use setTint for colour
     glow_s: [16, 16, 1], glow_m: [32, 32, 1], glow_l: [64, 64, 1], // dithered white halos for ADD blending, setTint for colour
     shockwave: [96, 96, 12],        // expanding 1px ring, white, plays once (fps 24)
+    // explosions play once (fps 16): flash -> fireball -> violet smoke. Default = fire; + _cyan _magenta _lime
     explosion_s: [24, 24, 6],
     explosion_m: [40, 40, 7],
     explosion_l: [64, 64, 8],
-    debris_0: [3, 3, 1], debris_1: [4, 4, 1], debris_2: [5, 4, 1], debris_3: [4, 5, 1],
-    smoke: [8, 8, 4],
-    spark: [5, 5, 3],
+    debris_0: [3, 3, 1], debris_1: [4, 4, 1], debris_2: [5, 4, 1], debris_3: [4, 5, 1],   // white/steel, tint per material
+    smoke: [8, 8, 4],               // violet puff, plays once
+    spark: [5, 5, 3],               // white impact star, tint at runtime, plays once
+    // Background.js generates its own cached textures at runtime (bg_grad_*, bg_neb_*, bg_stars_*, bg_planet_*,
+    // bg_rock_*, bg_streak_*, bg_twinkle); they are internal to the backdrop and not for use elsewhere.
 
     // --- icons.js (owner: art-ui) ----------------------------------------------------------------
     icon_dash: [16, 16, 1], icon_forcefield: [16, 16, 1], icon_phase: [16, 16, 1],
