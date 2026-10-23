@@ -29,6 +29,11 @@ export default class MainMenu extends Phaser.Scene {
         // attract mode ("PRESS ANY KEY") when the browser still blocks audio, or when forced (dev/testing)
         this.attract = !!data?.attract || audioLocked(this);
         this.starting = false;
+        this.overlayOpen = false;
+        // startGame()/openOverlay() disable input, and the scene's KeyboardPlugin keeps `enabled` across restarts:
+        // without this, returning from a run left the menu deaf to the keyboard
+        this.input.keyboard.enabled = true;
+        this.input.enabled = true;
     }
 
     create() {
