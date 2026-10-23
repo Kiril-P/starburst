@@ -78,7 +78,8 @@ export const ENEMY_TYPES = {
     meteor_l: { meteor: 'l', radius: 12, hp: 60, score: SCORE.meteor_l, speed: 40 * SPEED_SCALE, explosion: 'l', shake: 2, big: true, shards: [3, 6, 9, 12], splitInto: 'meteor_s' }
 };
 
-// v2 enemies (sniper, kamikaze, shield, turret, minelayer, mine, splitter, splitter_s) live in their own files
+// v2 enemies (sniper, kamikaze, shield, turret, minelayer, mine, splitter, splitter_s) live in their own files.
+// maxAlive caps how many of a type the timed spawners keep on screen (formations may add a few more).
 Object.assign(ENEMY_TYPES, TYPES_2, TYPES_3);
 
 /** Shard burst for a broken meteor. */

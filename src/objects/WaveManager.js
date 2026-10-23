@@ -5,7 +5,7 @@
 import { W } from '../config.js';
 import { WAVES } from '../systems/tuning.js';
 import { WAVE_TABLE, BOSS_EVERY } from './waves.js';
-import { resolveType } from './enemyTypes.js';
+import { resolveType, ENEMY_TYPES } from './enemyTypes.js';
 import Enemy from './Enemy.js';
 import Formations from './formations.js';
 import { applySector, sectorBiome, sectorInfo, isSectorStart } from './sectors.js';
@@ -128,7 +128,7 @@ export default class WaveManager {
                 this.hooks.onEscape(e);
                 e.despawn();
             }
-            if (!e.alive) { live[i] = live[live.length - 1]; live.pop(); }
+            if (!e.alive) { e.listed = false; live[i] = live[live.length - 1]; live.pop(); }
         }
     }
 
@@ -143,6 +143,8 @@ export default class WaveManager {
 
     spawnGroup(typeName) {
         if (typeName.startsWith('f:')) { this.formations.launch(typeName.slice(2)); return; }
+        const cap = ENEMY_TYPES[typeName].maxAlive;
+        if (cap && this.live.reduce((k, e) => k + (e.alive && e.typeName === typeName), 0) >= cap) return;
         const m = WAVES.spawnMarginX, gap = WAVES.formationSpacing;
         const formation = typeName === 'basic' && this.room() >= 3 && Math.random() < WAVES.formationChance[this.tier];
         const x = formation ? rand(m + gap, W - m - gap) : rand(m, W - m);
@@ -158,12 +160,14 @@ export default class WaveManager {
 
     /** extra: per-type spawn options (e.g. kamikaze { delay }) */
     spawn(typeName, x, y, extra) {
-        let e = this.pool.find((p) => !p.alive && !p.active);
+        // `listed`: a just-killed enemy stays in `live` until the next sweep; reusing it now would list it twice
+        let e = this.pool.find((p) => !p.alive && !p.active && !p.listed);
         if (!e) { e = new Enemy(this.scene); this.pool.push(e); }
         const fa = WAVES.firstAttackMs;
         let hovering = 0;
         for (const o of this.live) if (o.alive && o.hover && o.hoverMs > 0) hovering++;
         e.spawn(typeName, x, y, { hpMod: this.diff.enemyHealth, tier: this.tier, firstAttackMs: rand(fa[0], fa[1]), canHover: hovering < WAVES.maxHovering, ...extra });
+        e.listed = true;
         this.live.push(e);
         return e;
     }
@@ -171,7 +175,7 @@ export default class WaveManager {
     /** Remove every enemy, calling fn(e) first (wave-clear explosions). */
     clearEnemies(fn) {
         this.formations.clear();
-        for (const e of this.live) { if (e.alive) { if (fn) fn(e); e.despawn(); } }
+        for (const e of this.live) { if (e.alive) { if (fn) fn(e); e.despawn(); } e.listed = false; }
         this.live.length = 0;
     }
 

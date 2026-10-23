@@ -1,17 +1,19 @@
 // Parallax pixel-art space backdrop. Layers, back to front:
 //   deep gradient (static) -> far nebula -> far 1px stars -> planet -> near nebula filaments -> near stars
 //   -> twinkling stars -> drifting asteroid chunks -> speed streaks
+// Sector biomes (asteroid / station / solar) add their own layers in between via BiomeLayers (biomeLayers.js).
 // All textures are generated once (bgArt.js) and cached under unique keys; nebulae/stars are TileSprites that
 // scroll by whole-pixel tilePosition, so a frame costs a few draw calls and zero allocations.
 import Phaser from 'phaser';
 import { W, H, DEPTH } from '../config.js';
 import { COLORS as C } from '../art/palette.js';
 import { save } from '../systems/Save.js';
+import BiomeLayers from './biomeLayers.js';
 import { BIOMES, TILE_H, gradientTexture, nebulaTexture, starTexture, planetKey, bakeProps, streakKey, STREAK_COUNT, ROCK_KEYS } from './bgArt.js';
 
 const SPEED = { far: 4, starsFar: 7, planet: 2.5, near: 13, starsNear: 22 };   // px/s at intensity 1
 const ADD = Phaser.BlendModes.ADD;
-const N_TWINKLE = 14, N_STREAK = 24, N_ROCK = 4;
+const N_TWINKLE = 14, N_STREAK = 24, N_ROCK = 7;   // rock pool sized for the asteroid biome (BIOMES[i].rocks)
 const STREAK_TINTS = [C.b, C.b, C['6'], C.x, C.C];
 const rand = Phaser.Math.FloatBetween;
 const wrap = (v, m) => ((v % m) + m) % m;
@@ -63,6 +65,8 @@ export default class Background {
         this.streakY = new Float32Array(N_STREAK);
         this.streakAcc = 0;
         this.time = 0;
+        this.layers = new BiomeLayers(scene);
+        this.layers.setBiome(this.biome, 0);
     }
 
     /** @param dt ms since last frame, @param intensity 1 = calm drift, >1 = faster streaks (boss/dash) */
@@ -87,6 +91,7 @@ export default class Background {
         this._updateTwinkles(s * m);
         this._updateRocks(s, m, dt);
         this._updateStreaks(s, boost);
+        this.layers.update(dt, m);
     }
 
     /** crossfade to another palette/biome (0..N) */
@@ -96,6 +101,8 @@ export default class Background {
         this.pending = null;
         if (i === this.biome) return;
         this.biome = i;
+        this.layers.setBiome(i, fadeMs);
+        if (this.planet.visible && this.planetWait <= 0) this.planetOut = 1;   // old biome's planet fades away
         if (fadeMs <= 0) {
             const back = this.sets[1 - this.front];
             this._assign(back, i);
@@ -115,6 +122,7 @@ export default class Background {
     }
 
     destroy() {
+        this.layers.destroy();
         for (const set of this.sets) { set.grad.destroy(); set.far.destroy(); set.near.destroy(); }
         for (const o of [this.starsFar, this.starsNear, this.pulseFar, this.pulseNeb, this.pulseStars, this.planet, ...this.twinkles, ...this.rocks, ...this.streaks]) o.destroy();
         this.sets = []; this.twinkles = []; this.rocks = []; this.streaks = [];
@@ -186,6 +194,11 @@ export default class Background {
 
     _updatePlanet(s, dt) {
         const p = this.planet;
+        if (this.planetOut > 0) {
+            this.planetOut = Math.max(0, this.planetOut - dt / 1500);
+            p.setAlpha(this.planetOut);
+            if (!this.planetOut) { p.setVisible(false).setAlpha(1); this.planetWait = rand(6000, 14000); }
+        }
         if (this.planetWait > 0) {
             this.planetWait -= dt;
             if (this.planetWait > 0) return;
@@ -219,7 +232,7 @@ export default class Background {
             const r = this.rocks[i], st = this.rockState[i];
             if (!r.visible) {
                 if (this.rockWait > 0) continue;
-                this.rockWait = rand(5000, 12000);
+                this.rockWait = rand(5000, 12000) / (BIOMES[this.biome].rocks ?? 1);
                 const big = Math.random() < 0.35;
                 r.setTexture(ROCK_KEYS[big ? 2 + ((Math.random() * 2) | 0) : (Math.random() * 2) | 0]).setVisible(true).setFlip(Math.random() < 0.5, false);
                 // keep rocks near the side edges so they frame the playfield instead of cluttering it

@@ -15,7 +15,7 @@ const PROXIMITY = 42, SHORT_FUSE = 420;
 export const TYPES_3 = {
     // Crosses the upper half sideways, seeding mines. Spawned at any x: it picks the nearer edge to enter from.
     minelayer: {
-        key: 'enemy_minelayer', radius: 10, hp: 45, score: 200, speed: 40 * SPEED_SCALE, explosion: 'm', shake: 1,
+        key: 'enemy_minelayer', radius: 10, hp: 45, score: 200, maxAlive: 2, speed: 40 * SPEED_SCALE, explosion: 'm', shake: 1,
         init(e) {
             const fromLeft = e.x < W / 2;
             e.cruiseY = e.y > 0 ? e.y : rand(28, 96);
@@ -59,7 +59,7 @@ export const TYPES_3 = {
 
     // Three fused pods. Killing it cracks it into 2 (tier 2+: 3) pods that scatter, then sink and take a shot each.
     splitter: {
-        key: 'enemy_splitter', radius: 9, hp: 36, score: 150, speed: 70 * SPEED_SCALE, fireRate: 2600, explosion: 'm', shake: 1,
+        key: 'enemy_splitter', radius: 9, hp: 36, score: 150, maxAlive: 4, speed: 70 * SPEED_SCALE, fireRate: 2600, explosion: 'm', shake: 1,
         moves: [4, 4, 2], amplitude: [20, 50], frequency: [1.0, 2.0],
         attack(e, c, tier) {
             const o = { speed: V * c.speed, style: ORB_M, damage: c.damage };

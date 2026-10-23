@@ -37,7 +37,7 @@ const THEMES = [
         ]
     },
     {
-        mul: { meteor: 3, basic: 1.35, spread: 1.2 }, pace: { duration: 1, bullets: 1 },
+        mul: { meteor: 3, basic: 1.5, spread: 1.3, circular: 1.5 }, pace: { duration: 1, bullets: 1 },
         plan: [
             { opener: 'turrets', add: [['turret', 9000], ['f:sweep', 12000]] },
             { opener: 'pincer', add: [['turret', 8500], ['shield', 11000], ['sniper', 12000]] },
@@ -46,7 +46,7 @@ const THEMES = [
         ]
     },
     {
-        mul: { basic: 1.3, circular: 1.2 }, pace: { duration: 0.85, bullets: 1.06 },
+        mul: { basic: 1.4, spread: 1.15, circular: 1.4 }, pace: { duration: 0.85, bullets: 1.06 },
         plan: [
             { opener: 'swarm', add: [['f:sweep', 9000], ['f:swarm', 9000]] },
             { opener: 'pincer:kamikaze', add: [['f:swarm', 9000], ['sniper', 10000], ['splitter', 8000]] },

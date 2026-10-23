@@ -10,12 +10,14 @@ const rand = (a, b) => a + Math.random() * (b - a);
 const ease = (k) => 1 - (1 - k) * (1 - k);
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const wrapPi = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+/** group size scaled by the difficulty's pattern density (easy 0.75 -> fewer ships, hard 1.25 -> a few more) */
+const sized = (f, n) => Math.max(2, Math.round(n * Math.min(1.2, f.wm.diff?.patternDensity ?? 1)));
 
 /** member = { at: ms delay, type, x, y, path?, extra?, after?(e) } */
 const DEFS = {
     // classic V: swoops in, holds the shape while gliding and swaying in sync, then breaks off
     vee(f, type, tier) {
-        const count = tier >= 1 ? 5 : 3, x0 = rand(90, W - 90), out = [];
+        const count = tier >= 1 && sized(f, 5) >= 4 ? 5 : 3, x0 = rand(90, W - 90), out = [];
         for (let i = 0; i < count; i++) {
             const r = Math.ceil(i / 2), side = i & 1 ? -1 : 1, xs = x0 + side * r * 24, y0 = -16 - r * 12, yT = 72 - r * 12;
             out.push({ at: 0, type, x: xs, y: y0, path: (e, ms) => {
@@ -30,7 +32,7 @@ const DEFS = {
     },
     // a snake of ships sweeping across the upper screen from one side, weaving up and down
     sweep(f, type, tier) {
-        const count = 3 + Math.min(3, tier), dir = Math.random() < 0.5 ? 1 : -1, row = rand(36, 92), out = [];
+        const count = sized(f, 3 + Math.min(3, tier)), dir = Math.random() < 0.5 ? 1 : -1, row = rand(36, 92), out = [];
         const x0 = dir > 0 ? -14 : W + 14;
         for (let i = 0; i < count; i++) {
             out.push({ at: i * 300, type, x: x0, y: row, path: (e, ms) => {
@@ -63,7 +65,7 @@ const DEFS = {
     },
     // ships spiral in from the top and sides onto a ring, rotate as a wheel for a while, then peel off downward
     circle(f, type, tier) {
-        const count = 5 + Math.min(3, tier), cx = rand(170, W - 170), cy = 92, R = 60, spin = Math.random() < 0.5 ? 0.7 : -0.7, out = [];
+        const count = sized(f, 5 + Math.min(3, tier)), cx = rand(170, W - 170), cy = 92, R = 60, spin = Math.random() < 0.5 ? 0.7 : -0.7, out = [];
         for (let i = 0; i < count; i++) {
             const th = (i / count) * Math.PI * 2;
             const ths = -Math.PI / 2 + wrapPi(th + Math.PI / 2) * 0.5;   // start angle squeezed into the upper half
@@ -80,7 +82,7 @@ const DEFS = {
     },
     // kamikaze cluster: arrives together, then the drones commit one after another (front first)
     swarm(f, type, tier) {
-        const count = 3 + Math.min(3, tier), x0 = rand(110, W - 110), out = [];
+        const count = sized(f, 3 + Math.min(3, tier)), x0 = rand(110, W - 110), out = [];
         for (let i = 0; i < count; i++) {
             const r = Math.ceil(i / 2), side = i & 1 ? -1 : 1;
             out.push({ at: r * 120, type: 'kamikaze', x: x0 + side * r * 16, y: -12 - r * 8, extra: { delay: 700 + i * 380 - tier * 40 } });
@@ -89,7 +91,7 @@ const DEFS = {
     },
     // diagonal meteor rain: a band of rocks that all drift the same way, so there is always a lane
     shower(f, type, tier) {
-        const count = 5 + tier, dir = Math.random() < 0.5 ? 1 : -1, out = [];
+        const count = sized(f, 5 + tier), dir = Math.random() < 0.5 ? 1 : -1, out = [];
         const lane = rand(0.2, 0.8);   // one gap in the band
         for (let i = 0; i < count; i++) {
             let u = i / (count - 1);

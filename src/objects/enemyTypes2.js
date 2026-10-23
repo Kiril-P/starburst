@@ -28,7 +28,7 @@ export const TYPES_2 = {
     // Parks near the top and fires a fast needle lance down an amber laser line. The line tracks the player,
     // then LOCKS (dense, fast blink) for the last third of the charge, which is the cue to step sideways.
     sniper: {
-        key: 'enemy_sniper', radius: 7, hp: 30, score: 175, speed: 44 * SPEED_SCALE, explosion: 's', shake: 1,
+        key: 'enemy_sniper', radius: 7, hp: 30, score: 175, maxAlive: 2, speed: 44 * SPEED_SCALE, explosion: 's', shake: 1,
         fireRate: 3400, chargeMs: [1250, 1100, 1000, 950],
         init(e) {
             e.mode = 0; e.charge = 0; e.aimA = Math.PI / 2;
@@ -106,7 +106,7 @@ export const TYPES_2 = {
     // sides land normally and shots from above (behind) do double damage, so it rewards flying around it.
     // From tier 1 it also launches a pair of kamikaze drones every third volley.
     shield: {
-        key: 'enemy_shield', radius: 11, hp: 70, score: 250, speed: 24 * SPEED_SCALE, fireRate: 2800, explosion: 'm', shake: 2, big: true,
+        key: 'enemy_shield', radius: 11, hp: 70, score: 250, maxAlive: 2, speed: 24 * SPEED_SCALE, fireRate: 2800, explosion: 'm', shake: 2, big: true,
         moves: [6, 4, 0], amplitude: [18, 40], frequency: [0.5, 1.1],
         armor(e, shot) {
             const dx = shot.x - e.x, dy = shot.y - e.y;
@@ -132,7 +132,7 @@ export const TYPES_2 = {
     // Drops in, bolts itself in place (drifting only with the scrolling station) and sprays a rotating cross of
     // orbs in on/off bursts. The barrels on the sprite point where the next bullets go.
     turret: {
-        key: 'enemy_turret', radius: 10, hp: 60, score: 220, speed: 60 * SPEED_SCALE, explosion: 'm', shake: 2, big: true,
+        key: 'enemy_turret', radius: 10, hp: 60, score: 220, maxAlive: 2, speed: 60 * SPEED_SCALE, explosion: 'm', shake: 2, big: true,
         init(e) {
             e.mode = 0; e.anchorY = rand(34, H * 0.32); e.holdMs = 9500;
             e.spinA = Math.random() * TAU; e.spinDir = Math.random() < 0.5 ? -1 : 1;
@@ -151,8 +151,8 @@ export const TYPES_2 = {
             e.spinA += e.spinDir * (55 + tier * 8) * DEG * s;
             e.setFrame((((e.spinA % (Math.PI / 2)) + Math.PI / 2) % (Math.PI / 2) / (Math.PI / 8)) | 0);
             if (!e.firing || (e.nextFire -= dt) > 0) return;
-            e.nextFire += (tier >= 2 ? 190 : 170) / c.density;
             const arms = tier >= 2 ? 4 : 2, step = TAU / arms;
+            e.nextFire += (arms === 4 ? 300 : 210) / c.density;   // ~13 bullets/s either way while spinning
             for (let k = 0; k < arms; k++) {
                 const a = e.spinA + k * step;
                 c.pool.spawn(e.x + Math.cos(a) * 12, e.y + Math.sin(a) * 12, a, V * 0.6 * c.speed, ORB_S, { damage: c.damage });

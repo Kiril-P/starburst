@@ -15,15 +15,20 @@ export const BIOMES = [
     { name: 'teal', deep: ['1', 'n'], far: ['1', 'n', '2', 'c'], near: ['n', 'c', 'c', '4'], planet: ['1', 'n', 'c', 'C', 'b'], seed: 23 },
     { name: 'magenta', deep: ['u', 'p'], far: ['u', 'p', 'v', 'V'], near: ['p', 'p', 'm', 'm'], planet: ['u', 'p', 'm', 'M', 'q'], seed: 37 },
     { name: 'dusk', deep: ['u', 'y'], far: ['u', 'v', 'y', 'V'], near: ['y', 'a', 'a', 'A'], planet: ['u', 'y', 'a', 'A', 'z'], seed: 41 },
-    { name: 'toxic', deep: ['1', 'g'], far: ['k', '1', '1', '2'], near: ['1', 'g', 'g', 'l'], planet: ['k', 'g', 'l', 'L', 'j'], seed: 53 }
+    { name: 'toxic', deep: ['1', 'g'], far: ['k', '1', '1', '2'], near: ['1', 'g', 'g', 'l'], planet: ['k', 'g', 'l', 'L', 'j'], seed: 53 },
+    // sector biomes 2-4 (objects/sectors.js). Extra parallax layers for these live in biomeLayers.js / bgArt2.js.
+    // rocks = how often the side rocks drift past (x spawn rate). Kept dark so bullets stay the brightest thing.
+    { name: 'asteroid', deep: ['1', 'u'], far: ['k', 'u', '1', '2'], near: ['u', '1', '2', '3'], planet: ['1', '2', '3', '4', '5'], seed: 61, rocks: 3 },
+    { name: 'station', deep: ['1', 'n'], far: ['k', '1', 'n', 'n'], near: ['n', '1', '2', 'c'], planet: ['1', 'n', '2', 'c', 'C'], seed: 71, rocks: 0.3 },
+    { name: 'solar', deep: ['u', 'y'], far: ['k', 'u', 'y', 'y'], near: ['u', 'u', 'y', 'y'], planet: ['k', 'k', 'u', 'y', 'a'], seed: 83, rocks: 0.5 }
 ];
 
 // ---- colour + canvas helpers ----------------------------------------------------------------------------
 const u32 = (hex) => { const n = parseInt(hex.slice(1), 16); return (0xff000000 | ((n & 0xff) << 16) | (n & 0xff00) | (n >> 16)) >>> 0; };
-const LUT = Object.fromEntries(Object.entries(PALETTE).filter(([, v]) => v).map(([k, v]) => [k, u32(v)]));
+export const LUT = Object.fromEntries(Object.entries(PALETTE).filter(([, v]) => v).map(([k, v]) => [k, u32(v)]));
 LUT.bg = u32(BG);
 
-function canvasTexture(scene, key, w, h, paint) {
+export function canvasTexture(scene, key, w, h, paint) {
     if (scene.textures.exists(key)) return key;
     const tex = scene.textures.createCanvas(key, w, h);
     const img = tex.context.createImageData(w, h);
@@ -34,7 +39,7 @@ function canvasTexture(scene, key, w, h, paint) {
 }
 
 // ---- periodic value noise -------------------------------------------------------------------------------
-function noise2(seed) {
+export function noise2(seed) {
     const r = rng(seed), vals = new Float32Array(256), perm = new Uint8Array(256);
     for (let i = 0; i < 256; i++) { vals[i] = r(); perm[i] = i; }
     for (let i = 255; i > 0; i--) { const j = (r() * (i + 1)) | 0; [perm[i], perm[j]] = [perm[j], perm[i]]; }
@@ -48,13 +53,13 @@ function noise2(seed) {
     };
 }
 /** fBm on the unit torus (u, v in 0..1), base lattice px x py cells */
-function fbm(n, u, v, px, py, oct, gain = 0.5) {
+export function fbm(n, u, v, px, py, oct, gain = 0.5) {
     let s = 0, a = 1, norm = 0;
     for (let o = 0; o < oct; o++) { const k = 1 << o; s += a * n(u * px * k, v * py * k, px * k, py * k); norm += a; a *= gain; }
     return s / norm;
 }
 /** computes a periodic field at half resolution, returns a bilinear (wrapping) sampler at full resolution */
-function field(w, h, fn) {
+export function field(w, h, fn) {
     const fw = w >> 1, fh = h >> 1, f = new Float32Array(fw * fh);
     for (let y = 0; y < fh; y++) for (let x = 0; x < fw; x++) f[y * fw + x] = fn(x / fw, y / fh);
     return (x, y) => {
