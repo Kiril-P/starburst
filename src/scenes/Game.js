@@ -74,8 +74,8 @@ export default class Game extends Phaser.Scene {
 
     playerHooks() {
         return {
-            onFire: (x, y) => {
-                this.shots.spawn(x, y, -Math.PI / 2, PLAYER.shotSpeed, SHOT_STYLE, { damage: this.player.stats.damage });
+            onFire: (x, y, angle) => {
+                this.shots.spawn(x, y, angle, PLAYER.shotSpeed, SHOT_STYLE, { damage: this.player.stats.damage });
                 this.fx.muzzle(x, y);
                 this.audio.play('player-shoot', { vol: 0.28, jitter: 120 });
             },

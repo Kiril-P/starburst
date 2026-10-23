@@ -33,6 +33,8 @@ export default class Player {
         this.cdMax = { dash: 1, forcefield: 1, phase: 1 };
         this.dashT = 0; this.phaseT = 0; this.shieldT = 0;
         this.dashDir = { x: 0, y: -1 };
+        this.aim = -Math.PI / 2;          // facing (v1: ship turns toward its movement and fires that way)
+        this.aimVis = this.aim;           // smoothed, step-snapped angle used for drawing
         this.ghostT = 0;
         this.hudAbilities = {
             dash: { unlocked: false, cooldown01: 0, active: false, key: 'SHIFT' },
@@ -113,7 +115,8 @@ export default class Player {
         if (this.controllable && (this.keys.fire.isDown || q.fire) && this.fireTimer <= 0) {
             q.fire = false;
             this.fireTimer = this.fireRate;
-            this.hooks.onFire(this.x, this.y - this.ship.height / 2 + 1);
+            const nose = this.ship.height / 2 - 1;
+            this.hooks.onFire(this.x + Math.cos(this.aim) * nose, this.y + Math.sin(this.aim) * nose, this.aim);
         }
         this.updateVisuals(dt);
     }
@@ -126,7 +129,7 @@ export default class Player {
         this.cd[id] = this.cdMax[id] = A.cooldown[Math.min(L, A.cooldown.length - 1)];
         if (id === 'dash') {
             const m = Math.hypot(this.vx, this.vy);
-            if (m > 20) { this.dashDir.x = this.vx / m; this.dashDir.y = this.vy / m; } else { this.dashDir.x = 0; this.dashDir.y = -1; }
+            if (m > 20) { this.dashDir.x = this.vx / m; this.dashDir.y = this.vy / m; } else { this.dashDir.x = Math.cos(this.aim); this.dashDir.y = Math.sin(this.aim); }
             this.dashT = A.duration[L];
             this.hooks.onDash();
         } else if (id === 'forcefield') {
@@ -155,6 +158,7 @@ export default class Player {
             const ctl = this.controllable;
             let tx = ctl ? (k.left.isDown ? -1 : k.right.isDown ? 1 : 0) : 0;
             let ty = ctl ? (k.up.isDown ? -1 : k.down.isDown ? 1 : 0) : 0;
+            if (tx || ty) this.aim = Math.atan2(ty, tx);
             const sp = this.speed * (tx && ty ? DIAGONAL_FACTOR * Math.SQRT1_2 : 1);
             this.vx = this.approach(this.vx, tx * sp, s);
             this.vy = this.approach(this.vy, ty * sp, s);
@@ -180,12 +184,19 @@ export default class Player {
 
     updateVisuals(dt) {
         const x = Math.round(this.x), y = Math.round(this.y);
-        const bank = !this.canBank ? 0 : this.vx < -PLAYER.bankThreshold ? 1 : this.vx > PLAYER.bankThreshold ? 2 : 0;
+        // turn toward the aim by the shortest way, then snap to 16 steps so the pixels stay crisp
+        const d = Math.atan2(Math.sin(this.aim - this.aimVis), Math.cos(this.aim - this.aimVis));
+        this.aimVis += d * Math.min(1, dt / 55);
+        const STEP = Math.PI / 8;
+        const rot = Math.round((this.aimVis + Math.PI / 2) / STEP) * STEP;   // 0 = ship nose up
+        const up = Math.abs(rot) < 0.01;
+        const bank = !this.canBank || !up ? 0 : this.vx < -PLAYER.bankThreshold ? 1 : this.vx > PLAYER.bankThreshold ? 2 : 0;
         if (this.ship.frame.name !== bank) this.ship.setFrame(bank);
-        this.ship.setPosition(x, y);
-        // flame tucked under the tail; hidden while braking hard downwards so the ship "coasts"
-        this.flame.setPosition(x, y + Math.floor(this.ship.height / 2) - 3);
-        this.flame.setVisible(this.vy < this.speed * 0.6);
+        this.ship.setPosition(x, y).setRotation(rot);
+        // flame tucked under the tail; hidden while coasting backwards against the facing
+        const tail = Math.floor(this.ship.height / 2) - 3;
+        this.flame.setPosition(Math.round(x - Math.sin(rot) * tail), Math.round(y + Math.cos(rot) * tail)).setRotation(rot);
+        this.flame.setVisible(this.vx * Math.cos(this.aim) + this.vy * Math.sin(this.aim) > -this.speed * 0.6);
         this.dot.setPosition(x, y);
         this.shield.setPosition(x, y).setVisible(this.shielded);
         if (this.shielded && !this.shield.anims.isPlaying && this.scene.anims.exists('shield_ring')) this.shield.play('shield_ring');
@@ -200,7 +211,7 @@ export default class Player {
             if (this.ghostT <= 0) {
                 this.ghostT = this.dashing ? 22 : 90;
                 const g = this.ghosts[this.ghostIdx++ % GHOSTS];
-                g.setPosition(x, y).setFrame(bank).setVisible(true).setAlpha(this.dashing ? 0.7 : 0.45);
+                g.setPosition(x, y).setFrame(bank).setRotation(rot).setVisible(true).setAlpha(this.dashing ? 0.7 : 0.45);
                 g.setTint(this.dashing ? this.stats.accent : COLORS.M);
                 g.life = this.dashing ? 260 : 420;
                 g.maxLife = g.life;
