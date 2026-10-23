@@ -6,6 +6,8 @@ import fx from './sprites/fx.js';
 import icons from './sprites/icons.js';
 import ui from './sprites/ui.js';
 import bosses from './sprites/bosses.js';
+import pickups from './sprites/pickups.js';
+import weapons from './sprites/weapons.js';
 
-export const SPRITE_MODULES = { ships, projectiles, enemies, fx, icons, ui, bosses };
+export const SPRITE_MODULES = { ships, projectiles, enemies, fx, icons, ui, bosses, pickups, weapons };
 export const ALL_SPRITES = Object.values(SPRITE_MODULES).flat();
