@@ -14,7 +14,7 @@ const NEEDLE_M = style('needle', 'magenta');
 const SHARDS = 4;
 const F_OPEN = 0, F_PULSE = 1, F_CHARGE = 2, F_SHUT = 3;
 
-export const PRISM = { name: 'THE PRISM', title: 'EYE OF THE VOID', hp: 1500, phases: [0.66, 0.33], homeY: 96, bonus: 18000 };
+export const PRISM = { id: 'prism', kind: 'main', name: 'THE PRISM', title: 'EYE OF THE VOID', hp: 1500, phases: [0.66, 0.33], homeY: 96, bonus: 18000 };
 
 export default class Prism extends Boss {
     constructor(game, opts) {

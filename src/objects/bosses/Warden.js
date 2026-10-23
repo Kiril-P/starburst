@@ -14,7 +14,7 @@ const NEEDLE_M = style('needle', 'magenta');
 
 const POD_X = 42, POD_Y = 20, CORE_Y = -5, PROW_Y = 32;
 
-export const WARDEN = { name: 'THE WARDEN', title: 'DREADNOUGHT', hp: 1400, phases: [0.66, 0.33], homeY: 72, bonus: 15000 };
+export const WARDEN = { id: 'warden', kind: 'main', name: 'THE WARDEN', title: 'DREADNOUGHT', hp: 1400, phases: [0.66, 0.33], homeY: 72, bonus: 15000 };
 
 export default class Warden extends Boss {
     constructor(game, opts) {

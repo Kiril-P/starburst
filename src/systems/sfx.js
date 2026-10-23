@@ -22,7 +22,8 @@ const RULES = {
     'ui-back': { gap: 40, cap: 2 },
     'shield-hit': { gap: 60, cap: 3, jitter: 150 },
     warning: { gap: 1200, cap: 1 },
-    'boss-explosion': { gap: 300, cap: 2 }
+    'boss-explosion': { gap: 300, cap: 2 },
+    'boss-stinger': { gap: 400, cap: 1 }
 };
 const DEFAULT_RULE = { gap: 0, cap: 4, jitter: 0 };
 const voices = new Map();     // key -> [{ snd, t }]

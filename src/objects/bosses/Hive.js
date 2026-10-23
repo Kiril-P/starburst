@@ -24,7 +24,7 @@ ENEMY_TYPES.drone ??= {
     attack(e, c) { aimed(c.pool, e.x, e.y + 6, c.px, c.py, { speed: V * 0.8 * c.speed, style: ORB_S, damage: c.damage }); }
 };
 
-export const HIVE = { name: 'THE HIVE', title: 'BROOD CARRIER', hp: 1500, phases: [0.66, 0.33], homeY: 66, bonus: 16000 };
+export const HIVE = { id: 'hive', kind: 'main', name: 'THE HIVE', title: 'BROOD CARRIER', hp: 1500, phases: [0.66, 0.33], homeY: 66, bonus: 16000 };
 
 export default class Hive extends Boss {
     constructor(game, opts) {

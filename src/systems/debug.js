@@ -1,7 +1,8 @@
 // Dev-only console / test hook: window.__dbg (never installed in production builds).
 //   __dbg.skipToWave(8)  __dbg.godMode(true)  __dbg.spawn('circular', x?)  __dbg.killAll()
 //   __dbg.unlockAll()    __dbg.hurt(30)       __dbg.spray(400)  (fill the screen with bullets for FPS tests)
-//   __dbg.boss(1)   jump to the n-th boss (1 Warden, 2 Hive, 3 Prism, 4 Warden MK2 ...)   __dbg.bossHp(0.5)
+//   __dbg.boss(1)   jump to the n-th main-boss wave (5, 10, 15, 20 = final)   __dbg.bossHp(0.5)
+//   __dbg.fight('tempest')  any boss by id   __dbg.mini(2)  n-th mid-boss wave   __dbg.final()   (objects/bosses/BossDirector.js)
 //   __dbg.state()        -> { fps, bullets, enemies, wave, state, score, hp, combo, ... }
 import { W } from '../config.js';
 import { ring, style } from '../objects/patterns.js';
@@ -36,4 +37,5 @@ export function installDebug(scene) {
             };
         }
     };
+    Object.assign(window.__dbg, g.bosses.debugHelpers());
 }

@@ -70,6 +70,19 @@ const RECIPES = {
             };
         }
     },
+    // boss stinger (intros / phase shifts): a short noise riser slams into a detuned low power chord + sub hit
+    'boss-stinger': {
+        len: 1.2, peak: 0.8, fn: (k) => {
+            const hz = [55, 55.4, 82.4, 110, 110.7], v = hz.map(() => k.osc('saw'));
+            const sub = k.osc('sine'), f = k.lp(), r = k.lp();
+            return (t) => {
+                if (t < 0.18) return r(k.noise(), 400 + 6000 * (t / 0.18)) * (t / 0.18) * 0.5;
+                const u = t - 0.18;
+                const chord = v.reduce((s, o, i) => s + o(hz[i]), 0) / 3;
+                return f(chord, 300 + 2600 * decay(u, 0.25)) * decay(u, 0.45) + sub(60 * decay(u, 0.3) + 30) * decay(u, 0.35) * 0.9;
+            };
+        }
+    },
     // big boom: sub drop + low-passed noise whose cutoff closes, with a crackly start
     'boss-explosion': {
         len: 2.0, peak: 0.85, fn: (k) => {

@@ -17,7 +17,7 @@ export const V = ENEMY_BULLET.speed;
 
 export default class Boss {
     /**
-     * def: { name, title, hp, phases: [hp01 thresholds where phase 2, 3 start], homeY, bonus }
+     * def: { id, kind: 'mini'|'main'|'final', name, title, hp, phases: [hp01 thresholds where phase 2, 3 start], homeY, bonus, enterMs? }
      * opts: { hpMod, cycle, onPhase(boss, phase), onDefeat(boss), onHit(boss) }
      */
     constructor(game, def, opts) {
@@ -37,7 +37,7 @@ export default class Boss {
         this.x = W / 2;
         this.y = -60;
         this.homeY = def.homeY;
-        this.enterMs = ENTER_MS;
+        this.enterMs = this.enterTotal = def.enterMs ?? ENTER_MS;
         this.invulnMs = 0;
         this.flashT = 0; this.flashCd = 0; this.deflectCd = 0;
         this.attackT = 1200;
@@ -45,6 +45,7 @@ export default class Boss {
         this.parts = [];
         this.targets = [];
         this.timers = [];
+        this.props = [];             // live hazards owned by the boss (gravity wells, ...): { update(dt) -> alive, destroy() }
         this.warn = new Telegraph(game);
     }
 
@@ -78,6 +79,9 @@ export default class Boss {
     /** fn(i, x, y) `times` times every `every` ms at the boss position (Sequencer: stops with the boss) */
     repeat(every, times, fn) { return this.c.seq.run(this, every, times, fn); }
     sfx() { this.c.onShoot(this); }
+    /** register a hazard object that lives until its update() returns false (or the boss dies) */
+    prop(p) { this.props.push(p); return p; }
+    clearProps() { for (const p of this.props) p.destroy(); this.props.length = 0; }
 
     get invulnerable() { return this.state !== 'fight' || this.invulnMs > 0 || this.shut; }
     get hp01() { return this.hp / this.maxHp; }
@@ -116,6 +120,7 @@ export default class Boss {
         this.state = 'dead';
         this.alive = false;
         this.clearPending();
+        this.clearProps();
         this.opts.onDefeat(this);
     }
 
@@ -135,7 +140,7 @@ export default class Boss {
         if (this.state === 'enter') {
             // ease in from above the screen; the boss can't be hurt until it has arrived
             this.enterMs -= dt;
-            const k = 1 - Math.max(0, this.enterMs) / ENTER_MS;
+            const k = 1 - Math.max(0, this.enterMs) / this.enterTotal;
             this.y = -60 + (this.homeY + 60) * (1 - (1 - k) ** 3);
             if (this.enterMs <= 0) { this.state = 'fight'; this.onArrive(); }
         } else {
@@ -147,6 +152,7 @@ export default class Boss {
                 this.attackT = atk.call(this) ?? 1500;   // each attack returns the pause before the next one
             }
         }
+        for (let i = this.props.length - 1; i >= 0; i--) if (!this.props[i].update(dt)) { this.props[i].destroy(); this.props.splice(i, 1); }
         this.animate(dt);
         this.sync();
         this.warn.update(dt);
@@ -166,11 +172,12 @@ export default class Boss {
     attacks() { return [() => 1000]; }
 
     /** death throes visuals are driven by the director; this hides the rig at the very end */
-    hide() { for (const p of this.parts) p.setVisible(false); this.warn.clear(); }
+    hide() { for (const p of this.parts) p.setVisible(false); this.warn.clear(); this.clearProps(); }
 
     destroy() {
         this.alive = false;
         this.timers.length = 0;
+        this.clearProps();
         for (const p of this.parts) p.destroy();
         this.parts.length = 0;
         this.targets.length = 0;
