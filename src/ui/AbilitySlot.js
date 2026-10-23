@@ -68,7 +68,7 @@ export default class AbilitySlot {
             this.state = state;
             this.icon.setTexture(unlocked ? this.opts.icon : 'icon_lock');
             if (state === 'cool') this.icon.setTint(COLORS[4]); else this.icon.clearTint();
-            this.label.setColor(state === 'locked' ? TEXT.off : state === 'cool' ? TEXT.muted : TEXT.light);
+            this.label.setColor(state === 'locked' ? TEXT.muted : state === 'cool' ? TEXT.dim : TEXT.light);
             if (a && a.key && a.key !== this.label.text) { this.label.setText(a.key); centerText(this.label, this.x); }
         }
 

@@ -122,7 +122,8 @@ export function createPanel(scene, x, y, w, h, opts = {}) {
 }
 
 /**
- * Clickable button. opts { w = 96, h = 20, icon?: textureKey, size = 8, font = 'TITLE', disabled, color, hoverSfx = true }.
+ * Clickable button. opts { w = 96, h = 20, icon?: textureKey, size = 8, font = 'TITLE', disabled, color, hoverSfx = true,
+ *   arrows = w >= 80 (ui_arrow_l/r chevrons inside the frame while focused/hovered) }.
  * Methods: setLabel, setEnabled, setFocused, activate() (keyboard press: flashes the press frame then clicks).
  * Emits 'hover' (button) on pointer over so MenuNav can follow the mouse.
  */
@@ -146,6 +147,13 @@ export class Button extends Phaser.GameObjects.Container {
         if (opts.icon) {
             this.icon = scene.add.image(-(w >> 1) + 6, -8, opts.icon).setOrigin(0, 0);
             this.face.add(this.icon);
+        }
+        if ((opts.arrows ?? w >= 80) && !opts.icon) {
+            this.arrows = [
+                scene.add.image(-(w >> 1) + 6, -4, 'ui_arrow_r').setOrigin(0, 0),
+                scene.add.image((w >> 1) - 14, -4, 'ui_arrow_l').setOrigin(0, 0)
+            ];
+            this.face.add(this.arrows);
         }
         this.ring = scene.add.graphics();
         this.add([this.ring, this.face]);
@@ -210,6 +218,7 @@ export class Button extends Phaser.GameObjects.Container {
         const col = !this.enabled ? TEXT.off : this.opts.color ?? (hot ? TEXT.white : TEXT.cyanHi);
         this.text.setColor(col);
         if (this.icon) this.icon.setAlpha(this.enabled ? 1 : 0.4);
+        if (this.arrows) this.arrows.forEach((a) => a.setVisible(hot));
         this.drawRing(this.focused && this.enabled);
         return this;
     }

@@ -39,10 +39,13 @@ class Card extends Phaser.GameObjects.Container {
         const hue = HUE[option.icon] ?? 'cyan';
         this.ramp = RAMPS[hue];
         this.css = CSS[hue];
+        // art-ui may provide hue variants of the card frame (ui_card_magenta ...); fall back to the cyan contract keys
+        const variant = (k) => (hue !== 'cyan' && scene.textures.exists(`${k}_${hue}`) ? `${k}_${hue}` : k);
+        this.keys = [variant('ui_card'), variant('ui_card_hover')];
         const x0 = -(CW >> 1), y0 = -(CH >> 1);
 
         this.face = scene.add.container(0, 0);
-        this.bg = nine(scene, x0, y0, 'ui_card', CW, CH).setAlpha(0.95);
+        this.bg = nine(scene, x0, y0, this.keys[0], CW, CH).setAlpha(0.95);
         this.face.add(this.bg);
         // emblem: pixel ring around the card icon
         const ring = scene.add.graphics();
@@ -67,7 +70,13 @@ class Card extends Phaser.GameObjects.Container {
         // SELECT pill shown on the focused card
         this.pill = scene.add.container(0, y0 + CH - 16);
         const pw = CW - 28;
-        this.pill.add(nine(scene, -(pw >> 1), -8, 'ui_button_hover', pw, 16));
+        // drawn in the card's hue (the button frames are cyan-only): chamfered 2px corners, highlight top row
+        const pg = scene.add.graphics(), px = -(pw >> 1), py = -8, r = this.ramp;
+        pg.fillStyle(r[2], 1).fillRect(px + 2, py, pw - 4, 16).fillRect(px + 1, py + 1, pw - 2, 14).fillRect(px, py + 2, pw, 12);
+        pg.fillStyle(r[1], 1).fillRect(px + 2, py + 2, pw - 4, 12);
+        pg.fillStyle(r[3], 1).fillRect(px + 3, py + 2, pw - 6, 1);
+        pg.fillStyle(r[0], 1).fillRect(px + 3, py + 13, pw - 6, 1);
+        this.pill.add(pg);
         this.pill.add(centerText(pxText(scene, 0, 0, 'SELECT', { font: 'TITLE', color: TEXT.white }), 0, 0));
         this.pill.setVisible(false);
         this.face.add(this.pill);
@@ -100,7 +109,7 @@ class Card extends Phaser.GameObjects.Container {
     setFocused(b) {
         if (b === this.focused) return this;
         this.focused = b;
-        this.bg.setTexture(b ? 'ui_card_hover' : 'ui_card');
+        this.bg.setTexture(this.keys[b ? 1 : 0]);
         this.bg.setSlices(CW, CH, SLICE, SLICE, SLICE, SLICE);
         this.face.y = b ? -3 : 0;
         this.pill.setVisible(b);
@@ -186,7 +195,7 @@ export default class UpgradeScreen {
         this.anims.push(uiTween(scene, {
             ms: 260, ease: 'linear', onUpdate: (v) => {
                 const on = (((v * 6) | 0) & 1) === 0;
-                card.bg.setTexture(on ? 'ui_card_hover' : 'ui_card').setSlices(CW, CH, SLICE, SLICE, SLICE, SLICE);
+                card.bg.setTexture(card.keys[on ? 1 : 0]).setSlices(CW, CH, SLICE, SLICE, SLICE, SLICE);
             }
         }));
         this.cards.forEach((c) => {
