@@ -11,6 +11,7 @@ import { pxText, centerText, fmtNum } from '../ui/text.js';
 import { save } from '../systems/Save.js';
 import { sfx } from '../systems/sfx.js';
 import { playMusic, duck } from '../systems/music.js';
+import { addBuildSummary } from '../ui/buildSummary.js';
 
 const PW = 248, ROW = 17, ROW_BIG = 26, PX = (W - PW) >> 1, PY = 100;
 const rowsH = (n) => ROW_BIG + (n - 1) * ROW;
@@ -42,6 +43,7 @@ export default class GameOver extends Phaser.Scene {
         ];
         this.buildPanel(rows);
         this.buildButtons();
+        addBuildSummary(this, data.build);
 
         this.input.keyboard.on('keydown', this.skip, this);
         this.input.on('pointerdown', this.skip, this);

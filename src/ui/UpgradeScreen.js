@@ -13,7 +13,7 @@ import { sfx } from '../systems/sfx.js';
 
 const CW = 116, CH = 180, GAP = 12, CY = 198;
 const HUE = { card_dash: 'cyan', card_forcefield: 'cyan', card_phase: 'magenta', card_speed: 'lime', card_heal: 'lime' };
-const TAG_HUE = { NEW: 'cyan', UPGRADE: 'amber', HEAL: 'lime' };
+const TAG_HUE = { NEW: 'cyan', UPGRADE: 'amber', HEAL: 'lime', WEAPON: 'cyan', SYNERGY: 'amber' };
 const CSS = { cyan: [PALETTE.c, PALETTE.C, PALETTE.b], magenta: [PALETTE.m, PALETTE.M, PALETTE.q], lime: [PALETTE.l, PALETTE.L, PALETTE.j], amber: [PALETTE.a, PALETTE.A, PALETTE.z] };
 
 /** Greedy word wrap using a scratch text object for measuring. */
@@ -36,7 +36,7 @@ class Card extends Phaser.GameObjects.Container {
         this.enabled = true;
         this.focused = false;
         this.onActivate = onActivate;
-        const hue = HUE[option.icon] ?? 'cyan';
+        const hue = option.hue ?? HUE[option.icon] ?? 'cyan';   // weapon cards pass hue (amber = rare synergy)
         this.ramp = RAMPS[hue];
         this.css = CSS[hue];
         // art-ui may provide hue variants of the card frame (ui_card_magenta ...); fall back to the cyan contract keys

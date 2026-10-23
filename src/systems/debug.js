@@ -2,10 +2,12 @@
 //   __dbg.skipToWave(8)  __dbg.godMode(true)  __dbg.spawn('circular', x?)  __dbg.killAll()
 //   __dbg.unlockAll()    __dbg.hurt(30)       __dbg.spray(400)  (fill the screen with bullets for FPS tests)
 //   __dbg.boss(1)   jump to the n-th boss (1 Warden, 2 Hive, 3 Prism, 4 Warden MK2 ...)   __dbg.bossHp(0.5)
+//   weapons / loot helpers: see objects/weapons/debugGear.js (__dbg.weapon, drop, buff, offers, gear ...)
 //   __dbg.state()        -> { fps, bullets, enemies, wave, state, score, hp, combo, ... }
 import { W } from '../config.js';
 import { ring, style } from '../objects/patterns.js';
 import { BOSS_EVERY } from '../objects/waves.js';
+import { gearDebug } from '../objects/weapons/debugGear.js';
 
 export function installDebug(scene) {
     if (!import.meta.env.DEV) return;
@@ -36,4 +38,5 @@ export function installDebug(scene) {
             };
         }
     };
+    Object.assign(window.__dbg, gearDebug(g));
 }

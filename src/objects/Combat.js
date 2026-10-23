@@ -15,17 +15,30 @@ export default class Combat {
     }
 
     addScore(base, useCombo = true) {
-        const pts = Math.round(base * (useCombo ? this.g.combo.mult : 1));
+        const pts = Math.round(base * (useCombo ? this.g.combo.mult : 1) * (this.g.powerups?.scoreMul ?? 1));
         this.score += pts;
         return pts;
     }
 
     shotHit(s, e) {
         const g = this.g;
-        g.shots.kill(s);
+        // piercing weapon shots fly on and remember the target so they never hit it twice (collisions.js)
+        if (s.pierce > 0) { s.pierce--; s.hits.push(e); } else g.shots.kill(s);
         g.impacts.play(s.x, s.y - 2);
         if (e.damage(s.damage)) this.killEnemy(e, true);
         else g.fx.hitSpark(s.x, s.y - 2, COLORS.C);
+        if (s.splash) this.splash(s, e);
+    }
+
+    /** missile blast: half damage to every other enemy within s.splash px */
+    splash(s, hit) {
+        const g = this.g, r2 = s.splash * s.splash;
+        g.fx.explosion(Math.round(s.x), Math.round(s.y), 's', 'cyan');
+        for (const e of [...g.waves.live]) {
+            if (e === hit || !e.alive) continue;
+            const dx = e.x - s.x, dy = e.y - s.y;
+            if (dx * dx + dy * dy < r2 && e.damage(s.damage * 0.5)) this.killEnemy(e, true);
+        }
     }
 
     killEnemy(e, byPlayer) {
@@ -35,6 +48,7 @@ export default class Combat {
         e.despawn();
         if (byPlayer) {
             const pts = this.addScore(t.score);
+            g.loot?.enemyDrop(t, x, y);
             this.stats.kills++;
             const up = g.combo.kill(t.score);
             this.stats.maxCombo = Math.max(this.stats.maxCombo, g.combo.mult);
@@ -76,6 +90,7 @@ export default class Combat {
     hurt(amount) {
         const g = this.g;
         if (g.god) { g.fx.hitSpark(g.player.x, g.player.y, COLORS.R); return; }
+        if (g.powerups?.absorb()) return;   // SHIELD power-up eats one hit
         const dead = g.player.damage(amount);
         g.combo.reset();
         if (dead) { g.startDeath(); return; }

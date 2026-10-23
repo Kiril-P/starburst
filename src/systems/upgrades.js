@@ -1,6 +1,7 @@
 // Between-wave upgrades. v1 offered "full heal" + one random not-yet-owned upgrade (dash, phase shift,
 // forcefield, improved thrusters). v2 keeps that offer shape and adds levels to each ability
 // (values in tuning.ABILITIES). When everything is maxed, a repeatable hull upgrade replaces it.
+// Weapon cards (ids 'w:*' / 'syn:*') come from the run's Arsenal and are applied by it, not by Player.
 import { ABILITIES } from './tuning.js';
 
 const sec = (ms) => `${(ms / 1000).toFixed(ms % 1000 ? 1 : 0)}S`;
@@ -41,16 +42,44 @@ export const UPGRADES = {
 export const HEAL = { id: 'heal', title: 'REPAIR', desc: 'Restore the hull to full health', icon: 'card_heal', tag: 'HEAL' };
 export const HULL = { id: 'hull', title: 'HULL PLATING', desc: '+20% max hull, fully repaired', icon: 'card_heal', tag: 'UPGRADE' };
 
-/** levels: { dash: 0..3, ... } -> UpgradeScreen options (heal + one random upgrade, shuffled like v1). */
-export function rollOptions(levels, rnd = Math.random) {
+/**
+ * levels: { dash: 0..3, ... } -> UpgradeScreen options. v1 offered heal + one random ability; v2 adds a weapon
+ * card from the arsenal (objects/weapons/Arsenal.offers) and, after a boss, a second weapon card.
+ * Synergies are rare: offered 35% of the time when one is unlocked (always after a boss).
+ * arsenal / opts are optional so the v1 call shape rollOptions(levels) still works.
+ */
+export function rollOptions(levels, rnd = Math.random, arsenal = null, opts = {}) {
     const open = Object.keys(UPGRADES).filter((id) => (levels[id] || 0) < UPGRADES[id].levels.length);
     // prefer abilities that aren't unlocked yet half of the time so new players see them early
     const fresh = open.filter((id) => !levels[id]);
     const pool = fresh.length && rnd() < 0.5 ? fresh : open;
     const pick = pool.length ? pool[Math.floor(rnd() * pool.length)] : null;
-    const options = [HEAL, pick ? describe(pick, levels[pick] || 0) : HULL];
-    if (rnd() < 0.5) options.reverse();
-    return options;
+    const options = [HEAL];
+    const weapons = arsenal ? arsenal.offers() : [];
+    options.push(pick ? describe(pick, levels[pick] || 0) : HULL);
+    const nWeapon = opts.boss ? 2 : 1;
+    for (let i = 0; i < nWeapon && weapons.length; i++) options.push(pickWeapon(weapons, rnd, opts.boss || i > 0));
+    return shuffle(options, rnd);
+}
+
+/** weighted weapon pick (removes it from `list`); synergies win outright on a lucky roll */
+function pickWeapon(list, rnd, rich) {
+    const syn = list.filter((o) => o.rare);
+    let o;
+    if (syn.length && rnd() < (rich ? 1 : 0.35)) o = syn[Math.floor(rnd() * syn.length)];
+    else {
+        const normal = list.filter((x) => !x.rare);
+        const src = normal.length ? normal : list;
+        let r = rnd() * src.reduce((t, x) => t + x.weight, 0);
+        o = src.find((x) => (r -= x.weight) < 0) || src[0];
+    }
+    list.splice(list.indexOf(o), 1);
+    return o;
+}
+
+function shuffle(a, rnd) {
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+    return a;
 }
 
 function describe(id, level) {

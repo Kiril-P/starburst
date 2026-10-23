@@ -11,7 +11,7 @@ import UpgradeScreen from '../ui/UpgradeScreen.js';
 import PauseMenu from '../ui/PauseMenu.js';
 import { save } from '../systems/Save.js';
 import { COLORS } from '../art/palette.js';
-import { PLAYER, ENEMY_BULLET, JUICE, TIER_BULLET_SPEED } from '../systems/tuning.js';
+import { ENEMY_BULLET, JUICE, TIER_BULLET_SPEED } from '../systems/tuning.js';
 import { currentDifficulty } from '../systems/difficulty.js';
 import { rollOptions, UPGRADES } from '../systems/upgrades.js';
 import Combo from '../systems/combo.js';
@@ -26,8 +26,10 @@ import Impacts from '../objects/Impacts.js';
 import BossDirector from '../objects/bosses/BossDirector.js';
 import { Sequencer } from '../objects/patterns.js';
 import { bulletsVsPlayer, shotsVsEnemies, playerVsEnemies } from '../objects/collisions.js';
+import Arsenal from '../objects/weapons/Arsenal.js';
+import Loot from '../objects/pickups/Loot.js';
+import PowerUps from '../objects/pickups/PowerUps.js';
 
-const SHOT_STYLE = { key: 'pshot_basic', base: 'pshot_basic', r: PLAYER.shotRadius, orient: false };
 const STEP_MS = 17;   // max simulation sub-step: keeps fast bullets from tunnelling on slow frames
 const ABILITY_KEYS = { dash: 'SHIFT', forcefield: 'Z', phase: 'X' };
 
@@ -47,12 +49,15 @@ export default class Game extends Phaser.Scene {
         this.combo = new Combo();
         this.seq = new Sequencer();
         this.enemyBullets = new BulletPool(this, { size: 1200, depth: DEPTH.PLAYER + 1 });  // above the ship: never hide a bullet
-        this.shots = new BulletPool(this, { size: 48, depth: DEPTH.PLAYER_BULLET, cullMargin: 12 });
+        this.shots = new BulletPool(this, { size: 160, depth: DEPTH.PLAYER_BULLET, cullMargin: 12 });
         this.impacts = new Impacts(this);
         this.combat = new Combat(this);
         this.player = new Player(this, W / 2, H - 76, save.ship, this.playerHooks());
         this.waves = new WaveManager(this, this.diff, this.waveHooks());
         this.bosses = new BossDirector(this);
+        this.arsenal = new Arsenal(this, this.player);   // weapons (objects/weapons)
+        this.loot = new Loot(this);                      // drops + pickups (objects/pickups)
+        this.powerups = new PowerUps(this);
         this.enemyCtx = {
             pool: this.enemyBullets, seq: this.seq, px: 0, py: 0, speed: 1, density: this.diff.patternDensity,
             damage: ENEMY_BULLET.damage * this.diff.enemyDamage, fireRateMod: 1,
@@ -75,9 +80,7 @@ export default class Game extends Phaser.Scene {
     playerHooks() {
         return {
             onFire: (x, y, angle) => {
-                this.shots.spawn(x, y, angle, PLAYER.shotSpeed, SHOT_STYLE, { damage: this.player.stats.damage });
-                this.fx.muzzle(x, y);
-                this.audio.play('player-shoot', { vol: 0.28, jitter: 120 });
+                this.arsenal.fire(x, y, angle);
             },
             onDash: () => {
                 this.intensity = JUICE.dashIntensity;
@@ -114,6 +117,7 @@ export default class Game extends Phaser.Scene {
                 this.audio.play('wave-complete', { vol: 0.8 });
                 this.waves.clearEnemies((e) => this.combat.killEnemy(e, false));
                 this.combat.cancelBullets(false);
+                this.loot.vacuum();
                 this.fx.flash(COLORS.A, 0.25, 400);
                 if (!this.waves.isBoss) this.hud.announce(`WAVE ${wave} CLEAR`, 'NICE FLYING');   // bosses get their own banner
                 if (wave > save.highestWaveCompleted) save.highestWaveCompleted = wave;
@@ -121,9 +125,9 @@ export default class Game extends Phaser.Scene {
             onUpgrade: (wave, done) => {
                 if (this.dying) return;
                 this.player.controllable = false;
-                this.upgradeScreen = new UpgradeScreen(this, rollOptions(this.player.levels), (opt) => {
+                this.upgradeScreen = new UpgradeScreen(this, rollOptions(this.player.levels, Math.random, this.arsenal, { boss: this.waves.isBoss }), (opt) => {
                     this.upgradeScreen = null;
-                    this.player.applyUpgrade(opt.id);
+                    if (!this.arsenal.apply(opt.id)) this.player.applyUpgrade(opt.id);
                     this.player.controllable = true;
                     this.announceUpgrade(opt);
                     done();
@@ -136,6 +140,7 @@ export default class Game extends Phaser.Scene {
     announceUpgrade(opt) {
         if (opt.id === 'heal' || opt.id === 'hull') { this.hud.toast('HULL REPAIRED', '#b7ff4a'); return; }
         if (opt.id === 'thrusters') { this.hud.toast('THRUSTERS UPGRADED', '#b7ff4a'); return; }
+        if (opt.tag === 'SYNERGY' || opt.id.startsWith('w:')) { this.hud.toast(`${opt.title} ${opt.tag === 'SYNERGY' ? 'SYNERGY' : 'ONLINE'}`, opt.tag === 'SYNERGY' ? '#ffb547' : '#39e7ff'); return; }
         const lv = this.player.levels[opt.id];
         this.hud.toast(lv === 1 ? `${UPGRADES[opt.id].title} UNLOCKED  [${ABILITY_KEYS[opt.id]}]` : `${UPGRADES[opt.id].title} LV${lv}`, '#39e7ff');
     }
@@ -158,6 +163,7 @@ export default class Game extends Phaser.Scene {
     step(dt) {
         const p = this.player;
         p.update(dt);
+        this.arsenal.update(dt);
         this.enemyCtx.px = p.x;
         this.enemyCtx.py = p.y;
         this.waves.update(dt, this.enemyCtx);
@@ -176,6 +182,8 @@ export default class Game extends Phaser.Scene {
             shotsVsEnemies(this.shots, boss, (s, e) => this.combat.shotHit(s, e));
             if (!this.dying) playerVsEnemies(p, boss, (e) => this.combat.ram(e));
         }
+        this.loot.update(dt);
+        this.powerups.update(dt);
         this.combo.update(dt);
     }
 
@@ -247,7 +255,7 @@ export default class Game extends Phaser.Scene {
     gameOver() {
         this.dying = false;
         this.audio.stop();
-        this.scene.start('GameOver', { score: this.combat.score, wave: this.waves.wave, stats: { ...this.combat.stats } });
+        this.scene.start('GameOver', { score: this.combat.score, wave: this.waves.wave, stats: { ...this.combat.stats }, build: this.arsenal.summary() });
     }
 
     cleanup() {
@@ -260,6 +268,7 @@ export default class Game extends Phaser.Scene {
         this.shots.destroy();
         this.impacts.destroy();
         this.player.destroy();
+        for (const k of ['arsenal', 'loot', 'powerups']) this[k]?.destroy();
         if (window.__dbg?.scene === this) delete window.__dbg;
     }
 }
