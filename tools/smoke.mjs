@@ -113,6 +113,11 @@ await step('settings + controls rebinding', async () => {
     await page.screenshot({ path: path.join(outDir, '02-controls.png') });
     await key('Escape'); await gone('MenuControls');
     await sleep(200);
+    // Settings has the keyboard back: CONTROLS -> AIM -> ENEMY BULLETS, cycle it right then left again
+    await key('ArrowDown'); await key('ArrowDown'); await key('ArrowRight');
+    const hc = await ev(() => localStorage.getItem('bulletContrast'));
+    await key('ArrowLeft');
+    if (hc !== 'hc') throw new Error(`ENEMY BULLETS row did not cycle (got ${hc})`);
     await key('Escape'); await gone('MenuSettings');
     await ev(() => localStorage.removeItem('keyBindings'));
     await sleep(150);

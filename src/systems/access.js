@@ -11,11 +11,28 @@ import { PALETTE } from '../art/palette.js';
 export const ASSIST = { bulletSpeed: 0.75, hp: 1.5, graze: 1.8 };
 const BASE_GRAZE = PLAYER.grazeRadius;
 
+/**
+ * Dev console: __access.state() shows the run's options; __access.set({ aim: 'mouse', bullets: 'cb', assist: true })
+ * saves them (they apply from the next run: __game.scene.getScene('Game').scene.restart()).
+ */
+function installDevHelpers() {
+    window.__access = {
+        state: () => ({ aim: save.aimMode, bullets: save.bulletContrast, assist: save.assist, graze: PLAYER.grazeRadius, leaderboardEligible: save.leaderboardEligible, bindings: save.bindings }),
+        set({ aim, bullets, assist } = {}) {
+            if (aim) save.aimMode = aim;
+            if (bullets) save.bulletContrast = bullets;
+            if (assist !== undefined) save.assist = assist;
+            return this.state();
+        }
+    };
+}
+
 export function applyRunAccess(scene) {
     const on = save.assist;
     // collisions.js reads PLAYER.grazeRadius directly; reset it every run so turning assist off restores the default
     PLAYER.grazeRadius = on ? Math.round(BASE_GRAZE * ASSIST.graze) : BASE_GRAZE;
     scene.assist = on;
+    if (import.meta.env.DEV) installDevHelpers();
     if (!on) return;
     // the difficulty object is this run's private copy (currentDifficulty() builds a new one), shared with WaveManager
     scene.diff.bulletSpeed *= ASSIST.bulletSpeed;
