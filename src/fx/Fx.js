@@ -161,6 +161,7 @@ export default class Fx {
 
     /** step effects by dt (ms, real time). Called by the scene; if a scene forgets, Fx steps itself. */
     update(dt) {
+        if (!this.p) return;   // already destroyed (scene shutdown)
         this.stepped = true;
         this.p.step(dt * this.clock.scale);
     }
