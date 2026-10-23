@@ -1,6 +1,6 @@
 # STARBURST v2 — Architecture & Contracts
 
-Phaser 3.90 + Vite. Native 640×360, pixel-art. Read `docs/STYLE.md` first. Old (v1) code for reference lives in `legacy/` (800×600, messy, **do not import from it** — read it to preserve mechanics/behaviour, then write clean code).
+Phaser 3.90 + Vite. Native 640×360, pixel-art. Read `docs/STYLE.md` first.
 
 ## Layout
 ```
@@ -54,7 +54,7 @@ tools/qa.mjs             smoke + leak test of every flow (see docs/QA.md)
 2. Depth values from `DEPTH`. No magic numbers for layout that relate to screen size: use `W`/`H`.
 3. Clean small modules (aim < 300 lines/file). No giant scenes. Comments explain *why*.
 4. Performance: pool bullets and particles; avoid per-frame allocations in hot loops; 60 fps with ~300 bullets on screen.
-5. Don't edit `legacy/`. Don't commit `tmp/`, `node_modules/`, `dist/`.
+5. Don't commit `tmp/`, `node_modules/`, `dist/`.
 6. Keep every file you own importable even when other modules are still stubs.
 
 ## How to run / look at things

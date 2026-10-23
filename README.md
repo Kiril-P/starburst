@@ -1,13 +1,12 @@
 # StarBurst
 
-![StarBurst bullet dodging](docs/media/19-starburst.gif)
-
 Dodge bullet patterns, fight bosses, and build a stronger ship between waves.
 
 **[▶ Play in browser](https://kpetrovski.me/play/starburst/)** · [itch.io](https://kirilp.itch.io/starburst)
 
-![StarBurst title screen](docs/media/19-starburst-title.png)
-![StarBurst gameplay](docs/media/19-starburst-gameplay.png)
+![StarBurst title screen](docs/media/title.png)
+![StarBurst gameplay](docs/media/gameplay.png)
+![StarBurst boss fight](docs/media/boss.png)
 
 ## How to play
 
@@ -16,7 +15,8 @@ Dodge bullet patterns, fight bosses, and build a stronger ship between waves.
 - When unlocked, **Shift** dashes, **Z** activates a forcefield, and **X** activates phase shift.
 - **Esc** pauses, **F** toggles fullscreen.
 - **Gamepad**: stick/D-pad move, A/RT fire, LB/RB dash, X forcefield, Y phase shift, B/Start pause. Touch screens get on-screen controls.
-- Survive timed waves and choose upgrades between them.
+- Survive timed waves and choose upgrades between them. Every 5th wave is a boss fight.
+- Graze bullets (near misses) to build your combo multiplier.
 
 Created for **Bullet Hell Jam 6**.
 
