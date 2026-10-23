@@ -15,6 +15,7 @@ import { createBestRun, createShipInfo } from './menu/InfoPanels.js';
 import { DIFFICULTY_INFO, SHIP_INFO } from './menu/data.js';
 import { playTitleMusic, fadeOutTitleMusic, audioLocked } from './menu/music.js';
 import { text, navButton } from './menu/helpers.js';
+import { addBossGalleryEntry } from './menu/BossGallery.js';
 
 // layout (native px)
 const NAV = { x: 16, w: 160, h: 22, y: 130, step: 26 };
@@ -45,6 +46,7 @@ export default class MainMenu extends Phaser.Scene {
         this.freshQuests = syncQuests(save).map((q) => q.id);
 
         this.buildNav();
+        addBossGalleryEntry(this);   // BOSSES button + [B] (owned by the bosses module)
         this.bestRun = createBestRun(this, NAV.x, 236, NAV.w, 62, save);
         this.shipInfo = createShipInfo(this, STAGE_CX, 258, 300);
         this.shipInfo.show(SHIP_INFO[SHIPS[shipIdx]]);
