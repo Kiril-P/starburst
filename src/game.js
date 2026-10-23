@@ -3,6 +3,7 @@ import '@fontsource/press-start-2p';
 import '@fontsource/silkscreen';
 import { W, H } from './config.js';
 import { SCENES } from './scenes/index.js';
+import { installPixelScaling } from './systems/display.js';
 
 const config = {
     type: Phaser.AUTO,
@@ -24,6 +25,7 @@ const config = {
 };
 
 const game = new Phaser.Game(config);
+installPixelScaling(game);
 
 if (import.meta.env.DEV) {
     window.__game = game; // debugging handle, dev only
