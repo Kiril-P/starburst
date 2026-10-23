@@ -48,7 +48,8 @@ export const TYPES_3 = {
             e.fuse -= dt;
             // blink faster as the fuse runs out
             const rate = e.fuse < 700 ? 60 : 260;
-            e.setFrame((((e.age / rate) | 0) & 1) ? 2 : 1);
+            const f = (((e.age / rate) | 0) & 1) ? 2 : 1;
+            if (e.frame.name !== f) e.setFrame(f);
             if (e.fuse > 0) return;
             const tier = Math.min(3, e.tier);
             ring(c.pool, e.x, e.y, { speed: V * 0.5 * c.speed, style: ORB_S, damage: c.damage, count: n(6 + tier * 2, c), offset: Math.random() * TAU });

@@ -149,7 +149,8 @@ export const TYPES_2 = {
             if ((e.cycle -= dt) <= 0) { e.firing = !e.firing; e.cycle = e.firing ? 1800 : 1200; }
             const tier = Math.min(3, e.tier);
             e.spinA += e.spinDir * (55 + tier * 8) * DEG * s;
-            e.setFrame((((e.spinA % (Math.PI / 2)) + Math.PI / 2) % (Math.PI / 2) / (Math.PI / 8)) | 0);
+            const f = (((e.spinA % (Math.PI / 2)) + Math.PI / 2) % (Math.PI / 2) / (Math.PI / 8)) | 0;
+            if (e.frame.name !== f) e.setFrame(f);   // setFrame resizes + emits: only on change
             if (!e.firing || (e.nextFire -= dt) > 0) return;
             const arms = tier >= 2 ? 4 : 2, step = TAU / arms;
             e.nextFire += (arms === 4 ? 300 : 210) / c.density;   // ~13 bullets/s either way while spinning

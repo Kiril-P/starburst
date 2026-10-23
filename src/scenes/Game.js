@@ -247,7 +247,7 @@ export default class Game extends Phaser.Scene {
     gameOver() {
         this.dying = false;
         this.audio.stop();
-        this.scene.start('GameOver', { score: this.combat.score, wave: this.waves.wave, stats: { ...this.combat.stats } });
+        this.scene.start('GameOver', { score: this.combat.score, wave: this.waves.wave, stats: { ...this.combat.stats }, biome: this.waves.biome });
     }
 
     cleanup() {
