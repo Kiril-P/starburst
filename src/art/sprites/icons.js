@@ -9,7 +9,7 @@ import { expandRows } from '../bake.js';
 // Every icon then gets a 1px 'k' outline so it reads on any background (HUD glass, bright FX).
 
 // mask letter -> [highlight, mid, shade]
-const RAMPS = {
+export const RAMPS = {
     S: ['6', '5', '3'], // steel
     T: ['5', '4', '2'], // darker steel
     Y: ['b', 'C', 'c'], // cyan
@@ -23,7 +23,7 @@ const RAMPS = {
 
 const solid = (rows, x, y) => y >= 0 && y < rows.length && x >= 0 && x < rows[y].length && rows[y][x] !== '.';
 
-function shade(rows) {
+export function shade(rows) {
     return rows.map((row, y) => [...row].map((ch, x) => {
         const ramp = RAMPS[ch];
         if (!ramp) return ch;
@@ -34,7 +34,7 @@ function shade(rows) {
 }
 
 // 4-connected 1px dark outline around every opaque pixel
-function outline(rows) {
+export function outline(rows) {
     return rows.map((row, y) => [...row].map((ch, x) => {
         if (ch !== '.') return ch;
         return solid(rows, x, y - 1) || solid(rows, x, y + 1) || solid(rows, x - 1, y) || solid(rows, x + 1, y) ? 'k' : '.';

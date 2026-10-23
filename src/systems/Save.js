@@ -2,6 +2,8 @@
 const num = (k, d) => { const v = parseFloat(localStorage.getItem(k)); return Number.isFinite(v) ? v : d; };
 const str = (k, d) => localStorage.getItem(k) || d;
 const set = (k, v) => { try { localStorage.setItem(k, String(v)); } catch (e) { /* storage unavailable */ } };
+// JSON values: a corrupt entry falls back to the default instead of breaking the menu
+const json = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v ?? d; } catch (e) { return d; } };
 
 export const save = {
     get masterVolume() { return num('masterVolume', 1); },
@@ -42,6 +44,22 @@ export const save = {
 
     get completedTasks() { try { return JSON.parse(localStorage.getItem('completedTasks') || '[]'); } catch (e) { return []; } },
     set completedTasks(v) { set('completedTasks', JSON.stringify(v)); },
+
+    // --- meta progression (systems/meta.js, achievements.js, leaderboard.js) ---------------------------------
+    get credits() { return Math.max(0, Math.floor(num('credits', 0))); },
+    set credits(v) { set('credits', Math.max(0, Math.floor(v))); },
+    get metaLevels() { return json('metaLevels', {}); },              // { hull: 2, damage: 1, ... }
+    set metaLevels(v) { set('metaLevels', JSON.stringify(v)); },
+    get unlockedShips() { return json('unlockedShips', ['normal']); }, // bought with credits (challenges are checked live)
+    set unlockedShips(v) { set('unlockedShips', JSON.stringify(v)); },
+    get achievements() { return json('achievements', {}); },          // { id: unlockedAtMs }
+    set achievements(v) { set('achievements', JSON.stringify(v)); },
+    get leaderboard() { return json('leaderboard', { normal: [], daily: [] }); },
+    set leaderboard(v) { set('leaderboard', JSON.stringify(v)); },
+    get lifetime() { return json('lifetime', {}); },                  // { runs, kills, graze, credits, dailies, purchases }
+    set lifetime(v) { set('lifetime', JSON.stringify(v)); },
+    get seenIntro() { return str('seenIntro', '0') === '1'; },
+    set seenIntro(v) { set('seenIntro', v ? '1' : '0'); },
 
     /** Record a finished run. Returns { newBestScore, newBestWave }. */
     recordRun(score, wave) {

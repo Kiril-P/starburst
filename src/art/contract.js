@@ -82,5 +82,12 @@ export const CONTRACT = {
     ui_logo_flare: [24, 24, 4],     // little lens-flare twinkle, animated (fps 8), centre it on LOGO_FLARE (export of sprites/ui.js, logo-local px)
     ui_arrow_l: [8, 8, 1], ui_arrow_r: [8, 8, 1],
     ui_check_off: [10, 10, 1], ui_check_on: [10, 10, 1],
-    ui_knob: [8, 12, 1]
+    ui_knob: [8, 12, 1],
+
+    // --- badges.js (owner: meta) -----------------------------------------------------------------
+    // achievement medals (systems/achievements.js ids) + ach_locked, and the hangar/credit icons
+    ...Object.fromEntries(['first_blood', 'exterminator', 'grazer', 'needle', 'combo8', 'combo16', 'wave5', 'wave10', 'wave20',
+        'boss1', 'boss3', 'score50k', 'score250k', 'untouchable', 'clutch', 'speedy5', 'tank5', 'hard5', 'daily', 'veteran',
+        'investor', 'fleet', 'locked'].map((id) => [`ach_${id}`, [16, 16, 1]])),
+    icon_credit: [16, 16, 1], icon_firerate: [16, 16, 1], icon_damage: [16, 16, 1], icon_graze: [16, 16, 1]
 };
