@@ -37,6 +37,15 @@ export const CONTRACT = {
     boss_drone: [18, 16, 2],
     boss_prism: [72, 72, 4],        // 0 open, 1 pulse, 2 charging (white-hot), 3 shut (armoured, invulnerable)
     boss_prism_shard: [14, 24, 2],  // orbits the Prism (not rotated)
+    // --- bosses2.js (owner: bosses): mid-bosses, Tempest, Colossus, the final boss -----------------
+    boss_lancer: [64, 50, 2], boss_gyre: [60, 60, 4], boss_bastion: [76, 50, 2], boss_manta: [80, 44, 2],
+    boss_tempest: [112, 64, 4],
+    boss_colossus: [128, 76, 2],
+    boss_colossus_core: [30, 30, 4],    // 0 shut, 1 open, 2 open pulse, 3 overload
+    boss_colossus_plate: [30, 20, 2],   // 0 intact, 1 cracked
+    boss_starburst: [104, 104, 3],      // 0 idle, 1 pulse, 2 supernova (frames set by code)
+    boss_star_node: [18, 18, 2],
+    boss_well: [33, 33, 4],             // gravity well vortex, animated
 
     // --- projectiles.js (owner: art-enemies) -----------------------------------------------------
     // default colour = magenta for orbs/rings, amber for needles, lime for shards. Variants listed.
