@@ -1,5 +1,5 @@
-// SETTINGS overlay: music / sfx volume, screen shake, flash effects, glow. Everything persists immediately via Save
-// and music volume is applied live. Keyboard: UP/DOWN pick a row, LEFT/RIGHT adjust, ENTER/SPACE toggles.
+// SETTINGS overlay: music / sfx volume, screen shake, flash effects, glow, graphics quality, FPS counter. Everything
+// persists immediately via Save and music volume is applied live. Keyboard: UP/DOWN pick a row, LEFT/RIGHT adjust, ENTER/SPACE toggles.
 import { COLORS, PALETTE } from '../../art/palette.js';
 import { createSlider, createToggle, Button } from '../../ui/widgets.js';
 import { save } from '../../systems/Save.js';
@@ -7,23 +7,32 @@ import { sfx } from '../../systems/sfx.js';
 import OverlayScene from './OverlayScene.js';
 import { setMusicVolume } from './music.js';
 import { text, setTextKeep } from './helpers.js';
+import { quality } from '../../systems/quality.js';
 
 const STEP = 0.1;
 const KEYMAP = { ArrowUp: 'up', w: 'up', ArrowDown: 'down', s: 'down', ArrowLeft: 'left', a: 'left', ArrowRight: 'right', d: 'right', Enter: 'ok', ' ': 'ok' };
 const ROW_H = 22;
 const pct = (v) => (v <= 0 ? 'OFF' : `${Math.round(v * 100)}%`);
 
-// Row definitions: kind 'slider' (0..1) or 'toggle' (bool).
+const QUALITIES = ['auto', 'high', 'low'];
+
+// Row definitions: kind 'slider' (0..1), 'toggle' (bool) or 'choice' (cycles options, shows def.text()).
 const ROWS = [
     { label: 'MUSIC', kind: 'slider', get: () => save.musicVolume, set: (v, sc) => { save.musicVolume = v; setMusicVolume(sc, v); } },
     { label: 'SOUND FX', kind: 'slider', get: () => save.soundVolume, set: (v, sc) => { save.soundVolume = v; sc.previewSfx(); } },
     { label: 'SCREEN SHAKE', kind: 'slider', get: () => save.screenShake, set: (v) => { save.screenShake = v; } },
     { label: 'FLASH EFFECTS', kind: 'toggle', get: () => save.flashEffects, set: (v) => { save.flashEffects = v; } },
-    { label: 'GLOW', kind: 'toggle', get: () => save.glow, set: (v) => { save.glow = v; } }
+    { label: 'GLOW', kind: 'toggle', get: () => save.glow, set: (v) => { save.glow = v; } },
+    {
+        label: 'GRAPHICS', kind: 'choice', options: QUALITIES, get: () => save.quality, text: () => quality.label,
+        // choosing AUTO again forgets an earlier "this device is slow" verdict so it re-measures
+        set: (v) => { save.quality = v; if (v === 'auto') save.autoLow = false; }
+    },
+    { label: 'SHOW FPS', kind: 'toggle', get: () => save.showFps, set: (v) => { save.showFps = v; } }
 ];
 
 export default class SettingsPanel extends OverlayScene {
-    constructor() { super('MenuSettings', 'SETTINGS', [300, 196]); }
+    constructor() { super('MenuSettings', 'SETTINGS', [300, 240]); }
 
     build(b) {
         this.rows = [];
@@ -56,6 +65,8 @@ export default class SettingsPanel extends OverlayScene {
         const v = def.get();
         if (def.kind === 'slider') {
             row.ctrl = createSlider(this, this.ctrlX + this.sliderW / 2, row.y, v, (nv) => this.change(row, Math.round(nv * 20) / 20, false), { w: this.sliderW });
+        } else if (def.kind === 'choice') {
+            row.ctrl = this.createChoice(row);
         } else {
             row.ctrl = createToggle(this, this.ctrlX + 5, row.y, v, (nv) => this.change(row, nv, false));
         }
@@ -63,7 +74,36 @@ export default class SettingsPanel extends OverlayScene {
         this.refreshValue(row);
     }
 
+    /** "<  AUTO (HIGH)  >" picker: arrows (or a click on the label) cycle through def.options */
+    createChoice(row) {
+        const c = this.add.container(this.ctrlX, row.y);
+        const al = this.add.image(0, -3, 'ui_arrow_l').setOrigin(0, 0);
+        const ar = this.add.image(this.sliderW, -3, 'ui_arrow_r').setOrigin(1, 0);
+        const label = text(this, this.sliderW / 2, 0, '', { size: 8, origin: [0.5, 0.5], color: PALETTE.w });
+        c.add([al, ar, label]);
+        const zone = (x, w, d) => {
+            const z = this.add.zone(x, 0, w, 16).setOrigin(0, 0.5).setInteractive({ useHandCursor: true });
+            z.on('pointerdown', () => { this.cycle(row, d); sfx(this, 'button-sound', { vol: 0.5 }); });
+            c.add(z);
+        };
+        zone(-4, 16, -1);
+        zone(16, this.sliderW - 32, 1);
+        zone(this.sliderW - 12, 16, 1);
+        c.label = label;
+        return c;
+    }
+
+    cycle(row, d) {
+        const o = row.def.options, i = o.indexOf(row.def.get());
+        this.change(row, o[(i + d + o.length) % o.length], false);
+    }
+
     refreshValue(row) {
+        if (row.def.kind === 'choice') {
+            setTextKeep(row.ctrl.label, row.def.text());
+            setTextKeep(row.value, '');
+            return;
+        }
         const v = row.def.get();
         setTextKeep(row.value, row.def.kind === 'slider' ? pct(v) : v ? 'ON' : 'OFF');
         row.value.setColor(row.def.kind === 'toggle' && !v ? PALETTE[3] : row.def.kind === 'slider' && v <= 0 ? PALETTE[3] : PALETTE.C);
@@ -114,7 +154,10 @@ export default class SettingsPanel extends OverlayScene {
             return;
         }
         const row = this.rows[this.focus], v = row.def.get();
-        if (row.def.kind === 'slider') {
+        if (row.def.kind === 'choice') {
+            this.cycle(row, key === 'left' ? -1 : 1);
+            sfx(this, 'button-sound', { vol: 0.5 });
+        } else if (row.def.kind === 'slider') {
             const d = key === 'left' ? -STEP : key === 'right' ? STEP : 0;
             if (d) this.change(row, Math.round(Math.min(1, Math.max(0, v + d)) * 10) / 10, true);
         } else {

@@ -3,7 +3,7 @@
 // and hit-stop / slow-mo apply to effects simply by scaling the dt we are given.
 import Phaser from 'phaser';
 
-const MAX_LIVE = 700;
+const MAX_LIVE = 700;   // LOW graphics quality halves this (see systems/quality.js)
 const ADD = Phaser.BlendModes.ADD, NORMAL = Phaser.BlendModes.NORMAL;
 
 function resetRecord(r) {
@@ -20,9 +20,13 @@ export default class Particles {
         this.freeRecords = [];
         this.freeSprites = [];
         this.freeTexts = [];
+        this.max = MAX_LIVE;
     }
 
-    get full() { return this.live.length >= MAX_LIVE; }
+    /** density 1 = full, 0.5 = LOW quality */
+    setDensity(d) { this.max = Math.round(MAX_LIVE * d); }
+
+    get full() { return this.live.length >= this.max; }
 
     /** Spawn a sprite record. Returns the record (configure its fields) or null when the pool is saturated. */
     sprite(key, frame, x, y, depth, add = false) {
