@@ -60,7 +60,13 @@ export const WAVES = {
     formationChance: [0.3, 0.25, 0.15, 0.1],    // by tier (late waves have enough going on)
     formationSpacing: 26,
     // pattern tier by wave (index = wave-1; waves past the end use the last entry). 0 = v1 behaviour.
-    tierByWave: [0, 0, 0, 1, 1, 2, 2, 3, 3, 3],
+    // Spread over the 20 authored waves (it used to max out at wave 8, built for v1's 10 boss-less waves).
+    tierByWave: [0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3],
+    // which v1 table row (waves.js, 1-based) each wave plays; values past the table's 10 rows are the last row plus
+    // that many endless steps (endlessSpawnFactor / endlessBulletSpeedStep). The v1 table was 10 waves with no
+    // bosses; with bosses on 3/5/8/10/... the timed waves used to reach row 10 at wave 11 and go endless from there.
+    // Boss-wave entries are unused. Past wave 20: the last entry + 1 endless step per wave.
+    tableRowByWave: [1, 2, 2, 3, 3, 4, 5, 5, 6, 6, 7, 8, 8, 9, 9, 10, 11, 11, 12, 12],
     maxHovering: 2,          // at most this many spiral-casting (hovering) enemies at once, so patterns stay legible
     // background biome per wave (fx/bgArt BIOMES: 0 violet, 1 teal, 2 magenta, 3 dusk, 4 toxic). Magenta/dusk are
     // avoided because magenta orbs / amber needles would melt into them. Past the end it alternates the last two.
@@ -74,7 +80,7 @@ export const WAVES = {
 // run (weapon levels, secondaries, synergies), and main bosses 2-3 are shuffled between waves 10 and 15, so the HP
 // multiplier is set by the WAVE the fight happens on. Tuned with the balance bot (docs/BALANCE.md).
 export const BOSSES = {
-    hpByWave: { 3: 1, 5: 1, 8: 1, 10: 1, 13: 1, 15: 1, 18: 1, 20: 1 },   // past wave 20: the wave-20 value (+ cycle)
+    hpByWave: { 3: 0.5, 5: 1.1, 8: 1.2, 10: 1.3, 13: 4.5, 15: 2.4, 18: 4, 20: 8 },   // past wave 20: the wave-20 value (+ cycle)
     cycleHp: 0.6                                                        // endless: each pass through the roster
 };
 export const bossHpScale = (wave) => BOSSES.hpByWave[wave] ?? BOSSES.hpByWave[((wave - 1) % 20) + 1] ?? 1;

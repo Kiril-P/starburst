@@ -10,7 +10,7 @@ import { S, hWall, vWall, gapNear, muzzleFans, spiral } from './attacks.js';
 const EMIT_X = 47, EMIT_Y = 17, EYE_Y = -4;
 const EMITTERS = [[-EMIT_X, EMIT_Y], [EMIT_X, EMIT_Y]];
 
-export const TEMPEST = { id: 'tempest', kind: 'main', name: 'THE TEMPEST', title: 'STORM SIREN', hp: 1700, phases: [0.66, 0.33], homeY: 64, bonus: 17000 };
+export const TEMPEST = { id: 'tempest', kind: 'main', name: 'THE TEMPEST', title: 'STORM SIREN', hp: 2000, phases: [0.66, 0.33], homeY: 64, bonus: 17000 };
 
 export default class Tempest extends Boss {
     constructor(game, opts) {

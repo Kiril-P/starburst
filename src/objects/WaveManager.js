@@ -45,9 +45,10 @@ export default class WaveManager {
 
     /** effective config for a wave number (1-based), including endless scaling past the authored table */
     config(wave) {
-        const last = WAVE_TABLE.length;
-        const base = WAVE_TABLE[Math.min(wave, last) - 1];
-        const extra = Math.max(0, wave - last);
+        const last = WAVE_TABLE.length, rows = WAVES.tableRowByWave;
+        const row = wave <= rows.length ? rows[wave - 1] : rows[rows.length - 1] + wave - rows.length;
+        const base = WAVE_TABLE[Math.min(row, last) - 1];
+        const extra = Math.max(0, row - last);
         const spawnF = Math.pow(WAVES.endlessSpawnFactor, extra) * this.diff.enemySpawn;
         return applySector({
             duration: base.duration * WAVES.durationScale,

@@ -50,7 +50,7 @@ export default class Lancer extends Boss {
     fans() { return muzzleFans(this, PRONGS, { volleys: this.phase ? 4 : 3, count: this.phase ? 5 : 3, spread: this.phase ? 36 : 24 }) + 900; }
 
     lance3() { return lances(this, { dy: NOSE_Y, count: 3, spreadDeg: 22, ms: 850 }) + 1100; }
-    lance5() { return lances(this, { dy: NOSE_Y, count: 5, spreadDeg: 16, ms: 800 }) + 1000; }
+    lance5() { return lances(this, { dy: NOSE_Y, count: 5, spreadDeg: 20, ms: 850 }) + 1000; }
 
     /** dash to the far side dropping accelerating needle pairs: gaps between drops let you slip through */
     strafe() {
