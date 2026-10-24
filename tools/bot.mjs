@@ -30,7 +30,7 @@ const brainSrc = fs.readFileSync(new URL('./bot/brain.js', import.meta.url), 'ut
 
 let server = null, base = get('--url', '');
 if (!base) {
-    server = await createServer({ logLevel: 'error', server: { port: 5400, strictPort: false } });
+    server = await createServer({ logLevel: 'error', server: { port: 5400, strictPort: false, hmr: false, watch: null } });
     await server.listen();
     base = server.resolvedUrls.local[0];
 }
