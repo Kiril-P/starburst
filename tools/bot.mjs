@@ -21,7 +21,8 @@ const list = (n, d) => get(n, d).split(',').filter(Boolean);
 const ships = list('--ships', 'normal,speedy,tank'), diffs = list('--diffs', 'normal'), profiles = list('--profiles', 'casual,skilled');
 const seeds = list('--seeds', '1,2,3').map(Number);
 const par = Number(get('--par', '8')), maxWave = Number(get('--max-wave', '20')), startWave = Number(get('--start-wave', '0'));
-const bossId = get('--boss', ''), trace = a.includes('--trace'), shots = get('--shots', ''), renderEvery = Number(get('--render-every', '30')), quiet = a.includes('--quiet');
+const bossId = get('--boss', ''), trace = a.includes('--trace'), shots = get('--shots', ''), renderEvery = Number(get('--render-every', '120')), quiet = a.includes('--quiet');
+const dbg = (...m) => { if (process.env.BOT_DEBUG) console.log(new Date().toISOString().slice(11, 19), ...m); };
 const out = get('--out', `tmp/bot/run-${Date.now()}.jsonl`);
 fs.mkdirSync(path.dirname(out), { recursive: true });
 const probeSrc = fs.readFileSync(new URL('./bot/probe.js', import.meta.url), 'utf8');
@@ -34,7 +35,7 @@ if (!base) {
     base = server.resolvedUrls.local[0];
 }
 base = base.replace(/\/$/, '');
-const browser = await puppeteer.launch({ executablePath: findChrome(get('--chrome')), headless: 'new', args: chromeArgs(960, 540), protocolTimeout: 600000 });
+const launch = () => puppeteer.launch({ executablePath: findChrome(get('--chrome')), headless: 'new', args: [...chromeArgs(960, 540), '--disable-renderer-backgrounding', '--disable-background-timer-throttling', '--disable-backgrounding-occluded-windows', '--disable-features=CalculateNativeWinOcclusion'], protocolTimeout: 600000 });
 
 /** runs before any page script: storage for this job, virtual-clock hook, never lose focus */
 function prelude(o) {
@@ -109,7 +110,7 @@ function skipAhead(o) {
     window.__dbg.skipToWave(o.startWave);
 }
 
-async function job(o) {
+async function job(o, browser) {
     const ctx = await browser.createBrowserContext();
     const page = await ctx.newPage();
     await page.setViewport({ width: 960, height: 540 });
@@ -119,7 +120,8 @@ async function job(o) {
     page.on('response', (r) => { if (r.status() >= 400) errors.push(`HTTP ${r.status()} ${r.url()}`); });
     await page.evaluateOnNewDocument(seedRandom, o.seed, true);
     await page.evaluateOnNewDocument(prelude, o);
-    const t0 = Date.now();
+    const t0 = Date.now(), tag = `${o.diff}/${o.profile}/${o.ship}/s${o.seed}`;
+    dbg(tag, 'start');
     let res;
     try {
         // a cold dev server transforms ~200 modules per page: with many pages at once that can take a while
@@ -128,7 +130,7 @@ async function job(o) {
                 await page.goto(base + '/?scene=Game', { waitUntil: 'load', timeout: 180000 });
                 await page.waitForFunction(() => window.__dbg && window.__dbg.scene.player && window.__game.loop.frame > 5, { timeout: 120000 });
                 break;
-            } catch (e) { if (tries >= 2) throw e; errors.length = 0; }
+            } catch (e) { dbg(tag, 'load failed', e.message); if (tries >= 2) throw e; errors.length = 0; }
         }
         await page.evaluate(probeSrc);
         await page.evaluate(brainSrc);
@@ -144,8 +146,11 @@ async function job(o) {
         const limitMs = 60 * 60 * 1000;   // an hour of game time is far past any run that isn't stuck
         if (o.trace) await page.evaluate(() => { window.__probe.trace = []; });
         let n = 0;
+        dbg(tag, 'loaded');
         do {
-            st = await page.evaluate(drive, 1200, o);
+            // watchdog: a stuck page (or an overloaded machine) must not hang the whole batch
+            st = await Promise.race([page.evaluate(drive, 1200, o), new Promise((_, no) => setTimeout(() => no(new Error('chunk watchdog: 1200 frames took > 180s')), 180000))]);
+            dbg(tag, 'chunk', n, JSON.stringify(st));
             if (shots) { fs.mkdirSync(shots, { recursive: true }); await page.screenshot({ path: path.join(shots, `${o.ship}-${o.profile}-${o.seed}-${String(n++).padStart(3, '0')}.png`) }); }
             if (o.trace) for (const l of await page.evaluate(() => window.__probe.trace.splice(0))) console.log(l);
         } while (!st.end && st.simMs < limitMs);
@@ -161,20 +166,25 @@ async function job(o) {
 
 // warm the dev server's module cache with one page before the parallel workers hit it
 {
+    dbg('warm-up', base);
+    const browser = await launch();
     const page = await browser.newPage();
     await page.goto(base + '/?scene=Game', { waitUntil: 'load', timeout: 300000 });
+    dbg('warm-up loaded');
     await page.waitForFunction(() => window.__dbg, { timeout: 300000 });
-    await page.close();
+    await browser.close();
 }
 
 const jobs = [];
 for (const diff of diffs) for (const profile of profiles) for (const ship of ships) for (const seed of seeds) jobs.push({ ship, diff, profile, seed, maxWave, startWave, boss: bossId, renderEvery, trace });
 let next = 0, done = 0;
 const t0 = Date.now();
+// one browser per worker: pages of one browser share a GPU process (SwiftShader) and slow each other down
 async function worker() {
+    const browser = await launch();
     while (next < jobs.length) {
         const o = jobs[next++];
-        const r = await job(o);
+        const r = await job(o, browser);
         fs.appendFileSync(out, JSON.stringify(r) + '\n');
         done++;
         if (!quiet) {
@@ -183,8 +193,8 @@ async function worker() {
                 `(${Math.round((r.simMs || 0) / 1000)}s sim / ${Math.round(r.realMs / 1000)}s real) ${r.death ? 'killed by ' + r.death.src : ''} ${boss}${r.errors.length ? ' ERRORS ' + r.errors.length : ''}${r.why ? ' ' + r.why : ''}`);
         }
     }
+    await browser.close();
 }
 await Promise.all(Array.from({ length: Math.min(par, jobs.length) }, worker));
-await browser.close();
 await server?.close();
 console.log(`${jobs.length} runs in ${Math.round((Date.now() - t0) / 1000)}s -> ${out}`);
