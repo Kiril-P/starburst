@@ -32,7 +32,8 @@ export const TYPES_2 = {
         fireRate: 3400, chargeMs: [1250, 1100, 1000, 950],
         init(e) {
             e.mode = 0; e.charge = 0; e.aimA = Math.PI / 2;
-            e.hoverY = rand(52, 84);   // below the HUD corner panels e.hoverMs = 9000; e.nextFire = rand(500, 1100);
+            e.hoverY = rand(52, 84);   // below the HUD corner panels
+            e.hoverMs = 9000; e.nextFire = rand(500, 1100);
         },
         think(e, dt, c) {
             const s = dt / 1000, t = e.type;
