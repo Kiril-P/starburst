@@ -34,7 +34,7 @@ export const DIFFICULTY_INFO = {
     },
     hard: {
         name: 'HARD', desc: 'MORE ENEMIES, HIGHER HEALTH, MORE DAMAGE',
-        mods: { health: 1.3, damage: 1.3, spawn: 0.8, max: 1.3 }, color: COLORS.R, css: PALETTE.R
+        mods: { health: 1.4, damage: 1.5, spawn: 0.8, max: 1.3 }, color: COLORS.R, css: PALETTE.R
     }
 };
 

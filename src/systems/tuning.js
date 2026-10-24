@@ -80,7 +80,7 @@ export const WAVES = {
 // run (weapon levels, secondaries, synergies), and main bosses 2-3 are shuffled between waves 10 and 15, so the HP
 // multiplier is set by the WAVE the fight happens on. Tuned with the balance bot (docs/BALANCE.md).
 export const BOSSES = {
-    hpByWave: { 3: 0.5, 5: 1.1, 8: 1.2, 10: 1.3, 13: 4.5, 15: 2.4, 18: 4, 20: 9.5 },   // past wave 20: the wave-20 value (+ cycle)
+    hpByWave: { 3: 0.5, 5: 1.1, 8: 1.2, 10: 1.3, 13: 4.5, 15: 2.4, 18: 4, 20: 11 },   // past wave 20: the wave-20 value (+ cycle)
     cycleHp: 0.6                                                        // endless: each pass through the roster
 };
 export const bossHpScale = (wave) => BOSSES.hpByWave[wave] ?? BOSSES.hpByWave[((wave - 1) % 20) + 1] ?? 1;
