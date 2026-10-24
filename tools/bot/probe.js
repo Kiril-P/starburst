@@ -98,6 +98,16 @@
                     b.__probe = true;
                     const A = b.attacks;
                     b.attacks = function (p) { return A.call(this, p).map((fn) => function () { P.atk = fn.name.replace('bound ', ''); return fn.apply(this, arguments); }); };
+                    // delayed parts of an attack (b.after: mortar bursts, walls after their telegraph) keep the label of
+                    // the attack that scheduled them; props (gravity wells) get their own
+                    const af = b.after;
+                    b.after = function (ms, fn) { const lab = P.atk; return af.call(this, ms, function () { const prev = P.src; P.src = `boss:${b.def.id}/p${b.phase + 1}/${lab}`; fn.apply(this, arguments); P.src = prev; }); };
+                    const pf = b.prop;
+                    b.prop = function (o) {
+                        const name = o.constructor.name, u = o.update;
+                        o.update = function () { const prev = P.src; P.src = `boss:${b.def.id}/p${b.phase + 1}/${name}`; const r = u.apply(this, arguments); P.src = prev; return r; };
+                        return pf.call(this, o);
+                    };
                 }
                 P.src = `boss:${b.def.id}/p${b.phase + 1}/${P.atk}`;
             }
