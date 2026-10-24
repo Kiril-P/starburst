@@ -87,7 +87,8 @@ export default class Boss {
     get hp01() { return this.hp / this.maxHp; }
     /** bullet speed / count helpers that respect difficulty + tier (enemyCtx) and the boss cycle */
     sp(k) { return V * k * this.c.speed * (1 + this.cycle * 0.06); }
-    n(count) { return Math.max(1, Math.round(count * this.c.density * (1 + this.cycle * 0.15))); }
+    /** def.density (default 1): per-boss pattern density on top of difficulty (balance knob, docs/BALANCE.md) */
+    n(count) { return Math.max(1, Math.round(count * this.c.density * (this.def.density ?? 1) * (1 + this.cycle * 0.15))); }
     get dmg() { return this.c.damage; }
 
     // --- damage --------------------------------------------------------------------------------------------

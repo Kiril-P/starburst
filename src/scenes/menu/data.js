@@ -10,7 +10,7 @@ export const SHIP_INFO = {
     },
     speedy: {
         name: 'NOVA DART', cls: 'SPEEDY', desc: 'LIGHTNING FAST, REDUCED DEFENCES',
-        stats: { hp: 0.3, damage: 0.5, speed: 1.0, fireRate: 1.0 },
+        stats: { hp: 0.4, damage: 0.5, speed: 1.0, fireRate: 1.0 },
         accent: COLORS.L, accentDark: COLORS.l, accentCss: PALETTE.L
     },
     tank: {

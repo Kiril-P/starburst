@@ -23,15 +23,15 @@ export const PLAYER = {
 // v1 ship classes (Player.applyShipStats). speed in v1 px/s; accel/decel are v1's per-frame lerp percentages.
 export const SHIPS = {
     normal: { hp: 100, speed: 430, accel: 60, decel: 30, damage: 20, fireRate: 500, accent: 0x39e7ff },
-    speedy: { hp: 70, speed: 550, accel: 80, decel: 50, damage: 15, fireRate: 400, accent: 0xb7ff4a },
-    tank: { hp: 150, speed: 300, accel: 40, decel: 20, damage: 25, fireRate: 650, accent: 0xffb547 }
+    speedy: { hp: 80, speed: 550, accel: 80, decel: 50, damage: 15, fireRate: 400, accent: 0xb7ff4a },
+    tank: { hp: 140, speed: 300, accel: 40, decel: 20, damage: 25, fireRate: 650, accent: 0xffb547 }
 };
 export const DIAGONAL_FACTOR = 0.8;    // v1 normalised diagonals to 80% speed
 
 // Abilities: level 1 = v1 values; later levels come from the upgrade list (systems/upgrades.js).
 export const ABILITIES = {
     dash: { cooldown: [5000, 3800, 2800], duration: [200, 220, 260], speed: 900 * SPEED_SCALE },
-    forcefield: { cooldown: [15000, 12000, 9000], bubbleMs: [900, 1200, 1600], cancelPoints: 5 },
+    forcefield: { cooldown: [16000, 13000, 10500], bubbleMs: [900, 1200, 1600], cancelPoints: 5 },
     phase: { cooldown: [15000, 12500, 10000], duration: [3000, 3500, 4000] },
     thrusters: { bonus: [100, 60] }      // v1: +100 speed (v1 px/s, scaled by SPEED_SCALE)
 };
