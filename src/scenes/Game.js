@@ -279,6 +279,6 @@ export default class Game extends Phaser.Scene {
         this.impacts.destroy();
         this.player.destroy();
         for (const k of ['arsenal', 'loot', 'powerups']) this[k]?.destroy();
-        if (window.__dbg?.scene === this) delete window.__dbg;
+        if (import.meta.env.DEV && window.__dbg?.scene === this) delete window.__dbg;
     }
 }
