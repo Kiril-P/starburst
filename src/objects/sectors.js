@@ -19,14 +19,17 @@ export const SECTORS = [
 
 // Per sector: `mul` scales existing spawn intervals by type (>1 = rarer), `pace` scales duration / bullet speed,
 // and plan[w] (w = wave within the sector, 0..3) gives the opener formation + extra spawners [type, everyMs].
+// w = 2 is the mid-boss wave (bosses/roster.js MID_OFFSET) and w = 4 the main boss, so a sector has three timed
+// waves: plan[0], plan[1], plan[3]. (plan[2] used to hold a timed wave that the mid-bosses silently replaced; its
+// new enemies were folded into plan[3] so every sector still introduces them.)
 const THEMES = [
     {
         mul: {}, pace: { duration: 1, bullets: 1 },
         plan: [
             { opener: 'vee', add: [['f:vee', 10000]] },
             { opener: 'swarm', add: [['f:sweep', 12000], ['f:swarm', 15000]] },
-            { opener: 'sweep', add: [['sniper', 11000], ['f:pincer', 14000]] },
-            { opener: 'pincer:spread', add: [['splitter', 8000], ['shield', 15000], ['f:circle', 16000]] }
+            null,
+            { opener: 'pincer:spread', add: [['sniper', 12000], ['splitter', 8000], ['shield', 15000], ['f:circle', 16000]] }
         ]
     },
     {
@@ -34,8 +37,8 @@ const THEMES = [
         plan: [
             { opener: 'shower', add: [['f:shower', 9000], ['minelayer', 13000], ['f:vee', 14000]] },
             { opener: 'vee:splitter', add: [['f:shower', 10000], ['splitter', 8000], ['minelayer', 12000]] },
-            { opener: 'minefield', add: [['f:shower', 9000], ['minelayer', 10000], ['sniper', 14000], ['f:circle:splitter', 18000]] },
-            { opener: 'circle', add: [['f:shower', 8000], ['splitter', 7000], ['minelayer', 9000], ['shield', 14000], ['f:swarm', 15000]] }
+            null,
+            { opener: 'minefield', add: [['f:shower', 8000], ['splitter', 7000], ['minelayer', 10000], ['sniper', 14000], ['shield', 14000], ['f:circle:splitter', 18000]] }
         ]
     },
     {
@@ -43,8 +46,8 @@ const THEMES = [
         plan: [
             { opener: 'turrets', add: [['turret', 9000], ['f:sweep', 12000]] },
             { opener: 'pincer', add: [['turret', 8500], ['shield', 11000], ['sniper', 12000]] },
-            { opener: 'snipers', add: [['turret', 8000], ['sniper', 10000], ['f:circle:spread', 16000], ['f:swarm', 14000]] },
-            { opener: 'turrets', add: [['turret', 7000], ['shield', 10000], ['sniper', 11000], ['f:vee:splitter', 12000]] }
+            null,
+            { opener: 'snipers', add: [['turret', 7000], ['shield', 10000], ['sniper', 11000], ['f:vee:splitter', 12000], ['f:swarm', 14000]] }
         ]
     },
     {
@@ -52,8 +55,8 @@ const THEMES = [
         plan: [
             { opener: 'swarm', add: [['f:sweep', 9000], ['f:swarm', 9000]] },
             { opener: 'pincer:kamikaze', add: [['f:swarm', 9000], ['sniper', 10000], ['splitter', 8000]] },
-            { opener: 'circle:spread', add: [['f:swarm', 8000], ['minelayer', 11000], ['sniper', 10000]] },
-            { opener: 'vee:splitter', add: [['f:swarm', 8000], ['turret', 10000], ['shield', 12000], ['splitter', 8000]] }
+            null,
+            { opener: 'circle:spread', add: [['f:swarm', 8000], ['turret', 10000], ['shield', 12000], ['splitter', 8000], ['minelayer', 11000]] }
         ]
     }
 ];
@@ -69,8 +72,8 @@ export function applySector(cfg, wave, spawnF) {
     const theme = THEMES[sectorOf(wave) % THEMES.length];
     const w = (wave - 1) % BOSS_EVERY;
     cfg.sector = sectorOf(wave);
-    if (w >= theme.plan.length) return cfg;   // boss wave: nothing spawns
     const plan = theme.plan[w];
+    if (!plan) return cfg;   // boss wave: nothing spawns
     for (const s of cfg.spawns) { s.every *= theme.mul[s.type] ?? 1; s.filler = true; }
     // the v1 filler may not take the last few slots: late waves spawn it so fast it would starve the sector's
     // own enemies and formations of room (WaveManager checks this reserve)

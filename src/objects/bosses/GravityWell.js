@@ -8,6 +8,7 @@ import { S } from './attacks.js';
 
 const CORE_R = 7;
 const SPARK_GAP = 140;
+const RING_CLEAR = 48;   // no ring while the player is this close to the core (it would spawn point-blank)
 
 export default class GravityWell {
     /** o: { life ms, radius px, pull px/s at the core, bend px/s^2 on bullets, ringEvery ms (0 = silent) } */
@@ -66,6 +67,9 @@ export default class GravityWell {
             if (bl.orient) bl.rotation = bl.angle0 + Math.PI / 2;
         }
         if (this.ringEvery && (this.ringT -= dt) <= 0) {
+            // the well drags the player toward its core: never emit a ring on top of them (it spawns at r=10)
+            const pdx = p.x - this.x, pdy = p.y - this.y;
+            if (p.alive && pdx * pdx + pdy * pdy < RING_CLEAR * RING_CLEAR) { this.ringT = 250; return true; }
             this.ringT = this.ringEvery;
             const n = this.b.n(10), off = this.age / 700;
             for (let k = 0; k < n; k++) {

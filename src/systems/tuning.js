@@ -23,16 +23,16 @@ export const PLAYER = {
 // v1 ship classes (Player.applyShipStats). speed in v1 px/s; accel/decel are v1's per-frame lerp percentages.
 export const SHIPS = {
     normal: { hp: 100, speed: 430, accel: 60, decel: 30, damage: 20, fireRate: 500, accent: 0x39e7ff },
-    speedy: { hp: 70, speed: 550, accel: 80, decel: 50, damage: 15, fireRate: 400, accent: 0xb7ff4a },
-    tank: { hp: 150, speed: 300, accel: 40, decel: 20, damage: 25, fireRate: 650, accent: 0xffb547 }
+    speedy: { hp: 80, speed: 550, accel: 80, decel: 50, damage: 15, fireRate: 400, accent: 0xb7ff4a },
+    tank: { hp: 140, speed: 300, accel: 40, decel: 20, damage: 25, fireRate: 650, accent: 0xffb547 }
 };
 export const DIAGONAL_FACTOR = 0.8;    // v1 normalised diagonals to 80% speed
 
 // Abilities: level 1 = v1 values; later levels come from the upgrade list (systems/upgrades.js).
 export const ABILITIES = {
     dash: { cooldown: [5000, 3800, 2800], duration: [200, 220, 260], speed: 900 * SPEED_SCALE },
-    forcefield: { cooldown: [15000, 12000, 9000], bubbleMs: [900, 1200, 1600], cancelPoints: 5 },
-    phase: { cooldown: [15000, 12500, 10000], duration: [3000, 3500, 4000] },
+    forcefield: { cooldown: [18000, 15000, 12000], bubbleMs: [900, 1200, 1600], cancelPoints: 5 },
+    phase: { cooldown: [16000, 14000, 12000], duration: [2500, 2800, 3200] },
     thrusters: { bonus: [100, 60] }      // v1: +100 speed (v1 px/s, scaled by SPEED_SCALE)
 };
 
@@ -60,7 +60,13 @@ export const WAVES = {
     formationChance: [0.3, 0.25, 0.15, 0.1],    // by tier (late waves have enough going on)
     formationSpacing: 26,
     // pattern tier by wave (index = wave-1; waves past the end use the last entry). 0 = v1 behaviour.
-    tierByWave: [0, 0, 0, 1, 1, 2, 2, 3, 3, 3],
+    // Spread over the 20 authored waves (it used to max out at wave 8, built for v1's 10 boss-less waves).
+    tierByWave: [0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3],
+    // which v1 table row (waves.js, 1-based) each wave plays; values past the table's 10 rows are the last row plus
+    // that many endless steps (endlessSpawnFactor / endlessBulletSpeedStep). The v1 table was 10 waves with no
+    // bosses; with bosses on 3/5/8/10/... the timed waves used to reach row 10 at wave 11 and go endless from there.
+    // Boss-wave entries are unused. Past wave 20: the last entry + 1 endless step per wave.
+    tableRowByWave: [1, 2, 2, 3, 3, 4, 5, 5, 6, 6, 7, 8, 8, 9, 9, 10, 11, 11, 12, 12],
     maxHovering: 2,          // at most this many spiral-casting (hovering) enemies at once, so patterns stay legible
     // background biome per wave (fx/bgArt BIOMES: 0 violet, 1 teal, 2 magenta, 3 dusk, 4 toxic). Magenta/dusk are
     // avoided because magenta orbs / amber needles would melt into them. Past the end it alternates the last two.
@@ -69,6 +75,15 @@ export const WAVES = {
     endlessSpawnFactor: 0.92,
     endlessBulletSpeedStep: 0.03
 };
+
+// Boss HP. Boss defs (objects/bosses/*) hold each boss's own base HP; the player's damage output grows a lot over a
+// run (weapon levels, secondaries, synergies), and main bosses 2-3 are shuffled between waves 10 and 15, so the HP
+// multiplier is set by the WAVE the fight happens on. Tuned with the balance bot (docs/BALANCE.md).
+export const BOSSES = {
+    hpByWave: { 3: 0.5, 5: 1.1, 8: 1.2, 10: 1.3, 13: 4.5, 15: 2.4, 18: 4, 20: 10 },   // past wave 20: the wave-20 value (+ cycle)
+    cycleHp: 0.6                                                        // endless: each pass through the roster
+};
+export const bossHpScale = (wave) => BOSSES.hpByWave[wave] ?? BOSSES.hpByWave[((wave - 1) % 20) + 1] ?? 1;
 
 // Bullet speed multiplier per tier: late waves get faster, denser patterns.
 export const TIER_BULLET_SPEED = [0.9, 1, 1.05, 1.1];

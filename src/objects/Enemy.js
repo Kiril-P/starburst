@@ -12,6 +12,7 @@ import { rngStream } from '../systems/rng.js';
 const rnd = rngStream('enemies');   // seeded in Daily Runs (systems/rng.js), Math.random otherwise
 const rand = (a, b) => a + rnd() * (b - a);
 const FLASH_MS = 70;
+const POINT_BLANK = 56;   // px: v1-style enemies hold fire this close to the player
 
 function pickWeighted(weights) {
     let total = 0;
@@ -98,6 +99,9 @@ export default class Enemy extends Phaser.GameObjects.Sprite {
             // only shoot while fully on screen and not in the bottom quarter (would be unfair point-blank)
             if (this.y > 6 && this.y < H * 0.78 && this.x > 4 && this.x < W - 4) {
                 this.nextFire -= dt;
+                // ...and hold fire while right next to the ship: an aimed shot from 40 px can't be read in time
+                const dx = c.px - this.x, dy = c.py - this.y;
+                if (this.nextFire <= 0 && dx * dx + dy * dy < POINT_BLANK * POINT_BLANK) this.nextFire = 250;
                 if (this.nextFire <= 0) {
                     this.nextFire += this.type.fireRate * c.fireRateMod;
                     this.type.attack(this, c, this.tier);

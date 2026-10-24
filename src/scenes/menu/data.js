@@ -10,7 +10,7 @@ export const SHIP_INFO = {
     },
     speedy: {
         name: 'NOVA DART', cls: 'SPEEDY', desc: 'LIGHTNING FAST, REDUCED DEFENCES',
-        stats: { hp: 0.3, damage: 0.5, speed: 1.0, fireRate: 1.0 },
+        stats: { hp: 0.4, damage: 0.5, speed: 1.0, fireRate: 1.0 },
         accent: COLORS.L, accentDark: COLORS.l, accentCss: PALETTE.L
     },
     tank: {
@@ -34,7 +34,7 @@ export const DIFFICULTY_INFO = {
     },
     hard: {
         name: 'HARD', desc: 'MORE ENEMIES, HIGHER HEALTH, MORE DAMAGE',
-        mods: { health: 1.3, damage: 1.3, spawn: 0.8, max: 1.3 }, color: COLORS.R, css: PALETTE.R
+        mods: { health: 1.4, damage: 1.5, spawn: 0.8, max: 1.3 }, color: COLORS.R, css: PALETTE.R
     }
 };
 

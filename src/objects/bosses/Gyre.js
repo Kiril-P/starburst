@@ -6,7 +6,8 @@ import { fan, angleTo } from '../patterns.js';
 import Boss from './Boss.js';
 import { S, spiral, rings } from './attacks.js';
 
-const LANE_W = 46;
+// the lane must cover the whole contact zone: rim radius 22 + player hitbox 3 + ram slack 2 = 27 px each side
+const LANE_W = 58;
 const DIVE_MS = 520, RISE_MS = 760;
 
 export const GYRE = { id: 'gyre', kind: 'mini', name: 'GYRE', title: 'SAWBLADE', hp: 850, phases: [0.5], homeY: 78, bonus: 5500, enterMs: 1800 };
