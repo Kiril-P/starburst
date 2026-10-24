@@ -12,13 +12,14 @@
     const PROFILES = {
         // lag = visual reaction + motor time; casual ~ an average adult, skilled ~ a practised shmup player
         casual: { lag: 280, think: 100, noise: 4, attention: 18, horizon: 480, kinematic: false, telegraphs: 0.4, lapse: 0.05, lapseMs: 450, abilityUse: 0.4, greedy: 0.6, policy: 'casual' },
-        skilled: { lag: 170, think: 50, noise: 1.5, attention: 60, horizon: 750, kinematic: true, telegraphs: 1, lapse: 0, lapseMs: 0, abilityUse: 1, greedy: 1, policy: 'skilled' },
+        skilled: { lag: 170, think: 50, noise: 1.5, attention: 60, horizon: 750, kinematic: true, telegraphs: 1, lapse: 0, lapseMs: 0, abilityUse: 1, greedy: 1.8, policy: 'skilled' },
         // no reaction delay, sees everything: what it still can't dodge is a fairness suspect, not a skill issue
         oracle: { lag: 0, think: 33, noise: 0, attention: 250, horizon: 900, kinematic: true, telegraphs: 1, lapse: 0, lapseMs: 0, abilityUse: 1, greedy: 1, policy: 'skilled' }
     };
     const KEYS = { left: 'ArrowLeft', right: 'ArrowRight', up: 'ArrowUp', down: 'ArrowDown', fire: 'Space', dash: 'ShiftLeft', forcefield: 'KeyZ', phase: 'KeyX' };
     const DIRS = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
     const SUB = 50;   // ms per prediction sub-step
+    const SHOT_SPEED = 420;   // px/s, the blaster (tuning PLAYER.shotSpeed); close enough for leading other weapons
     const Wd = 640, Hd = 360;
 
     const B = (window.__brain = { held: new Set(), queue: [], stats: { decisions: 0, lapses: 0 } });
@@ -170,8 +171,10 @@
             cost += 3 * edge(x, minX, maxX, 50) + 2 * edge(y, minY, maxY, 30);
             cost += 0.0003 * (y - Hd * 0.74) ** 2;
             if (tgt) {
-                // does the firing ray (8-way, along the last pressed direction) pass the target?
-                const rx = tgt.x - x, ry = tgt.y - y, ca = Math.cos(q.aim), sa = Math.sin(q.aim);
+                // does the firing ray (8-way, along the last pressed direction) pass the target? Skilled pilots lead a
+                // moving target by its velocity x shot flight time; casual ones aim where it is.
+                const lead = P.policy === 'skilled' ? Math.hypot(tgt.x - x, tgt.y - y) / SHOT_SPEED : 0;
+                const rx = tgt.x + (tgt.vx || 0) * lead - x, ry = tgt.y + (tgt.vy || 0) * lead - y, ca = Math.cos(q.aim), sa = Math.sin(q.aim);
                 const ahead = rx * ca + ry * sa, perp = Math.abs(-rx * sa + ry * ca);
                 cost += 1.6 * P.greedy * (ahead > 0 ? Math.min(1, Math.max(0, perp - tgt.r) / 40) : 1);
                 cost += 0.25 * P.greedy * Math.min(1, Math.abs(rx) / 160);
@@ -203,6 +206,12 @@
 
     /** what to shoot at: boss weak spot, else the enemy closest in x above us (a casual player picks the nearest) */
     function target(g, p) {
+        const t = pickTarget(g, p);
+        if (!t) return null;
+        const v = body(t, 0);   // velocity estimate from the body tracker
+        return { x: t.x, y: t.y, r: t.r, vx: v.vx, vy: v.vy };
+    }
+    function pickTarget(g, p) {
         const ts = g.bosses.targets, boss = g.bosses.boss;
         if (ts.length) {
             // armour first (Colossus: the core deflects until every plate is gone), else the best weak spot
@@ -252,7 +261,7 @@
             if (!pk.alive) continue;
             const kind = pk.def.kind;
             const w = kind === 'repair' ? (low < 0.7 ? 2.5 : 0.2) : kind === 'gem' ? 0.15 : 1.2;
-            out.push({ x: pk.px, y: pk.py, w: w * B.prof.greedy });
+            out.push({ x: pk.px, y: pk.py, w: w * Math.min(1, B.prof.greedy) });
         }
         return out;
     }
