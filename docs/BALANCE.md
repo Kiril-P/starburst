@@ -120,14 +120,14 @@ AFTER the difficulty rises with the sectors and peaks at the bosses and the fina
   bursts that are telegraphed at the landing point and spawn their bullets there, so bullet age is short by design.
   The oracle took 0 hits from them; casual/skilled bots get hit because they stand in the telegraph too long.
 - Upgrade uptake (AFTER, all runs): drones, missiles, forcefield, dash, blaster, phase, thrusters, then spread;
-  heal 103 picks; synergies (swarm, hunter) are taken when available. Forcefield uses per run dropped from 10.6 to
-  12.3 overall because runs are now longer, but per minute it went down after the cooldown change.
+  heal 103 picks; synergies (swarm, hunter) are taken when available. Forcefield uses per run: 10.6 → 12.3
+  (runs are much longer now), phase 3.6 → 5.0.
 
 ## Bugs fixed
 
 | commit | bug |
 |---|---|
-| `86902f6` | **Sniper never initialised** `hoverMs` / `nextFire` (swallowed by a trailing comment) — snipers fired every frame / never left. |
+| `86902f6` | **Sniper never initialised** `hoverMs` / `nextFire` (swallowed by a trailing comment) — both stayed undefined (NaN timers), so snipers never fired and never left. |
 | `60f7a89` | **Sector timed-wave plan 3 unreachable**: the mid-boss waves (3/8/13/18) replaced the third timed wave of every sector, so its new enemy (e.g. snipers) first appeared a sector late. Dropped those plan slots and folded their enemies into the next plan. |
 | `24ebc98` | **Wave table ran out at wave 11**: the 10-row v1 table was indexed by wave number, so from wave 11 on it went into endless-mode scaling (the w9/w11 death cliffs). New `WAVES.tableRowByWave` spreads the rows over 20 waves. |
 | `24ebc98` | **Flat boss HP**: late bosses melted (Bastion 8 s, Manta 9 s, final 20 s). `BOSSES.hpByWave` scales by the wave the boss is fought on. |
@@ -144,8 +144,8 @@ AFTER the difficulty rises with the sectors and peaks at the bosses and the fina
 | Lancer `lance5` | 16°, 800 ms | 20°, 850 ms | the w3 wall: casual bots couldn't read the 5-lance fan |
 | Hive / Tempest base HP | 1500 / 1700 | 2000 / 2000 | 13 s / 28 s fights |
 | Starburst `density` / `damage` (new `def.damage` knob in `Boss.dmg`) | 1 / 1 | 1.5 / 1.65 | with HP alone the final was long but harmless |
-| forcefield cooldown | lower | 18 / 15 / 12 s | skilled bots blocked almost every hit with it |
-| phase cooldown / duration | lower / longer | 16 / 14 / 12 s, 2.5 / 2.8 / 3.2 s | same |
+| forcefield cooldown | 15 / 12 / 9 s | 18 / 15 / 12 s | skilled bots blocked almost every hit with it |
+| phase cooldown / duration | 15 / 12.5 / 10 s, 3 / 3.5 / 4 s | 16 / 14 / 12 s, 2.5 / 2.8 / 3.2 s | same |
 | speedy / tank hull | 70 / 150 | 80 / 140 | speedy far behind, tank far ahead (still true, see below) |
 | hard `enemyHealth` / `enemyDamage` | 1.3 / 1.3 | 1.4 / 1.5 | hard skilled still beat the final too often after the curve fix |
 
