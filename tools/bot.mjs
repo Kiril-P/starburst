@@ -42,7 +42,7 @@ for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(sig, () => {
     process.exit(130);
 });
 const launch = async () => { const b = await launchRaw(); browsers.add(b); b.on('disconnected', () => browsers.delete(b)); return b; };
-const launchRaw = () => puppeteer.launch({ executablePath: findChrome(get('--chrome')), headless: 'new', args: [...chromeArgs(960, 540), '--disable-renderer-backgrounding', '--disable-background-timer-throttling', '--disable-backgrounding-occluded-windows', '--disable-features=CalculateNativeWinOcclusion'], protocolTimeout: 900000, detached: true, handleSIGINT: false, handleSIGTERM: false, handleSIGHUP: false });
+const launchRaw = () => puppeteer.launch({ executablePath: findChrome(get('--chrome')), headless: 'new', args: [...chromeArgs(960, 540), '--disable-renderer-backgrounding', '--disable-background-timer-throttling', '--disable-backgrounding-occluded-windows', '--disable-features=CalculateNativeWinOcclusion', '--disable-audio-output', '--mute-audio'], protocolTimeout: 900000, detached: true, handleSIGINT: false, handleSIGTERM: false, handleSIGHUP: false });
 
 /** runs before any page script: storage for this job, virtual-clock hook, never lose focus */
 function prelude(o) {
