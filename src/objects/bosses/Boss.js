@@ -89,7 +89,8 @@ export default class Boss {
     sp(k) { return V * k * this.c.speed * (1 + this.cycle * 0.06); }
     /** def.density (default 1): per-boss pattern density on top of difficulty (balance knob, docs/BALANCE.md) */
     n(count) { return Math.max(1, Math.round(count * this.c.density * (this.def.density ?? 1) * (1 + this.cycle * 0.15))); }
-    get dmg() { return this.c.damage; }
+    /** def.damage (default 1): per-boss bullet damage multiplier on top of difficulty */
+    get dmg() { return this.c.damage * (this.def.damage ?? 1); }
 
     // --- damage --------------------------------------------------------------------------------------------
     hit(n, t) {

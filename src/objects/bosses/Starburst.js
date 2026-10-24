@@ -16,7 +16,7 @@ const NODES = 4, TIPS = [[-48, 4], [48, 4], [0, 50]];
 const F_IDLE = 0, F_PULSE = 1, F_NOVA = 2;
 
 export const STARBURST = {
-    id: 'starburst', kind: 'final', name: 'THE STARBURST', title: 'HEART OF THE SECTOR', hp: 3200, phases: [0.75, 0.5, 0.25], density: 1.25,
+    id: 'starburst', kind: 'final', name: 'THE STARBURST', title: 'HEART OF THE SECTOR', hp: 3200, phases: [0.75, 0.5, 0.25], density: 1.5, damage: 1.25,
     homeY: 98, bonus: 50000, enterMs: 5200, phaseNames: ['AWAKENING', 'BROOD STORM', 'TEMPEST', 'SUPERNOVA']
 };
 
