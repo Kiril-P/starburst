@@ -5,3 +5,12 @@ dist/
 marketing/
 node_modules/
 tmp/
+.env
+.env.*
+*.pem
+*.key
+*.log
+.claude/
+.idea/
+.vscode/
+Thumbs.db

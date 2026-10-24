@@ -10,6 +10,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Least privilege: the workflow only reads the repo. No secrets are used anywhere in this file.
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -23,6 +27,8 @@ jobs:
       CHROME_PATH: /usr/bin/google-chrome
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-node@v4
         with:
@@ -34,8 +40,14 @@ jobs:
       - name: Static checks (syntax, sprite maps, texture contract, manifest)
         run: npm run check
 
+      - name: Dependency audit (production deps; fails on high severity)
+        run: npm audit --omit=dev --audit-level=high
+
       - name: Production build
         run: npm run build
+
+      - name: Compliance (asset allowlist, secrets, licence metadata, no dev hooks / CSP in dist)
+        run: npm run compliance -- --require-dist
 
       - name: Bundle size report
         run: du -sh dist dist/assets && ls -l dist/assets/*.js
