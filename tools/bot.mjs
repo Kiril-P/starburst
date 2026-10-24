@@ -30,7 +30,10 @@ const brainSrc = fs.readFileSync(new URL('./bot/brain.js', import.meta.url), 'ut
 
 let server = null, base = get('--url', '');
 if (!base) {
-    server = await createServer({ logLevel: 'error', server: { port: 5400, strictPort: false, hmr: false, watch: null } });
+    // --root DIR: serve another checkout (e.g. `git worktree add tmp/base <commit>` + a node_modules symlink) to
+// measure a baseline while the working tree moves on
+    const root = path.resolve(get('--root', '.'));
+    server = await createServer({ root, logLevel: 'error', server: { port: 5400, strictPort: false, hmr: false, watch: null, fs: { allow: [root, path.resolve('node_modules')] } } });
     await server.listen();
     base = server.resolvedUrls.local[0];
 }
@@ -165,7 +168,7 @@ async function job(o, browser) {
         const summary = await page.evaluate(() => ({ ...window.__probe.summary(), brain: window.__brain.stats }));
         res = { ...o, ...st.end, simMs: st.simMs, realMs: Date.now() - t0, errors, ...summary };
     } catch (e) {
-        res = { ...o, result: 'crash', why: e.message.slice(0, 300), errors, realMs: Date.now() - t0 };
+        res = { ...o, result: 'crash', why: e.message.slice(0, 300), stack: (e.stack || '').slice(0, 1200), errors, realMs: Date.now() - t0 };
     }
     await ctx.close().catch(() => {});
     return res;
@@ -205,3 +208,4 @@ async function worker() {
 await Promise.all(Array.from({ length: Math.min(par, jobs.length) }, worker));
 await server?.close();
 console.log(`${jobs.length} runs in ${Math.round((Date.now() - t0) / 1000)}s -> ${out}`);
+process.exit(0);   // a lingering Chrome / Vite handle must not keep a finished batch alive

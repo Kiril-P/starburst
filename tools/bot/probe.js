@@ -39,7 +39,8 @@
                 pending.set(dst, [canvas, noRepeat, flipY]);
                 return dst;
             };
-            P.flushTextures = () => { for (const [dst, [c, nr, fy]] of pending) up.call(r, c, dst, nr, fy); pending.clear(); };
+            // a texture destroyed since (pooled float texts) has no gl any more: nothing to upload
+            P.flushTextures = () => { for (const [dst, [c, nr, fy]] of pending) if (dst.gl && dst.webGLTexture) up.call(r, c, dst, nr, fy); pending.clear(); };
         }
     };
 
