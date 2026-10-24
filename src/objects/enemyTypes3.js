@@ -36,7 +36,7 @@ export const TYPES_3 = {
     },
 
     mine: {
-        key: 'enemy_mine', radius: 4, hp: 6, score: 25, minor: true, speed: 14, explosion: 's', shake: 0,
+        key: 'enemy_mine', radius: 4, hp: 6, score: 25, minor: true, chain: true, speed: 14, explosion: 's', shake: 0,
         init(e) { e.vy = 34; e.mode = 0; e.timer = 900; e.fuse = 0; e.stop(); e.setFrame(0); },
         think(e, dt, c) {
             const s = dt / 1000;

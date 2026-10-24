@@ -115,7 +115,10 @@ export default class Game extends Phaser.Scene {
             onIntro: (wave, cfg) => {
                 this.bg.setBiome(this.waves.biome);
                 this.enemyCtx.speed = TIER_BULLET_SPEED[this.waves.tier] * cfg.bulletSpeed * this.diff.bulletSpeed;
-                if (!this.bosses.intro(wave)) this.hud.announce(`WAVE ${wave}`, `SURVIVE ${Math.round(cfg.duration / 1000)}S`);
+                if (!this.bosses.intro(wave)) {
+                    const sc = cfg.script;   // scripted waves get a name + hint (objects/waveScripts.js)
+                    this.hud.announce(sc ? sc.name : `WAVE ${wave}`, sc ? `WAVE ${wave}  //  ${sc.sub}` : `SURVIVE ${Math.round(cfg.duration / 1000)}S`);
+                }
             },
             onStart: () => {},
             onClear: (wave) => {
@@ -124,7 +127,7 @@ export default class Game extends Phaser.Scene {
                 this.combat.cancelBullets(false);
                 this.loot.vacuum();
                 this.fx.flash(COLORS.A, 0.25, 400);
-                if (!this.waves.isBoss) this.hud.announce(`WAVE ${wave} CLEAR`, 'NICE FLYING');   // bosses get their own banner
+                if (!this.waves.isBoss) this.hud.announce(`WAVE ${wave} CLEAR`, this.waves.cfg?.script?.clear ?? 'NICE FLYING');   // bosses get their own banner
                 if (wave > save.highestWaveCompleted) save.highestWaveCompleted = wave;
             },
             onUpgrade: (wave, done) => {

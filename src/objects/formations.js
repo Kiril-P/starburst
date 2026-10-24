@@ -5,6 +5,7 @@
 // Fairness: formations enter from the top or the upper side edges only (never from below, where the player is),
 // shrink when the wave is near its max-active cap, and grow with the pattern tier.
 import { W } from '../config.js';
+import { SET_PIECES } from './formationsSet.js';
 
 const rand = (a, b) => a + Math.random() * (b - a);
 const ease = (k) => 1 - (1 - k) * (1 - k);
@@ -15,6 +16,7 @@ const sized = (f, n) => Math.max(2, Math.round(n * Math.min(1.2, f.wm.diff?.patt
 
 /** member = { at: ms delay, type, x, y, path?, extra?, after?(e) } */
 const DEFS = {
+    ...SET_PIECES,
     // classic V: swoops in, holds the shape while gliding and swaying in sync, then breaks off
     vee(f, type, tier) {
         const count = tier >= 1 && sized(f, 5) >= 4 ? 5 : 3, x0 = rand(90, W - 90), out = [];
@@ -123,7 +125,7 @@ export default class Formations {
     constructor(wm) { this.wm = wm; this.queue = []; }
 
     /** name 'vee' | 'vee:spread' ... Returns false (and spawns nothing) if the wave has no room for it now. */
-    launch(spec, force = false) {
+    launch(spec, force = false, delay = 0) {
         const [name, type = 'basic'] = spec.split(':');
         const def = DEFS[name];
         if (!def) return false;
@@ -131,7 +133,7 @@ export default class Formations {
         // all-or-nothing keeps the shape readable; minor/meteor members don't need room
         const need = members.filter((m) => m.type !== 'meteor').length;
         if (!force && need > 0 && this.wm.room() < Math.ceil(need * 0.6)) return false;
-        for (const m of members) this.queue.push(m);
+        for (const m of members) { m.at += delay; this.queue.push(m); }
         return true;
     }
 

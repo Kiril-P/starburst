@@ -9,6 +9,8 @@ import { isBossWave } from './bosses/roster.js';   // main bosses every 5th wave
 import { resolveType, ENEMY_TYPES } from './enemyTypes.js';
 import Enemy from './Enemy.js';
 import Formations from './formations.js';
+import { applyScript } from './waveScripts.js';
+import { runEvent, eventDue } from './waveEvents.js';
 import { applySector, sectorBiome, sectorInfo, isSectorStart } from './sectors.js';
 import SectorBanner from '../fx/SectorBanner.js';
 
@@ -49,12 +51,12 @@ export default class WaveManager {
         const base = WAVE_TABLE[Math.min(wave, last) - 1];
         const extra = Math.max(0, wave - last);
         const spawnF = Math.pow(WAVES.endlessSpawnFactor, extra) * this.diff.enemySpawn;
-        return applySector({
+        return applyScript(applySector({
             duration: base.duration * WAVES.durationScale,
             max: Math.round(base.max * WAVES.maxActiveScale * this.diff.maxEnemies),
             spawns: base.spawns.map(([type, every]) => ({ type, every: every * spawnF })),
             bulletSpeed: 1 + extra * WAVES.endlessBulletSpeedStep
-        }, wave, spawnF);
+        }, wave, spawnF), wave, spawnF);
     }
 
     start(wave) {
@@ -85,7 +87,9 @@ export default class WaveManager {
     beginSpawning() {
         this.state = 'active';
         // v1 staggers each enemy type's first spawn by 800ms
-        this.spawners = this.cfg.spawns.map((s, i) => ({ type: s.type, every: s.every, filler: !!s.filler, next: i * WAVES.staggerMs + (s.type.startsWith('f:') ? s.every * 0.5 : 0) }));
+        this.spawners = this.cfg.spawns.map((s, i) => ({ type: s.type, every: s.every, filler: !!s.filler, next: s.delay ?? (i * WAVES.staggerMs + (s.type.startsWith('f:') ? s.every * 0.5 : 0)) }));
+        this.elapsed = 0; this.calm = 0; this.surge = 1;
+        this.events = (this.cfg.events || []).map((e) => ({ ...e, done: false }));   // scripted timeline (waveScripts.js)
         if (this.cfg.opener) this.formations.launch(this.cfg.opener, true);   // every wave opens with a set piece
         this.hooks.onStart(this.wave);
     }
@@ -97,8 +101,12 @@ export default class WaveManager {
                 break;
             case 'active':
                 this.timeLeft -= dt;
+                this.elapsed += dt;
+                for (const ev of this.events) if (!ev.done && eventDue(this, ev)) { ev.done = true; runEvent(this, ev); }
+                const calm = (this.calm -= dt) > 0;   // scripted lull: spawners hold (formations already queued still arrive)
                 for (const sp of this.spawners) {
-                    if ((sp.next -= dt) > 0) continue;
+                    if (calm) { sp.next = Math.max(sp.next, 700); continue; }
+                    if ((sp.next -= dt * this.surge) > 0) continue;
                     const j = sp.every * WAVES.spawnJitter;
                     sp.next += Math.max(WAVES.minSpawnMs, sp.every + rand(-j, j));
                     if (this.room() > (sp.filler ? this.cfg.reserve || 0 : 0)) this.spawnGroup(resolveType(sp.type, rnd));

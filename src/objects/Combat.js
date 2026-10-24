@@ -12,6 +12,8 @@ export default class Combat {
         this.g = game;
         this.score = 0;
         this.stats = { graze: 0, maxCombo: 1, kills: 0 };
+        this.streak = 0; this.lastKill = -1e9;   // rapid-kill streak (popup every 5)
+        this.chainLen = 0; this.lastChain = -1e9;
     }
 
     addScore(base, useCombo = true) {
@@ -52,6 +54,7 @@ export default class Combat {
             this.stats.kills++;
             const up = g.combo.kill(t.score);
             this.stats.maxCombo = Math.max(this.stats.maxCombo, g.combo.mult);
+            this.streakKill();
             g.fx.floatText(x, y - 10, String(pts), g.combo.mult > 1 ? '#ffe3a0' : '#f4faff', 8);
             if (up && g.combo.mult >= 2) g.fx.floatText(x, y - 20, `x${g.combo.mult}`, '#39e7ff', 8);
         }
@@ -73,7 +76,39 @@ export default class Combat {
                 }
             }
         }
+        if (byPlayer && (e.volatile || t.chain)) this.chain(x, y, e.volatile ? 58 : 64);
         if (t.onKill) t.onKill(e, g, byPlayer, x, y);   // splitters break apart (enemyTypes2.js)
+    }
+
+    /** kills within 0.7s of each other build a streak; every 5th pays a flat bonus and pops a label by the ship */
+    streakKill() {
+        const g = this.g, now = g.time.now;
+        this.streak = now - this.lastKill < 700 ? this.streak + 1 : 1;
+        this.lastKill = now;
+        if (this.streak < 5 || this.streak % 5) return;
+        const bonus = this.addScore(this.streak * 20, false);
+        g.fx.floatText(Math.round(g.player.x), Math.round(g.player.y - 26), `${this.streak} STREAK +${bonus}`, '#b7ff4a', 8);
+        g.audio.play('combo-up', { vol: 0.6 });
+    }
+
+    /** chain explosion: the blast at (x,y) rips into everything close by, one ripple step at a time */
+    chain(x, y, r) {
+        const g = this.g, r2 = r * r;
+        g.fx.shockwave(Math.round(x), Math.round(y), COLORS.A, 0.5);
+        let k = 0;
+        for (const o of g.waves.live) {
+            const dx = o.x - x, dy = o.y - y;
+            if (!o.alive || dx * dx + dy * dy > r2) continue;
+            const gen = o.gen;
+            g.time.delayedCall(60 + ++k * 40, () => {
+                if (!o.alive || o.gen !== gen) return;
+                if (!o.damage(45)) { g.fx.hitSpark(o.x, o.y, COLORS.A); return; }
+                this.chainLen = g.time.now - this.lastChain < 1200 ? this.chainLen + 1 : 1;
+                this.lastChain = g.time.now;
+                if (this.chainLen > 1) g.fx.floatText(Math.round(o.x), Math.round(o.y - 20), `CHAIN x${this.chainLen}`, '#ffb547', 8);
+                this.killEnemy(o, true);
+            });
+        }
     }
 
     ram(e) {
