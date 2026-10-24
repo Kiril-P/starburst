@@ -82,7 +82,8 @@ export default class GameAudio {
         if (!!g.upgradeScreen !== !!this.upgradeOpen) { this.upgradeOpen = !!g.upgradeScreen; if (this.upgradeOpen) playSting('sting-upgrade', { vol: 0.8 }); }
         if (g.dying) duck('gameover', true, 1400);
         const wave = g.waves?.wave ?? 1;
-        if (this.wave !== undefined && wave > this.wave) {
+        if (this.wave === undefined) this.enterSector(sectorOf(wave));          // a run that starts past sector 1
+        else if (wave > this.wave) {
             sfx(g, 'banner', { vol: 0.55 });
             this.enterSector(sectorOf(wave));
         }
