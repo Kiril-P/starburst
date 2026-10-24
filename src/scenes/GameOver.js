@@ -10,7 +10,7 @@ import { Button, MenuNav, TEXT, nine, uiTween, uiDelay, onUiStep } from '../ui/w
 import { pxText, centerText, fmtNum } from '../ui/text.js';
 import { save } from '../systems/Save.js';
 import { sfx } from '../systems/sfx.js';
-import { playMusic, duck } from '../systems/music.js';
+import { playMusic, playSting, duck } from '../systems/music.js';
 import { addBuildSummary } from '../ui/buildSummary.js';
 import { settleRun } from '../systems/runResult.js';
 import RewardsPanel, { REWARDS_X } from './gameover/RewardsPanel.js';
@@ -55,7 +55,7 @@ export default class GameOver extends Phaser.Scene {
     }
 
     /** Duck the gameplay music instead of cutting it: the run is over, the mood drops. */
-    musicDuck() { duck('gameover', true, 900); }
+    musicDuck() { duck('gameover', true, 900); playSting('sting-gameover', { duck: false, vol: 0.9 }); }
 
     buildTitle(wave) {
         const y = 52;

@@ -5,12 +5,14 @@
 //   weapons / loot helpers: see objects/weapons/debugGear.js (__dbg.weapon, drop, buff, offers, gear ...)
 //   __dbg.boss(1)   jump to the n-th main-boss wave (5, 10, 15, 20 = final)   __dbg.bossHp(0.5)
 //   __dbg.fight('tempest')  any boss by id   __dbg.mini(2)  n-th mid-boss wave   __dbg.final()   (objects/bosses/BossDirector.js)
+//   __dbg.music('sector2')  __dbg.sfx('graze')  __dbg.sting('sting-boss')   audition audio (systems/audioDebug.js, docs/AUDIO.md)
 //   __dbg.state()        -> { fps, bullets, enemies, wave, state, score, hp, combo, ... }
 import { W } from '../config.js';
 import { ring, style } from '../objects/patterns.js';
 import { BOSS_EVERY } from '../objects/waves.js';
 import { installEnemyDebug } from '../objects/enemyDebug.js';
 import { gearDebug } from '../objects/weapons/debugGear.js';
+import { audioDbg } from './audioDebug.js';
 
 export function installDebug(scene) {
     if (!import.meta.env.DEV) return;
@@ -42,6 +44,6 @@ export function installDebug(scene) {
         }
     };
     installEnemyDebug(g, window.__dbg);   // formation / sector / biome / zoo helpers
-    Object.assign(window.__dbg, gearDebug(g));
+    Object.assign(window.__dbg, gearDebug(g), audioDbg());   // audioDbg: music('sector2') / sfx('graze') / sting('sting-boss')
     Object.assign(window.__dbg, g.bosses.debugHelpers());
 }

@@ -91,8 +91,8 @@ export default class BossDirector {
         g.fx.flash(COLORS.M, 0.3, 260);
         g.fx.shake(3, 400);
         g.bg.pulse(0.9);
-        g.audio.play('phase-shift', { vol: 0.8, rate: 0.75 });
-        g.audio.play('boss-stinger', { vol: 0.55, rate: 1 + phase * 0.08 });
+        g.audio.play('boss-phase', { vol: 0.8, rate: 1 + phase * 0.06 });
+        g.audio.play('phase-shift', { vol: 0.4, rate: 0.75 });
         const named = b.def.phaseNames?.[phase];
         g.hud.toast(named ? `PHASE ${phase + 1}  ${named}` : last ? `${b.def.name} ENRAGED` : `PHASE ${phase + 1}`, '#ff43c8', 1600);
     }
@@ -122,7 +122,7 @@ export default class BossDirector {
         this.clearBullets(true);
         // the brood dies with its mother: drones pop (and still score)
         for (const e of [...g.waves.live]) if (e.alive) g.combat.killEnemy(e, true);
-        g.audio.setBossMode(false);
+        g.audio.setBossMode(false, false, 2200);   // the theme returns after the death blast has rolled out
         g.hud.setBoss(null);
     }
 
@@ -155,7 +155,7 @@ export default class BossDirector {
         g.fx.hitStop(120);
         g.bg.pulse(1);
         g.audio.play('enemy-death', { vol: 1, rate: 0.5 });
-        g.audio.play('boss-explosion', { vol: 0.8 });
+        g.audio.play('boss-death', { vol: 0.85 });
         b.hide();
         // reward: bonus (faster kills pay more), heal, stats
         const speed = Math.max(0, 1 - this.fightMs / (kind === 'mini' ? 60000 : 120000));

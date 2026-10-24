@@ -1,0 +1,38 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>render-audio</title>
+<link rel="icon" href="data:,">
+<script type="module">
+// Runs inside headless Chrome (tools/render-audio.mjs serves the repo root and opens this page).
+import { renderTrack, renderSting, analyze, pcm16Base64 } from '/src/audio/offline.js';
+
+const slice = (ch, a, b) => ch.map((c) => c.slice(a, b));
+
+window.job = async (kind, key, o = {}) => {
+    const t0 = performance.now();
+    if (kind === 'sting') {
+        const r = await renderSting(key);
+        return { stats: analyze(r.channels, r.sr), sr: r.sr, pcm: pcm16Base64(r.channels), ms: Math.round(performance.now() - t0) };
+    }
+    // track: two passes so the loop can be checked against its own repeat; the file holds `loops` passes
+    const loops = Math.max(2, o.loops || 1);
+    const r = await renderTrack(key, { loops, intensity: 1, boss: !!o.boss });
+    const n = Math.round(r.loopSeconds * r.sr);
+    const A = slice(r.channels, 0, n), B = slice(r.channels, n, 2 * n);
+    const stats = analyze(A, r.sr, B[0]);
+    const raw = await renderTrack(key, { loops: 1, intensity: 1, limiter: false });
+    stats.rawPeakDb = analyze(raw.channels, raw.sr).peakDb;
+    stats.loopSeconds = +r.loopSeconds.toFixed(3);
+    if (o.layers) {
+        stats.layers = {};
+        for (const [name, i, boss] of [['calm', 0, false], ['mid', 0.5, false], ['full', 1, false], ['boss', 1, true]]) {
+            const x = await renderTrack(key, { loops: 1, intensity: i, boss });
+            const a = analyze(x.channels, x.sr);
+            stats.layers[name] = { rmsDb: a.rmsDb, peakDb: a.peakDb };
+        }
+    }
+    const keep = slice(r.channels, 0, Math.round(r.loopSeconds * r.sr * (o.loops || 1)));
+    return { stats, sr: r.sr, pcm: o.noPcm ? null : pcm16Base64(keep), ms: Math.round(performance.now() - t0) };
+};
+window.ready = true;
+</script>

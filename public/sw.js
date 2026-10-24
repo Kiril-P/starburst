@@ -2,8 +2,8 @@
 // - The cache is versioned by the registration URL (sw.js?v=<package version>, see src/pwa.js): a new release installs a
 //   new worker, which deletes the previous release's cache on activate.
 // - Pages (navigations) are network-first so a deploy is picked up as soon as the player is online; everything else is
-//   cache-first, which is safe because Vite gives built JS/CSS/fonts content-hashed names and audio/images never change
-//   within a version.
+//   cache-first, which is safe because Vite gives built JS/CSS/fonts content-hashed names and images never change within a
+//   version. There are no audio files to cache: music and sfx are synthesised in the browser (docs/AUDIO.md).
 // - On the first visit the page loaded its assets before this worker existed, so src/pwa.js posts the list of resources
 //   it already fetched ({ type: 'cache', urls }) and we add them here.
 const VERSION = new URL(self.location.href).searchParams.get('v') || 'dev';
@@ -23,7 +23,7 @@ self.addEventListener('activate', (e) => {
 });
 
 const sameOrigin = (url) => new URL(url).origin === self.location.origin;
-// only whole 200 responses: a 206 (audio range request) or an error page must never be served as the asset later
+// only whole 200 responses: a 206 (range request) or an error page must never be served as the asset later
 const cacheable = (res) => res && res.status === 200 && res.type === 'basic';
 
 async function put(req, res) {

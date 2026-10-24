@@ -2,15 +2,15 @@
 //   getBass()   0..1 smoothed low-end energy (≈40-160 Hz)
 //   getLevel()  0..1 smoothed overall loudness
 //   getPulse()  0..1 envelope that jumps on each beat and decays (~200 ms) - handy for glows
-//   onBeat(cb)  cb(strength 0..1) on bass hits; returns an unsubscribe function
+//   onBeat(cb)  cb(strength 0..1) on every beat of the music; returns an unsubscribe function
+// Beats come straight from the music sequencer (exact, on the audio clock), loudness from the analyser tap.
 // Driven by the game's 'step' event, so nothing has to call update(). No-op safe before the music engine exists.
-import { musicAnalyser } from './music.js';
+import { musicAnalyser, popBeats } from './music.js';
 import { save } from './Save.js';
 
 const BASS_HZ = [40, 160];
-const MIN_BEAT_GAP = 230;    // ms: at most ~4 beats/s, ignores the "and" of fast hi-hats leaking into the bass
 const listeners = new Set();
-const R = { bins: null, bass: 0, level: 0, pulse: 0, avg: 0, prev: 0, peak: 0, peakAll: 0, lastBeat: -1e9, beats: 0, installed: false };
+const R = { bins: null, bass: 0, level: 0, pulse: 0, peak: 0, peakAll: 0, beats: 0, installed: false };
 
 export const getBass = () => R.bass;
 export const getLevel = () => R.level;
@@ -34,7 +34,7 @@ function update(time, dt) {
     const an = musicAnalyser();
     R.pulse *= Math.exp(-dt / 200);
     // muted music shouldn't drive visuals: the beats would be "inaudible flashes"
-    if (!an || save.musicVolume <= 0 || an.context.state !== 'running') { R.bass *= 0.9; R.level *= 0.9; return; }
+    if (!an || save.musicVolume <= 0 || an.context.state !== 'running') { R.bass *= 0.9; R.level *= 0.9; popBeats(() => {}); return; }
     if (!R.bins || R.bins.length !== an.frequencyBinCount) R.bins = new Float32Array(an.frequencyBinCount);
     an.getFloatFrequencyData(R.bins);           // dB per bin
     const hzPerBin = an.context.sampleRate / an.fftSize;
@@ -53,15 +53,10 @@ function update(time, dt) {
     const bass = Math.sqrt(bassP / R.peak), all = Math.sqrt(allP / R.peakAll);
     R.bass += (bass - R.bass) * (bass > R.bass ? 0.6 : 0.15);
     R.level += (all - R.level) * (all > R.level ? 0.3 : 0.05);
-    // beat = bass power jumps clearly above its recent average, with a refractory gap
-    R.avg += (bassP - R.avg) * Math.min(1, dt / 300);
-    const prev = R.prev;
-    R.prev = bassP;
-    if (bassP > prev && bassP > R.avg * 1.35 && bass > 0.45 && time - R.lastBeat > MIN_BEAT_GAP) {
-        R.lastBeat = time;
+    // beats are scheduled by the sequencer; this hands out the ones that are sounding now
+    popBeats((strength) => {
         R.beats++;
-        const strength = Math.min(1, (bassP / Math.max(1e-12, R.avg) - 1) * 0.6);
         R.pulse = Math.max(R.pulse, strength);
         for (const cb of listeners) cb(strength);
-    }
+    });
 }

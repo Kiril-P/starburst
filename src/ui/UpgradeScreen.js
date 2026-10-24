@@ -174,7 +174,7 @@ export default class UpgradeScreen {
             this.anims.push(uiTween(scene, {
                 delay: 140 + i * 80, ms: 220, steps: 6, ease: 'back',
                 onUpdate: (v) => { c.setVisible(true); c.y = Math.round(c.homeY + 40 * (1 - v)); c.setAlpha(Math.min(1, v * 2)); },
-                onComplete: () => { if (i === 0) sfx(scene, 'button-sound', { vol: 0.5, rate: 0.8 }); }
+                onComplete: () => { sfx(scene, 'upgrade-card', { vol: 0.5, rate: 0.85 + i * 0.12 }); }
             }));
         });
         // input opens once the deal has landed, so a held key from gameplay can't insta-pick

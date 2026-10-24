@@ -18,6 +18,8 @@ function pickWeighted(weights) {
     return 'magnet';
 }
 
+const PICKUP_SFX = { repair: 'pickup-repair', magnet: 'pickup-magnet', rapid: 'pickup-rapid', x2: 'pickup-x2', shield: 'pickup-shield' };   // bomb: its blast is the sound
+
 export default class Loot {
     constructor(game) {
         this.g = game;
@@ -98,7 +100,7 @@ export default class Loot {
         }
         g.fx.shockwave(x, y, COLORS.L, 0.4);
         g.fx.hitSpark(x, y, COLORS.j);
-        g.audio.play('level-up', { vol: 0.55, rate: d.kind === 'repair' ? 1.2 : 1 });
+        g.audio.play(PICKUP_SFX[d.kind === 'repair' ? 'repair' : p.type] || 'level-up', { vol: 0.55 });   // one sound per pickup type
     }
 
     vacuum() { this.pickups.vacuum(); }

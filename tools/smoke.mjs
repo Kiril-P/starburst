@@ -124,6 +124,10 @@ await step('settings + controls rebinding', async () => {
     for (let j = 0; j < 6; j++) await key('ArrowUp');
 });
 await step('start game', async () => { await key('Enter'); await inScene('Game', 10000); await until(() => !!(window.__dbg && __dbg.scene.player), 'player'); });
+await step('generated audio: sector music playing, no audio files', async () => {
+    // sound is synthesised (docs/AUDIO.md): the music engine must be running a sector track once the run starts
+    await until(() => { const s = window.__audio && __audio.state(); return !!s && s.track === 'sector1' && s.state === 'running'; }, 'sector1 music running', 8000);
+});
 await step('player fires', async () => {
     await page.keyboard.down('Space');
     await until(() => __dbg.scene.shots.count > 0 || __dbg.scene.combat.stats.shots > 0, 'player shots');
@@ -140,6 +144,7 @@ await step('wave clear -> upgrade -> wave 2', async () => {
 await step('boss spawn', async () => {
     await ev(() => __dbg.boss(1));
     await until(() => !!(__dbg.scene.bosses.boss && __dbg.scene.bosses.boss.alive), 'boss', 10000);
+    await until(() => __audio.state().track === 'boss' || __audio.state().track === 'boss-final', 'boss theme', 8000);
     await sleep(2500);
     await page.screenshot({ path: path.join(outDir, '04-boss.png') });
 });

@@ -64,7 +64,10 @@ export default class Arsenal {
             rate = 1.3;
         }
         g.fx.muzzle(Math.round(x), Math.round(y));
-        g.audio.play('player-shoot', { vol: 0.28, jitter: 120, rate });
+        // each weapon family has its own voice (audio/sfx/recipesCombat.js)
+        if (id === 'spread') g.audio.play('shoot-spread', { vol: 0.3, rate });
+        else if (id === 'lance') g.audio.play('shoot-lance', { vol: 0.28 });
+        else g.audio.play('player-shoot', { vol: 0.28, jitter: 120, rate });
     }
 
     update(dt) {
