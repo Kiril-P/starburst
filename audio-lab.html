@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>STARBURST audio lab</title>
+<!-- Dev page (vite dev server only: it is not a build input). Auditions every generated track, sting and sfx with the
+     game's own engine, no Phaser. See docs/AUDIO.md. -->
+<style>
+  body { background: #070b1a; color: #cfe9ff; font: 13px/1.4 ui-monospace, Menlo, monospace; margin: 16px; }
+  h1 { font-size: 16px; color: #39e7ff; margin: 0 0 8px; } h2 { font-size: 12px; color: #ffb547; margin: 16px 0 6px; letter-spacing: 1px; }
+  button { background: #12204a; color: #cfe9ff; border: 1px solid #39e7ff; padding: 4px 8px; margin: 2px; cursor: pointer; font: inherit; }
+  button:hover { background: #1d3470; } button.on { background: #39e7ff; color: #070b1a; }
+  label { margin-right: 12px; } canvas { background: #0c1330; border: 1px solid #1d3470; display: block; margin: 6px 0; }
+  #sfx button { min-width: 120px; text-align: left; }
+</style>
+</head>
+<body>
+<h1>STARBURST audio lab</h1>
+<button id="start">Start audio</button> <span id="status">click to unlock audio</span>
+<div>
+  <label>volume <input id="vol" type="range" min="0" max="1" step="0.01" value="0.7"></label>
+  <label>intensity <input id="int" type="range" min="0" max="1" step="0.01" value="1"> <b id="intv">1.00</b></label>
+  <label><input id="boss" type="checkbox"> boss mode</label>
+  <button id="stop">stop music</button>
+  <button data-duck="pause">duck: pause</button><button data-duck="upgrade">duck: upgrade</button><button data-duck="gameover">duck: gameover</button>
+</div>
+<canvas id="meter" width="640" height="60"></canvas>
+<h2>MUSIC (loops)</h2><div id="tracks"></div>
+<h2>STINGS</h2><div id="stings"></div>
+<h2>SFX (rate: <input id="rate" type="range" min="0.5" max="2" step="0.01" value="1"> <b id="ratev">1.00</b>)</h2><div id="sfx"></div>
+<script type="module">
+import { createEngine } from './src/audio/engine.js';
+import { TRACK_KEYS, TRACKS } from './src/audio/tracks/index.js';
+import { STING_KEYS } from './src/audio/stings.js';
+import { SFX_KEYS, renderSfx } from './src/audio/sfx/index.js';
+import { loopSeconds } from './src/audio/sequencer.js';
+
+const $ = (id) => document.getElementById(id);
+let ctx, engine;
+const buffers = {};
+const mk = (parent, label, fn) => { const b = document.createElement('button'); b.textContent = label; b.onclick = () => { ensure(); fn(b); }; $(parent).appendChild(b); return b; };
+
+function ensure() {
+  if (ctx) return;
+  ctx = new AudioContext();
+  const lim = ctx.createDynamicsCompressor();      // same master chain as the game (systems/sfx.js)
+  lim.threshold.value = -4; lim.knee.value = 4; lim.ratio.value = 20; lim.attack.value = 0.002; lim.release.value = 0.12;
+  lim.connect(ctx.destination);
+  engine = createEngine(ctx, lim, { volume: Number($('vol').value) });
+  window.engine = engine;
+  ctx.resume();
+  $('status').textContent = 'running @ ' + ctx.sampleRate + ' Hz';
+  draw();
+}
+$('start').onclick = ensure;
+
+TRACK_KEYS.forEach((k) => mk('tracks', `${k}  ${TRACKS[k].bpm}bpm  ${loopSeconds(TRACKS[k]).toFixed(0)}s`, () => {
+  engine.play(k, { fadeIn: 250, fadeOut: 400, restart: true, intensity: Number($('int').value), boss: $('boss').checked });
+}));
+STING_KEYS.forEach((k) => mk('stings', k, () => engine.sting(k)));
+SFX_KEYS.forEach((k) => mk('sfx', k, () => {
+  if (!buffers[k]) { const d = renderSfx(k, ctx.sampleRate), b = ctx.createBuffer(1, d.length, ctx.sampleRate); b.copyToChannel(d, 0); buffers[k] = b; }
+  const s = ctx.createBufferSource(); s.buffer = buffers[k]; s.playbackRate.value = Number($('rate').value); s.loop = false;
+  const g = ctx.createGain(); g.gain.value = 0.8; s.connect(g).connect(ctx.destination); s.start();
+}));
+$('vol').oninput = () => engine?.setVolume(Number($('vol').value));
+$('int').oninput = () => { $('intv').textContent = Number($('int').value).toFixed(2); engine?.setIntensity(Number($('int').value)); };
+$('rate').oninput = () => { $('ratev').textContent = Number($('rate').value).toFixed(2); };
+$('boss').onchange = () => engine?.setBoss($('boss').checked);
+$('stop').onclick = () => engine?.stop(400);
+document.querySelectorAll('[data-duck]').forEach((b) => { b.onclick = () => { ensure(); const on = !b.classList.contains('on'); b.classList.toggle('on', on); engine.duck(b.dataset.duck, on); }; });
+
+function draw() {
+  const c = $('meter').getContext('2d'), an = engine.analyser, buf = new Uint8Array(an.fftSize);
+  const hist = [];
+  (function frame() {
+    an.getByteTimeDomainData(buf);
+    let peak = 0; for (const v of buf) peak = Math.max(peak, Math.abs(v - 128) / 128);
+    hist.push(peak); if (hist.length > 640) hist.shift();
+    c.clearRect(0, 0, 640, 60); c.fillStyle = '#39e7ff';
+    hist.forEach((p, i) => c.fillRect(i, 60 - p * 60, 1, p * 60));
+    $('status').textContent = JSON.stringify({ ...engine.state(), peakDb: (20 * Math.log10(Math.max(1e-6, peak))).toFixed(1) });
+    requestAnimationFrame(frame);
+  })();
+}
+</script>
+</body>
+</html>

@@ -1,20 +1,25 @@
 // Builds the launch trailer, captioned stills and social GIFs from REAL gameplay (npm run trailer). Needs Chrome + ffmpeg.
-//   node tools/make-trailer.mjs [--skip-capture] [--only trailer|stills|gifs] [--music-start 30]
+//   node tools/make-trailer.mjs [--skip-capture] [--only trailer|stills|gifs] [--music-start 0] [--track boss]
 // 1. capture: tools/make-gif.mjs --frames records each clip frame-exact and deterministic (autopilot, god mode) at 30 fps.
 // 2. compose: every output frame is a 1920x1080 screenshot of an HTML page: the 640x360 frame at exactly 3x (nearest
 //    neighbour, so pixels stay square) plus pixel-font captions in the game's own fonts. Hard cuts, integer-pixel shake.
-// 3. encode: ffmpeg with the game's own music and a few of its sfx. Everything lands in marketing/ (git-ignored).
+// 3. encode: ffmpeg with the game's own generated music + a few sfx, rendered offline by tools/render-audio.mjs (no audio
+//    files exist in the repo; docs/AUDIO.md). Everything lands in marketing/ (git-ignored).
 import puppeteer from 'puppeteer-core';
 import fs from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
 import { spawnSync } from 'node:child_process';
 import { findChrome } from './lib/browser.mjs';
+import { renderAll } from './render-audio.mjs';
+import { loopSeconds } from '../src/audio/sequencer.js';
+import { TRACKS } from '../src/audio/tracks/index.js';
 
 const a = process.argv.slice(2);
 const get = (n, d) => { const i = a.indexOf(n); return i < 0 ? d : a[i + 1]; };
 const only = get('--only', '');
-const musicStart = parseFloat(get('--music-start', '30'));
+const musicStart = parseFloat(get('--music-start', '0'));   // seconds into the rendered loop(s)
+const track = get('--track', 'boss');                       // any key from src/audio/tracks (docs/AUDIO.md)
 const FPS = 30;
 const OUT = 'marketing', WORK = `${OUT}/work`;
 fs.mkdirSync(WORK, { recursive: true });
@@ -33,7 +38,7 @@ const CLIPS = [
 // ---- timeline (seconds). clip = frames from CLIPS, at = start offset inside the clip --------------------------------------
 const T = [
     { kind: 'clip', clip: 'boss1', at: 1.0, dur: 2.2, caption: 'ONE SHIP.|A THOUSAND BULLETS.', cap: 'bottom' },
-    { kind: 'logo', clip: 'boss1', at: 3.0, dur: 2.2, sub: 'A NEON BULLET HELL', sfx: 'playerdeath' },
+    { kind: 'logo', clip: 'boss1', at: 3.0, dur: 2.2, sub: 'A NEON BULLET HELL', sfx: 'player-death' },
     { kind: 'clip', clip: 'wave3', at: 0.5, dur: 3.2, caption: 'GRAZE DEATH. BUILD THE COMBO.', cap: 'bottom' },
     { kind: 'clip', clip: 'wave8', at: 0.5, dur: 3.2, caption: '20 WAVES. EVERY ONE DIFFERENT.', cap: 'bottom' },
     { kind: 'clip', clip: 'gear', at: 0.5, dur: 3.4, caption: 'FIND WEAPONS. BREAK THE GAME.', cap: 'bottom' },
@@ -42,7 +47,7 @@ const T = [
     { kind: 'clip', clip: 'boss3', at: 0.3, dur: 0.9, caption: '' },
     { kind: 'clip', clip: 'wave8', at: 2.4, dur: 0.9, caption: '' },
     { kind: 'clip', clip: 'boss2', at: 3.2, dur: 0.9, caption: '' },
-    { kind: 'end', clip: 'boss1', at: 3.4, dur: 3.4, sfx: 'wavecomplete' }
+    { kind: 'end', clip: 'boss1', at: 3.4, dur: 3.4, sfx: 'wave-complete' }
 ];
 
 // ---- 1. capture ----------------------------------------------------------------------------------------------------------
@@ -146,20 +151,23 @@ if (!only || only === 'trailer') {
     const sfx = [];
     for (const s of T) {
         if (s.sfx) sfx.push({ f: s.sfx, at: clock });
-        else if (s.kind === 'clip' && s.dur < 1.2) sfx.push({ f: 'enemydeath', at: clock });
+        else if (s.kind === 'clip' && s.dur < 1.2) sfx.push({ f: 'enemy-death', at: clock });
         const frames = Math.round(s.dur * FPS);
         for (let f = 0; f < frames; f++) await render(s, f / FPS, dir, n++);
         clock += frames / FPS;
         process.stdout.write(`trailer ${clock.toFixed(1)}s\r`);
     }
     const total = n / FPS;
-    const inputs = ['-framerate', String(FPS), '-i', `${dir}/%05d.png`, '-ss', String(musicStart), '-i', 'public/assets/audio/main.mp3'];
-    let filter = `[1:a]atrim=0:${total},asetpts=PTS-STARTPTS,volume=0.9,afade=t=in:d=0.4,afade=t=out:st=${(total - 1.6).toFixed(2)}:d=1.6[m]`;
+    // generated audio: enough passes of the track to cover the trailer, plus the sfx it uses
+    const need = Math.ceil((total + musicStart) / loopSeconds(TRACKS[track]));
+    const audio = await renderAll({ out: `${WORK}/audio`, only: [track, ...new Set(sfx.map((x) => x.f))], loops: need });
+    const inputs = ['-framerate', String(FPS), '-i', `${dir}/%05d.png`, '-ss', String(musicStart), '-i', audio[track].file];
+    let filter = `[1:a]atrim=0:${total},asetpts=PTS-STARTPTS,volume=0.8,afade=t=in:d=0.4,afade=t=out:st=${(total - 1.6).toFixed(2)}:d=1.6[m]`;
     const mix = ['[m]'];
     sfx.forEach((x, k) => {
-        inputs.push('-i', `public/assets/audio/sfx/${x.f}.mp3`);
+        inputs.push('-i', audio[x.f].file);
         const ms = Math.round(x.at * 1000);
-        filter += `;[${k + 2}:a]adelay=${ms}|${ms},volume=${x.f === 'enemydeath' ? 0.5 : 1}[s${k}]`;
+        filter += `;[${k + 2}:a]adelay=${ms}|${ms},volume=${x.f === 'enemy-death' ? 0.5 : 1}[s${k}]`;
         mix.push(`[s${k}]`);
     });
     filter += `;${mix.join('')}amix=inputs=${mix.length}:normalize=0,alimiter=limit=0.95[aout]`;
