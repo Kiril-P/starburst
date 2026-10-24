@@ -36,7 +36,7 @@ const ROWS = [
 ];
 
 export default class SettingsPanel extends OverlayScene {
-    constructor() { super('MenuSettings', 'SETTINGS', [300, 330]); }
+    constructor() { super('MenuSettings', 'SETTINGS', [300, 318]); }
 
     build(b) {
         this.rows = [];

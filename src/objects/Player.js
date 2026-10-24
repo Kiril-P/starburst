@@ -7,9 +7,7 @@ import { W, H, DEPTH } from '../config.js';
 import { PLAYER, SHIPS, ABILITIES, SPEED_SCALE, DIAGONAL_FACTOR } from '../systems/tuning.js';
 import { COLORS } from '../art/palette.js';
 import { GameInput } from '../systems/bindings.js';
-import MouseAim from '../systems/mouseAim.js';
 import { save } from '../systems/Save.js';
-import { touchWanted } from '../ui/TouchControls.js';
 
 // v1 lerped velocity by pct/100 every frame at 60fps; convert to a per-second exponential rate
 const rate = (pct) => -Math.log(1 - Math.min(pct, 99) / 100) * 60;
@@ -37,7 +35,7 @@ export default class Player {
         this.cdMax = { dash: 1, forcefield: 1, phase: 1 };
         this.dashT = 0; this.phaseT = 0; this.shieldT = 0;
         this.dashDir = { x: 0, y: -1 };
-        this.aim = -Math.PI / 2;          // facing (v1: ship turns toward its movement and fires that way)
+        this.aim = -Math.PI / 2;          // fixed: the ship always faces and fires straight up
         this.aimVis = this.aim;           // smoothed, step-snapped angle used for drawing
         this.ghostT = 0;
         this.hudAbilities = {
@@ -56,7 +54,7 @@ export default class Player {
         this.input.onPress('shield', () => { this.queued.forcefield = true; });
         this.input.onPress('phase', () => { this.queued.phase = true; });
         this.input.onPress('fire', () => { this.queued.fire = true; });
-        this.mouse = save.aimMode === 'mouse' && !touchWanted() ? new MouseAim(scene, this) : null;
+        this.mouse = null;   // shooting is always straight up the screen
     }
 
     createSprites(scene) {
@@ -158,8 +156,7 @@ export default class Player {
             const ctl = this.controllable;
             let tx = ctl ? (k.left.isDown ? -1 : k.right.isDown ? 1 : 0) : 0;
             let ty = ctl ? (k.up.isDown ? -1 : k.down.isDown ? 1 : 0) : 0;
-            if ((tx || ty) && !this.mouseAiming) this.aim = Math.atan2(ty, tx);
-            const sp = this.speed * (tx && ty ? DIAGONAL_FACTOR * Math.SQRT1_2 : 1);
+                        const sp = this.speed * (tx && ty ? DIAGONAL_FACTOR * Math.SQRT1_2 : 1);
             this.vx = this.approach(this.vx, tx * sp, s);
             this.vy = this.approach(this.vy, ty * sp, s);
         }
