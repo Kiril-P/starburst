@@ -122,13 +122,13 @@ Afterwards: contact GitHub Support (GitHub's "Removing sensitive data from a rep
 pull-request refs need a support request) and re-clone your own working copies. **verify** the current wording of that
 guide before relying on it.
 
-## 4. Licence decision: OWNER DECISION (PROPOSED, not final)
+## 4. Licence decision: CONFIRMED by the owner on 2026-10-24 (MIT code, CC BY 4.0 assets)
 
 I added, but you must confirm:
 
-- `LICENSE`: **MIT**, "Copyright (c) 2026 Kiril Petrovski", for the source code. Marked PROPOSED at the bottom.
+- `LICENSE`: **MIT**, "Copyright (c) 2026 Kiril Petrovski", for the source code.
 - `ASSET-LICENSE.md`: **CC BY 4.0** for the original pixel art (ASCII sprite maps and renders from them) and the
-  runtime-generated audio. Marked PROPOSED.
+  runtime-generated audio.
 - `package.json`: `license: MIT`, `author`, `repository`, `homepage`, `bugs`.
 
 Things to weigh: MIT lets others reuse the code commercially with attribution only. CC BY 4.0 lets others reuse the art
@@ -213,7 +213,7 @@ Subreddit specifics (from memory, **verify each sub's current sidebar/rules and 
 
 Blocking:
 - [ ] Decide on the history of the public repo (make it private now, or run the section 3 recipe, or start a fresh repo).
-- [ ] Confirm or change the proposed licences (`LICENSE`, `ASSET-LICENSE.md`).
+- [x] Confirm or change the proposed licences (`LICENSE`, `ASSET-LICENSE.md`).
 - [ ] Decide on `docs/concept-art/` (recommended: remove from the repo and history).
 - [ ] Confirm the AI disclosure wording (`docs/ITCH.md`, README credits) is accurate for how the game was really made.
 - [ ] Audio change landed: `npm run compliance -- --require-dist` passes (no audio files in `public/` or `dist/`).

@@ -1,6 +1,6 @@
-# Asset licence (PROPOSED: pending the owner's confirmation)
+# Asset licence
 
-> **Status: PROPOSED.** The owner has not yet confirmed this choice. See `docs/COMPLIANCE.md` ("Licence decision").
+> **Status: confirmed by the owner (2026-10-24).**
 > Until confirmed, treat everything below as a draft and do not rely on it.
 
 Unless a file says otherwise, the original creative assets in this repository are licensed under
