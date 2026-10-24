@@ -149,7 +149,7 @@ async function job(o, browser) {
         dbg(tag, 'loaded');
         do {
             // watchdog: a stuck page (or an overloaded machine) must not hang the whole batch
-            st = await Promise.race([page.evaluate(drive, 1200, o), new Promise((_, no) => setTimeout(() => no(new Error('chunk watchdog: 1200 frames took > 180s')), 180000))]);
+            st = await Promise.race([page.evaluate(drive, 1200, o), new Promise((_, no) => setTimeout(() => no(new Error('chunk watchdog: 1200 frames took > 600s')), 600000))]);
             dbg(tag, 'chunk', n, JSON.stringify(st));
             if (shots) { fs.mkdirSync(shots, { recursive: true }); await page.screenshot({ path: path.join(shots, `${o.ship}-${o.profile}-${o.seed}-${String(n++).padStart(3, '0')}.png`) }); }
             if (o.trace) for (const l of await page.evaluate(() => window.__probe.trace.splice(0))) console.log(l);
