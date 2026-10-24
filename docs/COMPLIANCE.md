@@ -1,0 +1,237 @@
+# Compliance, provenance and launch checklist
+
+Audit date: 2026-10-24, branch `refactor/vite-foundation`. Written for the owner: items marked **OWNER DECISION** are
+not decided here. Anything I could not verify from the repository alone is marked **verify**.
+
+Run `npm run compliance` (CI runs it with `--require-dist`) to re-check the mechanical parts of this document.
+
+## 1. Findings
+
+| # | Severity | Finding | Status |
+|---|---|---|---|
+| 1 | **High** | The GitHub repo is **already PUBLIC**. Public refs: `main` (4 commits, 2025-05-06 to 2026-09-23), branch `kp/add-license`, PRs #1 (merged) and #2 (open). The v2 history on `refactor/vite-foundation` is **not pushed yet**. `main`'s history contains the original jam audio (`assets/audio/main.wav` 33 MB, `title.wav` 46 MB, `main.mp3`, `title.mp3`, 12 SFX mp3) and the v1 images (`assets/images/sprites/**`, incl. `*-removebg-preview.png`). Their author and licence are not recorded anywhere. | **Not fixed** (history rewrite = OWNER DECISION, recipe in section 3) |
+| 2 | **High** | Current tree still shipped the same audio in `public/assets/audio/*` (also in `dist/`). | Being removed by the audio work; `npm run compliance` fails until it is gone |
+| 3 | Medium | v1 sprites (`speedy_spaceship-removebg-preview.png` etc., 0.7-1.8 MB PNGs) look like generator or third-party output run through remove.bg; origin unknown. Removed from the tree in `d3dc4b4` but reachable in history (also on public `main`). | **Not fixed** (history) |
+| 4 | Medium | Code and pixel art of v2 were written with AI coding assistants: about 90 of the 183 commits carry `Co-Authored-By: Claude ...` trailers, and the README claimed "Design, code, and art: Kiril Petrovski". itch.io requires an AI disclosure and Reddit communities react badly to undisclosed AI. | README credits and itch disclosure text updated (confirm wording, **OWNER DECISION**) |
+| 5 | Medium | `docs/concept-art/` (6 PNG, 13 MB, plus PROMPTS) is AI-generated. It is not shipped but is public in the repo, and shows a non-pixel-art look that differs from the game. | Labelled as AI-generated everywhere. Recommend removal (section 2). **OWNER DECISION** |
+| 6 | Medium | No licence file on this branch: "all rights reserved" by default, `package.json` showed UNLICENSED. Note: open PR #2 (`kp/add-license`) already adds an MIT `LICENSE` (Copyright (c) 2026 Kiril Petrovski) and `.gitignore` entries, so MIT looks like your intent. | Proposed MIT + CC BY 4.0 added here (**PROPOSED**, section 4). Expect a trivial merge conflict on `LICENSE` and `.gitignore` with PR #2: keep one |
+| 7 | Medium | Fonts (OFL) shipped without licence text. | Fixed: `public/THIRD_PARTY_LICENSES.txt` ships with every build, `licenses/`, `THIRD_PARTY_NOTICES.md` |
+| 8 | Low | `docs/concept-art/gallery.html` contained absolute local paths `/Users/<name>/Documents/...` (75 historic revisions, local branches only, not on `origin`). Leaks the OS username and directory layout. | Fixed in tree (relative paths). History copies remain (cosmetic) |
+| 9 | Low | `window.__dbg` string was in the production bundle (`delete window.__dbg` in `Game.js`). Harmless but it is a dev hook. | Fixed (`import.meta.env.DEV` guard); `compliance` greps dist for `__dbg`, `__game`, `__meta` |
+| 10 | Low | `.DS_Store` tracked (`public/assets/audio/sfx/.DS_Store`, in history too). | Goes away with the audio removal; `compliance` fails on any tracked `.DS_Store` |
+| 11 | Low | Git history holds 183 commits; the `.git` is ~128 MB (two WAVs 79 MB, GIFs ~15 MB, concept art 13 MB x2 paths, v1 PNGs ~18 MB, all in history). A symlink `node_modules -> /Users/<name>/...` and `.claude/worktrees/*` gitlinks were committed in 7 local checkpoint commits (`refs/t3/...`, not on origin). | Not fixed (history); local `refs/t3/*` refs must not be pushed (`git push --mirror` would) |
+| 12 | Low | Author email `kirilpetrovski2005@gmail.com` is in all 108 of your commits (public ones on `main` today, the rest once pushed). Not a secret, but publicly scrapeable. | Informational; optional `--mailmap` in recipe |
+| 13 | Low | Service worker cache was keyed by `package.json` version only: unhashed `public/` files (icons, manifest, audio) would stay stale until someone bumps the version. | Fixed: cache key is `version + build timestamp` (`__BUILD_ID__`). Old caches deleted on activate (already the case) |
+| 14 | Low | No CSP. | Fixed: strict CSP meta injected in production builds (section 5) |
+| 15 | Low | `localStorage` reads trusted stored JSON shape and numbers (e.g. `leaderboard` as a number, volume 1e99, ship `"<x>"`). A hostile or corrupt value could throw in the menu or start the game with an unknown ship. | Fixed in `src/systems/Save.js` (type checks, clamping, enum whitelists, `__proto__` stripped) |
+| 16 | Info | CI had default token permissions and no audit step. | Fixed: `permissions: contents: read`, `persist-credentials: false`, `npm audit`, compliance step. No secrets in workflow |
+| 17 | Info | `npm audit` (prod and full): **0 vulnerabilities**. No upgrades needed. Phaser stays 3.90, Vite 8. | n/a |
+| 18 | Info | Secret scan of HEAD and all 183 commits (private keys, AWS/GitHub/Slack/OpenAI/Google keys, `api_key`, `password`, `token`, `.env`): **nothing found**. Only personal-path hits are #8 and #11. | n/a |
+| 19 | Info | No external network requests from the game (no analytics, CDN, remote fonts); the only absolute URLs in the build are `og:` meta tags pointing to `kpetrovski.me`. | n/a |
+
+## 2. Provenance inventory
+
+### Tracked in HEAD (excluding audio, which is being removed)
+
+| Asset | Origin | Evidence | Verdict |
+|---|---|---|---|
+| Fonts Press Start 2P, Silkscreen | npm `@fontsource/*` 5.3.0, SIL OFL 1.1 (CodeMan38; Jason Kottke) | `node_modules/@fontsource/*/LICENSE` (copied to `licenses/`), `license-checker` | OK, legitimately bundled. Licence text now ships in the build |
+| In-game pixel art | ASCII sprite maps in `src/art/sprites/*.js`, baked by `src/art/bake.js` | Code review: maps are plain strings, no image import, no `Image`/`fetch` of external files, no URLs, no "copied from" comments (grep for kenney, opengameart, itch.io, freesound, codepen, github.com, copyright: none). | No external source found. Authorship: written with Claude assistance (finding 4). **verify**: I cannot prove the maps were not drawn from memory of existing sprites; the owner should confirm none were traced from sheets |
+| `public/favicon.png`, `icon-192/512.png`, `icon-maskable-512.png`, `apple-touch-icon.png` | `tools/make-favicon.mjs` (15x15 star map in game palette) | script writes exactly these five files | OK, original |
+| `public/og-image.png` (1280x720) | Screenshot of the game's own title screen (viewed; contains only game art and OFL font) | No generator script: not reproducible from `tools/`. | OK in content, **verify** it was captured via `tools/shot.mjs` |
+| `docs/media/*.png/.gif` | Screenshots / recording of the game (`tools/shot.mjs`, `tools/make-gif.mjs`) | viewed titles; game art only | OK. 4 MB GIF is heavy for the repo, fine for README |
+| `docs/concept-art/*.png` (6) | **AI-generated** (built-in image generation tool, prompts in `PROMPTS.md`) | `docs/concept-art/README.md` | Labelled. **Recommend: remove from the public repo and history** (or move to a private archive). Reasons: not part of the game; shows non-pixel-art style that invites "AI art" accusations on pixel-art and shmup subreddits; AI-output copyright is unsettled so it cannot be cleanly licensed; 13 MB x2 in history; generator terms must be checked (**verify**). If kept: leave the label, keep it out of the itch page and promo, never present it as gameplay |
+| Third-party code snippets | none found | grep for URLs and attribution in `src/`, `tools/`: only `localhost`/`127.0.0.1` | OK |
+
+### Not in HEAD but reachable in history (and on public `origin/main`)
+
+| Path | Introduced | What | Risk |
+|---|---|---|---|
+| `assets/audio/main.wav`, `title.wav` (79 MB), `public/assets/audio/main.mp3`, `title.mp3` | 2025-05-06 (WAVs), 2026-10-23 (mp3 transcodes) | "Original jam audio". Creator/licence unknown (could be the owner's, a purchased pack, or AI music) | **High until the owner documents it** |
+| `assets/audio/sfx/*.mp3`, `.DS_Store` | 2025-05-06 | 12 SFX named `button`, `dash1`, `shoot1`... source unknown | High until documented |
+| `assets/images/sprites/**`, `public/assets/images/sprites/**` | 2025-05-06 | v1 ships, enemies, buttons, upgrade icons, title (including `*-removebg-preview.png`) | Medium, origin unknown (hand-drawn, stock, or AI) |
+| `docs/media/19-starburst*` | v1 | old screenshots/GIF showing v1 art | follows v1 art |
+| `legacy/`, `js/` | v1 | owner's own v1 code | OK |
+| `concept-art/` at repo root, `docs/concept-art/` | 2026-10-23 | AI concept art | see above |
+
+The untracked `_orig/` folder (`main.wav`, `title.wav`) is **not tracked** and is in `.gitignore` (verified:
+`git ls-files _orig` is empty, `git check-ignore _orig` matches). Keep it out of the repo; it is the same audio as above.
+
+### How to settle the audio/v1-image provenance (OWNER)
+
+For each file: do you hold the receipt, project file, DAW session, or the generator account/terms? If you cannot show
+that you created it or that its licence permits redistribution, treat it as unlicensed and remove it from history
+(section 3). Do not ship it on itch.io either.
+
+## 3. Git history: decide before promoting the repo
+
+The repo is **already public** (`gh repo view` says `PUBLIC`). What is downloadable today is `main` (v1 audio, v1 images,
+`.DS_Store`, 4 commits), plus `kp/add-license` and the PR refs. The v2 history, concept art and the rest of the local
+history (~128 MB .git) are not public yet, **so the cheapest fix is to never push this history as it is** (option 3, or
+option 2 before the first push) and to purge `main` as in option 2. Options, cheapest first:
+
+1. **Make the repo private now** (Settings, Danger Zone) until you decide. Forks or clones made while it was public keep
+   their copy, nothing can recall those.
+2. **Rewrite history** (recipe below), force-push, then ask GitHub Support to run garbage collection on the repo and drop
+   cached views of the removed commits (they stay reachable by SHA, in forks and in pull-request refs until then).
+3. **Start a fresh repository** from a clean snapshot (`git archive HEAD | tar -x` into a new dir, `git init`): simplest
+   and safest, loses the commit history (you may not care: it is mostly agent checkpoints).
+
+Do **not** run the recipe blindly: it rewrites every commit SHA, breaks open PRs, and requires everyone to re-clone.
+Back up first: `git clone --mirror . ../starburst-backup.git`.
+
+### git-filter-repo recipe (NOT executed)
+
+Needs `brew install git-filter-repo`. Work in a **fresh clone** (filter-repo refuses non-fresh clones, and this avoids
+touching your working checkout).
+
+```sh
+set -euo pipefail
+git clone --no-local /path/to/starburst /tmp/starburst-clean && cd /tmp/starburst-clean
+
+# 0. drop local-only bookkeeping refs so their objects are not kept alive
+git for-each-ref refs/t3 --format='delete %(refname)' | git update-ref --stdin
+
+# 1. remove unknown-licence assets, junk and leaked-path files from ALL history
+git filter-repo --force \
+  --path assets/audio --path public/assets/audio \
+  --path assets/images --path public/assets/images \
+  --path docs/media/19-starburst-gameplay.png --path docs/media/19-starburst-title.png --path docs/media/19-starburst.gif \
+  --path concept-art --path docs/concept-art \
+  --path node_modules --path .claude \
+  --path-glob '**/.DS_Store' \
+  --invert-paths
+# (drop the two concept-art lines if you decide to keep the concept art in the repo;
+#  add `--path legacy --path js` only if you also want the v1 code gone)
+
+# 2. optional: replace the personal email in author/committer fields with the GitHub noreply address
+#    mailmap.txt:  Kiril Petrovski <ID+Kiril-P@users.noreply.github.com> <kirilpetrovski2005@gmail.com>
+# git filter-repo --force --mailmap mailmap.txt
+
+# 3. verify nothing is left
+git log --all --name-only --format= | sort -u | grep -E '\.(wav|mp3|ogg)$|removebg|concept-art|\.DS_Store' || echo clean
+git count-objects -vH            # expect a few MB instead of ~128 MB
+
+# 4. publish (destructive: overwrites the remote). Only after you have confirmed the backup.
+git remote add origin https://github.com/Kiril-P/starburst.git
+git push --force --all origin
+git push --force --tags origin
+```
+
+Afterwards: contact GitHub Support (GitHub's "Removing sensitive data from a repository" guide says cached views and
+pull-request refs need a support request) and re-clone your own working copies. **verify** the current wording of that
+guide before relying on it.
+
+## 4. Licence decision: OWNER DECISION (PROPOSED, not final)
+
+I added, but you must confirm:
+
+- `LICENSE`: **MIT**, "Copyright (c) 2026 Kiril Petrovski", for the source code. Marked PROPOSED at the bottom.
+- `ASSET-LICENSE.md`: **CC BY 4.0** for the original pixel art (ASCII sprite maps and renders from them) and the
+  runtime-generated audio. Marked PROPOSED.
+- `package.json`: `license: MIT`, `author`, `repository`, `homepage`, `bugs`.
+
+Things to weigh: MIT lets others reuse the code commercially with attribution only. CC BY 4.0 lets others reuse the art
+(including commercially) with credit; if you want art protected for the game only, use "all rights reserved" for assets
+instead (then delete `ASSET-LICENSE.md`, say so in README). If most code and art was AI-assisted (finding 4), a licence
+grants only what you own, and copyrightability of AI-generated portions is unsettled in several jurisdictions. Also,
+keep the licence statement consistent on the itch page. Phaser, Vite and fonts keep their own licences (see
+`THIRD_PARTY_NOTICES.md`). None of this is legal advice.
+
+## 5. Security review
+
+| Area | Result |
+|---|---|
+| Dependencies | `npm audit --omit=dev` and `npm audit`: 0 vulnerabilities. Production dependency tree is 4 packages (Phaser, eventemitter3, 2 fonts). CI now runs `npm audit --omit=dev --audit-level=high`. |
+| Secrets / personal data | Not found in HEAD or history (patterns: private key blocks, AKIA, ghp_/gho_, xox*, sk-, AIza, api_key/secret/password/token assignments, `.env`, `/Users/`, `/home/`). `npm run compliance` re-scans tracked files on every CI run. |
+| CSP | Injected into `dist/index.html` by `vite.config.js` (build only, the dev server needs inline HMR): `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' data: blob:; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'`. `'unsafe-inline'` is for styles only (inline `<style>` block, and Phaser sets element style attributes); scripts have no `unsafe-inline`/`unsafe-eval`. `frame-ancestors` cannot be set via meta, so embedding (itch.io) stays open on purpose; if you host on your own server, add `Content-Security-Policy: frame-ancestors ...` as a header. Verified by the production smoke test (any CSP violation is a console error and fails the run). |
+| Service worker | Versioned cache name (`starburst-<version>-<build timestamp>`), old `starburst-*` caches deleted on activate, `skipWaiting` + `clients.claim`, navigations are network-first (a deploy is picked up as soon as the player is online), only same-origin, non-range, status-200, `basic` responses are cached, the page-to-worker message only fetches same-origin URLs. Cannot cache cross-origin or error responses. Residual: non-navigation requests are cache-first, which is safe because every build changes the cache name. `sw.js` itself is untouched by this work (audio entries belong to the audio change). **verify** after the audio change that `CORE`/message lists no longer reference removed mp3s. |
+| Dev hooks in production | `grep -E "__dbg|__game|__meta" dist/` is empty (was 1 hit, fixed). `compliance` enforces it. No `eval` / `new Function` in `src/`. |
+| localStorage | Hardened in `src/systems/Save.js`: parse errors and wrong JSON kinds fall back to defaults, numbers are finite and clamped (volumes 0..1, shake 0..3, counts 0..1e12), enums (`ship`, `difficulty`, `quality`, `bulletContrast`) whitelisted, ID arrays filtered to strings, `__proto__` keys dropped, `localStorage` access errors (blocked storage in sandboxed iframes) are caught. Consumers (`bindings.js`, `roster.js`) already re-validate their own shapes. Checked with a hostile-storage script (not committed). |
+| CI | `permissions: contents: read`, `persist-credentials: false`, actions pinned to major versions (`checkout@v4`, `setup-node@v4`, `upload-artifact@v4`), npm cache, no secrets. Stronger option: pin actions to full commit SHAs (Dependabot can maintain them). |
+| Supply chain | `package-lock.json` committed, `npm ci` in CI. puppeteer-core never downloads a browser. `npm install` prints a warning about `fsevents` install scripts (macOS optional dependency of Vite's watcher); it is not needed for the build. |
+| Reporting | `SECURITY.md` added. Enable "Private vulnerability reporting" in the repo settings so the advisory link works. |
+
+## 6. Platform rules
+
+Rules change; everything here comes from my knowledge, not from fetching the live pages. Treat each item as
+**verify before posting/uploading** unless stated.
+
+### itch.io (HTML5 game)
+
+- Upload a `.zip` of the **contents** of `dist/` with `index.html` at the zip root (no wrapping folder). `base: './'` already
+  makes asset paths relative. Mark the upload "This file will be played in the browser".
+- Limits (verify current numbers): an HTML5 zip is limited to roughly 1000 files and a few hundred MB extracted, with a
+  per-file cap near 200 MB. The build is ~2 MB (about 12 files), far below any limit. File names are case sensitive.
+- No external requests are required, and the CSP blocks them. That keeps the game working inside itch's iframe and
+  offline. Service worker registration works on itch's sandboxed `html.itch.zone` origin only as far as the browser allows;
+  `pwa.js` already swallows registration errors.
+- Embed settings: viewport 1280x720, "Mobile friendly" off or on with landscape as in `docs/ITCH.md`, fullscreen button on, autostart off.
+- **AI disclosure**: itch.io has a "generative AI" disclosure on the project edit page (Edit game, near the bottom;
+  **verify** exact label) and asks you to state AI use for assets, code and text. Fill it in using the text in
+  `docs/ITCH.md`, and repeat the one-line statement on the page itself.
+- Content rating / classification: itch has no age-rating system. Set "Kind of project", Genre, Tags and the Accessibility
+  checkboxes; leave "adult content" off (no violence beyond abstract shooting, no blood). Tick only accessibility features
+  that exist: rebindable controls, colour-blind bullet palette, high contrast, flash toggle, assist mode.
+- Images: **cover 630x500** (itch minimum 315x250, ratio about 5:4, PNG/GIF/JPG; cropping `og-image.png` loses the title: make a dedicated crop),
+  **screenshots** at least 3, 16:9 recommended (`docs/media/title.png`, `gameplay.png`, `boss.png`), optional GIF as the cover
+  (animated covers are allowed, under 3 MB recommended, verify).
+- Page must state the licence and credits (fonts, Phaser). Do not upload the concept art as screenshots.
+- Comments, pricing: free / no payments; do not add "donate" links to platforms that conflict with itch rules (verify).
+
+### Reddit (sitewide)
+
+- 9:1 guideline: Reddit's old "10% rule" is not enforced sitewide but most subs expect you to take part in the
+  community beyond your own posts. A new account that only posts its own game is routinely removed.
+- Say you are the developer ("I made", "dev here") in the title or first line. No misleading titles, no clickbait.
+- **Never ask for upvotes**, never ask friends to vote, never use alts: vote manipulation is a sitewide ban.
+- Do not crosspost the same text to many subs at once; space posts out (a day or more) and tailor each one.
+- Post media directly (one short GIF/video plus a link in a comment or the body) rather than GIF-spamming. Keep the
+  tone factual: what it is, what you want feedback on, controls, browser link.
+- Disclose AI use honestly if asked (and proactively in subs that ask for it). Do not post the concept art as gameplay.
+- Answer comments in the first hours; use the feedback, do not argue.
+
+Subreddit specifics (from memory, **verify each sub's current sidebar/rules and weekly threads before posting**):
+
+| Sub | What I recall | Do |
+|---|---|---|
+| r/gamedev | Self-promotion in standalone posts is not allowed. Developers share through the weekly threads (a Saturday showcase thread, "Showcase Saturday", and a Friday feedback thread; verify the current names/days). Posts must be about development, not marketing. | Post only in the weekly thread, short, with a GIF and a link; or write a genuine technical post (e.g. "how I authored sprites as ASCII maps") with no promo ask |
+| r/playmygame | Meant for sharing playable games to get feedback; requires a playable link, a flair for platform (Browser), and expects you to engage and give feedback in return. Bans pure spam. | Title like "[Browser] STARBURST - neon bullet hell, looking for feedback on difficulty"; link to itch (no download needed) |
+| r/WebGames | Browser-playable games only, no installs, no sign-up walls, no pay-to-play; usually a flair and a minimum quality bar; frequent posting by one author is discouraged. | Plain title with genre, direct link to the browser build; no extra links |
+| r/shmups | Community of shmup enthusiasts, strict about low-effort promotion; self-promotion usually needs a flair and the author should be a genuine community member (verify the self-promotion rule, a ratio or a weekly thread may apply). They care about hitbox clarity, scoring and bullet patterns. | Lead with the mechanics (graze, visible hitbox, boss phases), show a boss GIF, ask specific design questions; skip if you are brand new to the sub |
+| r/indiegames | Allows developers to post their own game with a dev flair; limit on frequency (verify: possibly one post per project or per few weeks), needs an image/video, no bare links. | One post with a GIF and a descriptive body, flair "Dev"/"Release" if present |
+| r/IndieDev, r/pixelart, r/BulletHell (if it exists) | Not in the brief, rules unknown to me. | **verify**; r/pixelart will check that the art is hand-made, so be accurate about AI use |
+
+### Twitter / X
+
+- Hashtags: `#gamedev #indiedev #pixelart #bulletHell #shmup #screenshotsaturday` (Saturday), `#indiegame`. Two or three per post.
+- Media: one GIF (<15 MB) or MP4 per post (verify current limits), show the best 6 seconds first. Alt text on images.
+- Disclose affiliation (it is your game) and any AI assistance. Do not use copyrighted music in trailers.
+- Do not buy followers or use engagement pods; do not reply-spam streamers/journalists with the link.
+
+## 7. Pre-launch checklist
+
+Blocking:
+- [ ] Decide on the history of the public repo (make it private now, or run the section 3 recipe, or start a fresh repo).
+- [ ] Confirm or change the proposed licences (`LICENSE`, `ASSET-LICENSE.md`).
+- [ ] Decide on `docs/concept-art/` (recommended: remove from the repo and history).
+- [ ] Confirm the AI disclosure wording (`docs/ITCH.md`, README credits) is accurate for how the game was really made.
+- [ ] Audio change landed: `npm run compliance -- --require-dist` passes (no audio files in `public/` or `dist/`).
+- [ ] Settle the origin of the jam audio and v1 images, or leave them removed from history.
+
+Build and test:
+- [ ] `npm ci && npm run check && npm run build && npm run test:smoke:prod && npm run compliance -- --require-dist`
+- [ ] Play the zip locally from a plain static server in a sub-folder (relative paths) and with the network disabled.
+- [ ] Check in Chrome, Firefox and Safari: audio starts after a click, fullscreen, gamepad, touch, save persists across reload.
+- [ ] Bump `version` in `package.json` for the release (shown in the version label).
+
+itch.io page:
+- [ ] Zip the contents of `dist/` with `index.html` at the root. Upload as HTML, set viewport 1280x720.
+- [ ] Cover image 630x500, 3+ screenshots, tags, accessibility checkboxes, AI disclosure filled, licence and credits in the text.
+- [ ] Test the live page in the itch iframe, including a mobile browser.
+
+Promotion:
+- [ ] README and itch page say: free, browser, who made it, AI use, licence, credits.
+- [ ] Reddit: read each sub's current rules, use the right flair/thread, one sub per day, say you are the dev, no vote asking.
+- [ ] Twitter/X: one GIF, hashtags, alt text, pinned post with the itch link.
+- [ ] Have `SECURITY.md` / private vulnerability reporting enabled; watch issues and comments for the first week.

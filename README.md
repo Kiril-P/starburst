@@ -11,7 +11,7 @@ A neon pixel-art bullet hell. Dodge dense bullet patterns, graze for combo, figh
 
 ## Features
 
-- **Hand-placed pixel art** at a native 640×360, scaled with whole-pixel steps so every pixel is the same size.
+- **Pixel art authored as text maps** (see AI note under Credits) at a native 640×360, scaled with whole-pixel steps so every pixel is the same size.
 - **Readable bullet patterns**: orbs, rings, needles, and shards each have their own shape. Your true hitbox is a small marked dot, and near misses (grazes) build your combo.
 - **Three ships**: Pulsar (balanced), Nova Dart (fast and fragile), and Titan (heavy armour). Each has its own hull, speed, damage, and fire rate.
 - **Upgrades between waves**: unlock and level up dash, forcefield, and phase shift, plus thrusters and hull repairs.
@@ -48,7 +48,7 @@ Originally made for **Bullet Hell Jam 6**.
 
 ## Development
 
-Built with JavaScript, Phaser 3.90, and Vite. Everything, including Phaser and the fonts, is bundled locally, so the game works offline.
+Built with JavaScript, Phaser 3.90, and Vite. Everything, including Phaser and the fonts, is bundled locally, so the game works offline. The pixel art is not made of image files: every sprite is an ASCII map in `src/art/` that is baked into textures at startup, and sound is synthesized at runtime. A strict Content-Security-Policy is injected into production builds.
 
 ```sh
 npm install
@@ -60,9 +60,10 @@ npm run test:smoke       # headless smoke test of the whole game loop (needs Chr
 npm run test:smoke:prod  # same, plus the production bundle and its service worker
 npm run gif              # re-record docs/media/gameplay.gif (needs ffmpeg)
 npm run icons            # regenerate favicon / PWA icons from the pixel-art source
+npm run compliance       # release checks: asset allowlist, secrets, licence metadata, no dev hooks in dist/ (see docs/COMPLIANCE.md)
 ```
 
-CI (`.github/workflows/ci.yml`) runs `check`, `build`, and the smoke test on every push and pull request. It uploads the build as the `starburst-dist` artifact.
+CI (`.github/workflows/ci.yml`, read-only token, no secrets) runs `check`, `npm audit`, `build`, `compliance`, and the smoke test on every push and pull request. It uploads the build as the `starburst-dist` artifact.
 
 There are a few more tools: `node tools/shot.mjs` takes screenshots of the running game, `node tools/render-sprites.mjs` renders sprite sheets, and `node tools/qa.mjs` runs a leak and flow check over every screen. In dev builds, `window.__dbg` exposes test hooks (`skipToWave`, `boss`, `godMode`, `spray`, …).
 
@@ -77,9 +78,25 @@ Before you change visuals or code structure, read `docs/STYLE.md` and `docs/ARCH
 
 ## Credits
 
-- Design, code, and art: Kiril Petrovski
+- Design and direction: Kiril Petrovski.
+- Code and pixel-art sprite maps: written with AI coding assistants (Anthropic's Claude) under the developer's direction and review.
 - Engine: [Phaser](https://phaser.io) 3.90 (MIT). Build tool: [Vite](https://vite.dev) (MIT).
 - Fonts (SIL Open Font License, via [Fontsource](https://fontsource.org)):
   - [Press Start 2P](https://fonts.google.com/specimen/Press+Start+2P) by CodeMan38
   - [Silkscreen](https://fonts.google.com/specimen/Silkscreen) by Jason Kottke
-- Music and sound effects: from the original Bullet Hell Jam 6 release. Extra UI and feedback sounds are synthesized at runtime.
+- Sound and music: synthesized at runtime by the game's own code; no audio files are shipped.
+- Full list of third-party components and licence texts: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+### AI-generated concept art
+
+The images in [`docs/concept-art/`](docs/concept-art/) are **AI-generated concept art** made during planning. They are not part of the game, are not hand-made pixel art, and are not shown as gameplay. The game's own art is the text-map pixel art in `src/art/`.
+
+## Licence
+
+Proposed licensing (the maintainer has to confirm it, see [docs/COMPLIANCE.md](docs/COMPLIANCE.md)):
+
+- Source code: [MIT](LICENSE), Copyright (c) 2026 Kiril Petrovski.
+- Original pixel art and generated audio: [CC BY 4.0](ASSET-LICENSE.md).
+- Third-party components (Phaser, Vite, fonts) keep their own licences, see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+Security issues: see [SECURITY.md](SECURITY.md). Contributions: see [CONTRIBUTING.md](CONTRIBUTING.md).
