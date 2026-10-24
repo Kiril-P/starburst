@@ -39,6 +39,9 @@ export default class Enemy extends Phaser.GameObjects.Sprite {
         this.hp = t.hp * opts.hpMod;
         this.r = t.radius;
         this.tier = opts.tier;
+        this.gen = (this.gen || 0) + 1;   // lets delayed effects tell a pooled enemy's lives apart
+        this.volatile = false;            // chain-explodes neighbours when killed (formations 'fuse')
+        this._vt = 0;
         this.age = 0;
         this.shots = 0;
         this.flash = 0;
@@ -78,7 +81,11 @@ export default class Enemy extends Phaser.GameObjects.Sprite {
     update(dt, c) {
         const s = dt / 1000;
         this.age += dt;
-        if (this.flash > 0 && (this.flash -= dt) <= 0) this.clearTint();
+        if (this.flash > 0 && (this.flash -= dt) <= 0) { this.clearTint(); this._vt = 0; }
+        if (this.volatile && this.flash <= 0) {   // amber blink = warning: this one blows up when shot
+            const on = ((this.age / 220) | 0) & 1;
+            if (on !== this._vt) { this._vt = on; if (on) this.setTintFill(0xffb547); else this.clearTint(); }
+        }
         if (this.frameMs > 0 && (this.frameMs -= dt) <= 0) this.setFrame(0);   // e.g. shield flash -> idle
         if (this.type.think) {
             this.type.think(this, dt, c);
