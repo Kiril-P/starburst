@@ -203,8 +203,14 @@
 
     /** what to shoot at: boss weak spot, else the enemy closest in x above us (a casual player picks the nearest) */
     function target(g, p) {
-        const ts = g.bosses.targets;
-        if (ts.length) return ts.reduce((a, t) => ((t.mult || 1) > (a.mult || 1) ? t : a), ts[0]);
+        const ts = g.bosses.targets, boss = g.bosses.boss;
+        if (ts.length) {
+            // armour first (Colossus: the core deflects until every plate is gone), else the best weak spot
+            const plates = ts.filter((t) => t.alive && t.plate);
+            if (plates.length && boss.phase === 0) return plates.reduce((a, t) => (Math.abs(t.x - p.x) < Math.abs(a.x - p.x) ? t : a), plates[0]);
+            const live = ts.filter((t) => t.alive);
+            if (live.length) return live.reduce((a, t) => ((t.mult || 1) > (a.mult || 1) ? t : a), live[0]);
+        }
         let best = null, bd = 1e9;
         for (const e of g.waves.live) {
             if (!e.alive || e.y < 0 || e.x < 0 || e.x > Wd || e.type.minor) continue;
