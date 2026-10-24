@@ -31,8 +31,8 @@ export const DIAGONAL_FACTOR = 0.8;    // v1 normalised diagonals to 80% speed
 // Abilities: level 1 = v1 values; later levels come from the upgrade list (systems/upgrades.js).
 export const ABILITIES = {
     dash: { cooldown: [5000, 3800, 2800], duration: [200, 220, 260], speed: 900 * SPEED_SCALE },
-    forcefield: { cooldown: [16000, 13000, 10500], bubbleMs: [900, 1200, 1600], cancelPoints: 5 },
-    phase: { cooldown: [15000, 12500, 10000], duration: [3000, 3500, 4000] },
+    forcefield: { cooldown: [18000, 15000, 12000], bubbleMs: [900, 1200, 1600], cancelPoints: 5 },
+    phase: { cooldown: [16000, 14000, 12000], duration: [2500, 2800, 3200] },
     thrusters: { bonus: [100, 60] }      // v1: +100 speed (v1 px/s, scaled by SPEED_SCALE)
 };
 
