@@ -1,23 +1,36 @@
-// In-game audio: main music (via the music engine), the looping thruster hum, throttled one-shots, and the
-// glue that makes music and visuals react to the run. Everything is derived here from scene state each frame
-// (pause / upgrade screen / death / wave / combo), so the Game scene only has to create and destroy this.
-//   music: crossfades in from the title, ducks (low-pass + quieter) while paused / picking an upgrade, closes
-//          down on death and stays ducked under GameOver; opens up as waves progress; boss mode via setBossMode.
-//   beats: bass hits pulse the background and the bloom glow.
+// In-game audio: the music (sector tracks, boss themes, stings) via the music engine, the looping thruster hum,
+// throttled one-shots, and the glue that makes music and visuals react to the run. Everything is derived here from
+// scene state each frame (pause / upgrade screen / death / wave / combo / hull), so the Game scene only has to create
+// and destroy this.
+//   music: each sector has its own track (sectorTrack); intensity builds within a sector as its waves progress and with
+//          the combo, so a fresh sector starts calm and fills out layer by layer; boss fights crossfade to the boss
+//          theme (final boss: its own variant) and return to the sector track once the boss is down.
+//   stings: boss warning, wave clear, upgrade screen. Ducks (low-pass + quieter) while paused / picking an upgrade.
+//   beats: the sequencer's beats pulse the background and the bloom glow.
 import { save } from './Save.js';
 import { sfx } from './sfx.js';
-import { playMusic, duck, setIntensity, setBossMode } from './music.js';
+import { ensureSynthSfx } from './synthSfx.js';
+import { playMusic, playSting, duck, setIntensity, setBossMode } from './music.js';
 import { onBeat, getPulse } from './audioReact.js';
+import { sectorOf } from '../objects/sectors.js';
+import { sectorTrack } from '../audio/tracks/index.js';
+import { BOSS_EVERY } from '../objects/waves.js';
 
-const INTENSITY_WAVES = 10;   // waves until the music is fully open
+const INTENSITY_WAVES = 10;   // waves until the global share of the intensity is full
 const BEAT_PULSE = 0.22;      // background pulse per beat (scaled by beat strength); big hits use 0.3-1
+const LOW_HP = 0.3;           // hull fraction under which the heartbeat alarm plays
+const LOW_HP_GAP = 1100;      // ms between alarm beats
 
 export default class GameAudio {
     constructor(scene) {
         this.scene = scene;
         this.last = Object.create(null);
-        playMusic('main-music', { restart: true, fadeIn: 700, fadeOut: 1400, intensity: 0 });
-        this.hum = scene.cache.audio.exists('thruster-hum') ? scene.sound.add('thruster-hum', { loop: true, volume: 0 }) : null;
+        this.trackKey = sectorTrack(sectorOf(scene.waves?.wave ?? 1));
+        playMusic(this.trackKey, { restart: true, fadeIn: 700, fadeOut: 1400, intensity: 0 });
+        this.hum = ensureSynthSfx(scene.game, 'thruster-hum') ? scene.sound.add('thruster-hum', { loop: true, volume: 0 }) : null;
+        this.bossOn = false;
+        this.intensity = 0;
+        this.lastHp = 0;
         this.humVol = 0;
         this.combo = 1;
         this.bloomBase = null;
@@ -30,31 +43,74 @@ export default class GameAudio {
     /** play unless the same key played less than `gapMs` ago */
     throttled(key, gapMs, opts) { return sfx(this.scene, key, { gap: gapMs, ...opts }); }
 
-    /** boss intro: siren + a short duck so it cuts through */
+    /** boss intro: siren + the warning sting (riser into a slam), the music dips under it */
     bossWarning() {
-        sfx(this.scene, 'warning', { vol: 0.8 });
-        duck('launch', true, 200);
-        // real time: the scene clock may be slowed / hit-stopped / paused
-        clearTimeout(this.warnT);
-        this.warnT = setTimeout(() => duck('launch', false, 800), 1600);
+        sfx(this.scene, 'warning', { vol: 0.6 });
+        playSting('sting-boss', { vol: 0.9 });
     }
 
-    setBossMode(on) { setBossMode(on); }
-    setIntensity(v) { setIntensity(v); }
+    /**
+     * Boss fight on/off: crossfades to the boss theme (final = the final-boss variant) and, `delayMs` after the boss is
+     * down (real time), back to the sector's track at the current intensity.
+     */
+    setBossMode(on, final = false, delayMs = 0) {
+        clearTimeout(this.bossT);
+        if (on === this.bossOn) return;
+        if (on) {
+            this.bossOn = true;
+            playMusic(final ? 'boss-final' : 'boss', { fadeIn: 450, fadeOut: 900, restart: true, intensity: 1, boss: true });
+            return;
+        }
+        const back = () => {
+            this.bossOn = false;
+            setBossMode(false);
+            playMusic(this.trackKey, { fadeIn: 1400, fadeOut: 1600, restart: true, intensity: this.intensity });
+        };
+        if (delayMs > 0) this.bossT = setTimeout(back, delayMs); else back();
+    }
+
+    setIntensity(v) { this.intensity = v; setIntensity(v); }
+
+    /** wave cleared: the clear sting (the upgrade screen follows with its own) */
+    waveClear() { playSting('sting-clear', { vol: 0.9 }); }
 
     tick(time, dt) {
         const g = this.scene;
         if (!g.player) return;
         duck('pause', !!g.paused);
         duck('upgrade', !!g.upgradeScreen);
+        if (!!g.upgradeScreen !== !!this.upgradeOpen) { this.upgradeOpen = !!g.upgradeScreen; if (this.upgradeOpen) playSting('sting-upgrade', { vol: 0.8 }); }
         if (g.dying) duck('gameover', true, 1400);
         const wave = g.waves?.wave ?? 1;
-        if (this.wave !== undefined && wave > this.wave) sfx(g, 'wave-start', { vol: 0.5 });
+        if (this.wave !== undefined && wave > this.wave) {
+            sfx(g, 'banner', { vol: 0.55 });
+            this.enterSector(sectorOf(wave));
+        }
         this.wave = wave;
         const mult = g.combo?.mult ?? 1;
-        setIntensity(Math.min(1, (wave - 1) / INTENSITY_WAVES) * 0.85 + Math.min(1, mult / 12) * 0.15);
+        // global progress + progress through the sector (a new sector starts calm) + combo heat
+        const within = ((wave - 1) % BOSS_EVERY) / (BOSS_EVERY - 1);
+        this.setIntensity(Math.min(1, (wave - 1) / INTENSITY_WAVES) * 0.2 + within * 0.55 + Math.min(1, mult / 12) * 0.25);
         this.comboSfx(mult);
+        this.lowHp(time);
         this.glow();
+    }
+
+    /** a new sector began: its own track (unless a boss theme is playing; it returns to the new track after) */
+    enterSector(sector) {
+        const key = sectorTrack(sector);
+        if (key === this.trackKey) return;
+        this.trackKey = key;
+        if (!this.bossOn) playMusic(key, { fadeIn: 1400, fadeOut: 1600, restart: true, intensity: 0 });
+    }
+
+    /** critical hull: a heartbeat + alarm blip about once a second (real time) */
+    lowHp(time) {
+        const p = this.scene.player;
+        if (!p || !p.alive || this.scene.paused || this.scene.dying) return;
+        if (p.hp / p.maxHp > LOW_HP || time - (this.lastLow || 0) < LOW_HP_GAP) return;
+        this.lastLow = time;
+        sfx(this.scene, 'low-hp', { vol: 0.5 });
     }
 
     /** rising chirp per combo tier, a drop when a big chain breaks */
@@ -93,7 +149,7 @@ export default class GameAudio {
 
     destroy() {
         this.stopHum();
-        clearTimeout(this.warnT);
+        clearTimeout(this.bossT);
         duck('launch', false);
         setBossMode(false);
         this.scene.events.off('update', this.tick, this);
