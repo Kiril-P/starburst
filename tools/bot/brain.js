@@ -100,6 +100,9 @@
     function predict(th, steps) {
         const P = B.prof, pos = [];
         const cur = th.bullets.map((b) => ({ ...b }));
+        const row0 = new Float32Array(cur.length * 2);
+        cur.forEach((b, i) => { row0[i * 2] = b.x; row0[i * 2 + 1] = b.y; });
+        pos.push(row0);   // pos[k] = positions after k sub-steps (pos[0] = now)
         for (let k = 1; k <= steps; k++) {
             const s = SUB / 1000, row = new Float32Array(cur.length * 2);
             cur.forEach((b, i) => {
@@ -143,10 +146,16 @@
             const q = { ...m };
             let cost = 0, firstHit = 99;
             for (let k = 0; k < steps; k++) {
+                const x0 = q.x, y0 = q.y;
                 move(q, k < until ? d1 : d2);
-                const x = q.x, y = q.y, w = Math.pow(0.88, k), t = (pre + k + 1) * SUB / 1000, row = pos[pre + k];
+                const x = q.x, y = q.y, w = Math.pow(0.88, k), t = (pre + k + 1) * SUB / 1000, row = pos[pre + k + 1], prev = pos[pre + k];
                 for (let i = 0; i < th.bullets.length; i++) {
-                    const dx = row[i * 2] - x, dy = row[i * 2 + 1] - y, dd = Math.sqrt(dx * dx + dy * dy) - th.bullets[i].r;
+                    // swept test: closest approach of the bullet to the ship during this sub-step (relative motion is
+                    // linear within it). Point samples miss fast needles, which move ~20 px per 50 ms sub-step.
+                    const ax = prev[i * 2] - x0, ay = prev[i * 2 + 1] - y0, bx = row[i * 2] - x, by = row[i * 2 + 1] - y;
+                    const ex = bx - ax, ey = by - ay, l2 = ex * ex + ey * ey;
+                    const u = l2 > 0 ? Math.max(0, Math.min(1, -(ax * ex + ay * ey) / l2)) : 0;
+                    const dx = ax + ex * u, dy = ay + ey * u, dd = Math.sqrt(dx * dx + dy * dy) - th.bullets[i].r;
                     if (dd < 1) { cost += 400 * w; if (firstHit > k) firstHit = k; } else if (dd < 14) cost += w * 6 / dd;
                 }
                 for (const o of th.bodies) {

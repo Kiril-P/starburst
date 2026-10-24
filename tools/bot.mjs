@@ -35,7 +35,14 @@ if (!base) {
     base = server.resolvedUrls.local[0];
 }
 base = base.replace(/\/$/, '');
-const launch = () => puppeteer.launch({ executablePath: findChrome(get('--chrome')), headless: 'new', args: [...chromeArgs(960, 540), '--disable-renderer-backgrounding', '--disable-background-timer-throttling', '--disable-backgrounding-occluded-windows', '--disable-features=CalculateNativeWinOcclusion'], protocolTimeout: 600000 });
+// every browser we start, so a killed bot (Ctrl-C / SIGTERM) doesn't leave SwiftShader GPU processes spinning
+const browsers = new Set();
+for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(sig, () => {
+    for (const b of browsers) { try { process.kill(-b.process().pid, 'SIGKILL'); } catch (e) { try { b.process().kill('SIGKILL'); } catch (e2) { /* gone */ } } }
+    process.exit(130);
+});
+const launch = async () => { const b = await launchRaw(); browsers.add(b); b.on('disconnected', () => browsers.delete(b)); return b; };
+const launchRaw = () => puppeteer.launch({ executablePath: findChrome(get('--chrome')), headless: 'new', args: [...chromeArgs(960, 540), '--disable-renderer-backgrounding', '--disable-background-timer-throttling', '--disable-backgrounding-occluded-windows', '--disable-features=CalculateNativeWinOcclusion'], protocolTimeout: 900000, detached: true, handleSIGINT: false, handleSIGTERM: false, handleSIGHUP: false });
 
 /** runs before any page script: storage for this job, virtual-clock hook, never lose focus */
 function prelude(o) {
