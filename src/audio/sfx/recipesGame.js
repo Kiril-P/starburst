@@ -61,13 +61,6 @@ export const GAME = {
             return (t) => o(sweep(300, 1250, 0.25, t)) * ar(t, 0.02, 0.3) * 0.5 + (b(1800) + c(2400) * 0.7) * (t > 0.2 ? decay(t - 0.2, 0.15) : 0) * 0.4 * (1 + 0.3 * Math.sin(t * TAU * 9));
         }
     },
-    // bomb: fuse beeps + a deep thud (the explosion itself is boss-explosion)
-    'pickup-bomb': {
-        len: 0.42, peak: 0.65, fn: (k) => {
-            const o = k.osc('square'), s = k.osc('sine');
-            return (t) => (t < 0.2 ? o(1000) * (((t / 0.07) | 0) % 2 === 0 ? 1 : 0) * 0.4 : 0) + (t >= 0.2 ? s(sweep(110, 40, 0.15, t - 0.2)) * decay(t - 0.2, 0.09) * 1.2 : 0);
-        }
-    },
     // boss phase change: dissonant stab that slams down, with a noise wash
     'boss-phase': {
         len: 1.1, peak: 0.8, fn: (k) => {

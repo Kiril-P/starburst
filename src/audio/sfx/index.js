@@ -9,6 +9,7 @@ import { GAME } from './recipesGame.js';
 export const RECIPES = { ...BASE, ...COMBAT, ...GAME };
 export const SFX_KEYS = Object.keys(RECIPES);
 const RMS_CAP = 0.16;   // -16 dBFS
+const PEAK_CAP = 0.8;   // -2 dBFS: no recipe is ever hotter, whatever its `peak` says
 
 /**
  * Render a recipe to Float32 samples, normalised to its `peak` with a 4 ms de-click fade at the end. Loop recipes are
@@ -28,7 +29,7 @@ export function renderSfx(key, sr) {
     // noise bursts at the same peak), so one volume number means roughly the same loudness for every key
     let sq = 0;
     for (let i = 0; i < n; i++) sq += out[i] * out[i];
-    const rms = Math.sqrt(sq / n) || 1, g = max > 0 ? Math.min(r.peak / max, (r.rms ?? RMS_CAP) / rms) : 0, fade = r.loop ? 0 : Math.min(n, Math.round(sr * 0.004));
+    const rms = Math.sqrt(sq / n) || 1, g = max > 0 ? Math.min(Math.min(r.peak, PEAK_CAP) / max, (r.rms ?? RMS_CAP) / rms) : 0, fade = r.loop ? 0 : Math.min(n, Math.round(sr * 0.004));
     for (let i = 0; i < n; i++) out[i] *= g * (i >= n - fade ? (n - i) / fade : 1);
     return out;
 }

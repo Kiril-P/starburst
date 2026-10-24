@@ -139,7 +139,33 @@ cache key; give it a rule in `sfx.js` if it can fire often).
 `node tools/render-audio.mjs --check --layers` renders every track (3 passes, the first is a warm-up) and reports peak, RMS,
 NaN count, DC, pass-to-pass difference and the seam; the numbers below are from the final run.
 
-RESULTS_PLACEHOLDER
+Music (full intensity, 3 passes rendered, after the game's master limiter; pre-limiter = same render without it):
+
+| Track | Length | Peak | RMS | Pre-limiter peak | Pass-to-pass diff | Wrap diff | RMS calm / mid / full |
+|---|---|---|---|---|---|---|---|
+| `title-music` | 34.91 s | -6.0 dBFS | -21.9 dBFS | -11.0 dBFS | -147 dB | -147 dBFS | -23.4 / -22.7 / -21.9 |
+| `sector1` | 32.54 s | -6.9 | -21.7 | -11.9 | -147 | -141 | -23.2 / -22.5 / -21.7 |
+| `sector2` | 29.09 s | -6.8 | -22.5 | -11.8 | -147 | -144 | -23.1 / -22.9 / -22.5 |
+| `sector3` | 40.00 s | -9.9 | -23.0 | -15.1 | -148 | -147 | -23.2 / -23.1 / -23.0 |
+| `sector4` | 25.60 s | -7.0 | -22.8 | -12.0 | -146 | -144 | -23.2 / -23.0 / -22.8 |
+| `boss` | 27.43 s | -4.0 | -21.0 | -8.6 | -146 | -141 | -21.7 / -21.4 / -21.0 |
+| `boss-final` | 25.60 s | -4.1 | -20.6 | -8.7 | -145 | -144 | -21.6 / -21.4 / -20.6 |
+
+- **Loop seam**: a rendered pass is sample-identical to the next one (difference below -140 dB, i.e. float rounding), so the wrap
+  from the end of a loop to its start is exactly what the continuing signal does there: no click. (Live play has no wrap at all.)
+  The offline renderer rounds the bar to a whole number of samples (tempo error < 0.01 %) to make this exact.
+- **Peaks** are all under -4 dBFS after the limiter (limit for the check: -1 dBFS), no NaN / Inf, DC offset < 0.001, no
+  silent 0.5 s window. RMS sits between -20.6 and -23 dBFS (calm layers up to 1.7 dB lower than full).
+- Stings (peak / RMS): `sting-boss` -1.7 / -20.7, `sting-clear` -2.2 / -24.9, `sting-gameover` -7.4 / -19.6,
+  `sting-upgrade` -3.1 / -24.5, `sting-victory` -2.2 / -20.1 dBFS.
+- Sfx: 46 recipes, every peak <= -1.9 dBFS (capped at -2) and RMS <= -15.9 dBFS (capped at -16).
+- **Cost** (Chrome, measured in-page): scheduling one bar of music takes 1-2.5 ms (max 4.8 ms), starting a track or a sting
+  about 6 ms; the sfx bake is 30 ms at boot (menu sounds first) plus idle slices of 6 ms, about 170-190 ms of work in total, the
+  slowest single recipe (`boss-death`, 3.4 s) about 45 ms cold. Nothing is generated per frame. Boot-time main-thread work for audio
+  stays under about 40 ms.
+- Game checks (headless Chrome): `npm run test:smoke` asserts a sector track is playing once the run starts and the boss theme
+  when a boss spawns; `node tools/qa.mjs` shows no growth in sounds / listeners across loops; blur suspends the context and
+  focus resumes it with the track still playing.
 
 What a human still has to judge by ear: melodic taste, whether each sector track feels like its backdrop, the balance of the
 layers (the lab page's intensity slider), the mix of music vs. sfx in a real fight, and the pitch climb of the chain / streak sounds.

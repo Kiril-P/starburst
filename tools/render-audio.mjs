@@ -68,6 +68,7 @@ export async function renderAll(opts = {}) {
         const st = new Int16Array(f.length * 2);
         for (let i = 0; i < f.length; i++) st[2 * i] = st[2 * i + 1] = i16[i];
         result[key] = { file: write(`sfx-${key}`, st, sr), stats: sfxStats(f, sr) };
+        opts.onResult?.(key, result[key]);
     }
 
     const jobs = [...TRACK_KEYS.map((k) => ['track', k, 'music']), ...STING_KEYS.map((k) => ['sting', k, 'stings'])].filter(([, k, g]) => want(k, g));
@@ -85,6 +86,7 @@ export async function renderAll(opts = {}) {
                 const i16 = r.pcm ? new Int16Array(Uint8Array.from(Buffer.from(r.pcm, 'base64')).buffer) : null;
                 r.stats.renderMs = r.ms;
                 result[key] = { file: i16 ? write(key, i16, r.sr) : null, stats: r.stats };
+                opts.onResult?.(key, result[key]);
             }
         } finally { await browser.close(); srv.close(); }
     }
@@ -105,19 +107,19 @@ export function problems(name, s) {
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
     const argv = process.argv.slice(2), get = (n, d) => { const i = argv.indexOf(n); return i >= 0 ? argv[i + 1] : d; }, has = (n) => argv.includes(n);
     const t0 = Date.now();
-    const res = await renderAll({
-        out: get('--out', null), only: get('--only', null)?.split(','), loops: Number(get('--loops', 1)), mp3: has('--mp3'),
-        layers: has('--layers'), files: !has('--no-files'), chrome: get('--chrome', undefined)
-    });
     let bad = 0;
-    for (const [name, { stats: s }] of Object.entries(res)) {
+    const report = (name, { stats: s }) => {
         const pr = problems(name, s);
         console.log(`${name.padEnd(18)} ${String(s.seconds).padStart(6)}s  peak ${String(s.peakDb).padStart(6)}  rms ${String(s.rmsDb).padStart(6)} dBFS`
             + (s.rawPeakDb !== undefined ? `  pre-limiter ${s.rawPeakDb}` : '') + (s.seamDiffDb !== undefined ? `  seam ${s.seamDiffDb} dBFS  loop-diff ${s.loopMismatchDb} dB` : '')
             + (s.layers ? '  layers ' + Object.entries(s.layers).map(([k, v]) => `${k} ${v.rmsDb}`).join(' / ') : '')
             + (s.renderMs ? `  [${s.renderMs}ms]` : '') + (pr.length ? `  !! ${pr.join('; ')}` : ''));
         bad += pr.length;
-    }
+    };
+    const res = await renderAll({ onResult: report,
+        out: get('--out', null), only: get('--only', null)?.split(','), loops: Number(get('--loops', 1)), mp3: has('--mp3'),
+        layers: has('--layers'), files: !has('--no-files'), chrome: get('--chrome', undefined)
+    });
     console.log(`${Object.keys(res).length} renders in ${((Date.now() - t0) / 1000).toFixed(1)}s -> ${get('--out', 'tmp/audio')}`);
     if (has('--check') && bad) process.exit(1);
 }

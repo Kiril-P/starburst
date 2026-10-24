@@ -34,7 +34,6 @@ const RULES = {
     'pickup-rapid': { gap: 200, cap: 1 },
     'pickup-x2': { gap: 200, cap: 1 },
     'pickup-shield': { gap: 200, cap: 1 },
-    'pickup-bomb': { gap: 200, cap: 1 },
     'low-hp': { gap: 700, cap: 1 },
     'boss-phase': { gap: 400, cap: 1 },
     'boss-death': { gap: 800, cap: 1 },

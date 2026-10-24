@@ -6,9 +6,9 @@ export const BASE = {
     // bright tick, short enough to repeat fast while skimming a bullet stream
     graze: { len: 0.07, peak: 0.55, fn: (k) => { const o = k.osc('sine'), h = k.hp(); return (t) => o(3100 - t * 9000) * decay(t, 0.014) + h(k.noise(), 5000) * decay(t, 0.004) * 0.5; } },
     // two-step rising chirp; callers raise the rate with the combo tier
-    'combo-up': { len: 0.16, peak: 0.6, fn: (k) => { const o = k.osc('pulse'), f = k.lp(); const n = [[0, 784], [0.055, 1175]]; return (t) => f(o(seqHz(n, t)), 5000) * decay(noteT(n, t), 0.05); } },
+    'combo-up': { len: 0.16, peak: 0.6, rms: 0.2, fn: (k) => { const o = k.osc('pulse'), f = k.lp(); const n = [[0, 784], [0.055, 1175]]; return (t) => f(o(seqHz(n, t)), 5000) * decay(noteT(n, t), 0.05); } },
     'combo-lost': { len: 0.3, peak: 0.5, fn: (k) => { const o = k.osc('square'), f = k.lp(); return (t) => f(o(520 * Math.pow(0.35, t / 0.3)), 2200) * ar(t, 0.005, 0.3); } },
-    pickup: { len: 0.2, peak: 0.6, fn: (k) => { const o = k.osc('square'), f = k.lp(); const n = [[0, 988], [0.06, 1319]]; return (t) => f(o(seqHz(n, t)), 6000) * (t < 0.06 ? 1 : decay(t - 0.06, 0.05)); } },
+    pickup: { len: 0.2, peak: 0.6, rms: 0.22, fn: (k) => { const o = k.osc('square'), f = k.lp(); const n = [[0, 988], [0.06, 1319]]; return (t) => f(o(seqHz(n, t)), 6000) * (t < 0.06 ? 1 : decay(t - 0.06, 0.05)); } },
     'level-up': {
         len: 0.62, peak: 0.7, fn: (k) => {
             const a = k.osc('square'), b = k.osc('tri'), f = k.lp();
@@ -29,8 +29,8 @@ export const BASE = {
         }
     },
     'ui-hover': { len: 0.03, peak: 0.35, fn: (k) => { const o = k.osc('tri'); return (t) => o(1760) * decay(t, 0.008); } },
-    'ui-select': { len: 0.09, peak: 0.5, fn: (k) => { const o = k.osc('square'), f = k.lp(); const n = [[0, 880], [0.035, 1320]]; return (t) => f(o(seqHz(n, t)), 4500) * decay(noteT(n, t), 0.03); } },
-    'ui-back': { len: 0.09, peak: 0.45, fn: (k) => { const o = k.osc('square'), f = k.lp(); const n = [[0, 1320], [0.035, 784]]; return (t) => f(o(seqHz(n, t)), 4000) * decay(noteT(n, t), 0.03); } },
+    'ui-select': { len: 0.09, peak: 0.5, rms: 0.2, fn: (k) => { const o = k.osc('square'), f = k.lp(); const n = [[0, 880], [0.035, 1320]]; return (t) => f(o(seqHz(n, t)), 4500) * decay(noteT(n, t), 0.03); } },
+    'ui-back': { len: 0.09, peak: 0.45, rms: 0.2, fn: (k) => { const o = k.osc('square'), f = k.lp(); const n = [[0, 1320], [0.035, 784]]; return (t) => f(o(seqHz(n, t)), 4000) * decay(noteT(n, t), 0.03); } },
     // boss warning: two klaxon whoops (saw through a resonant-ish low-pass), meant to loop-free announce
     warning: {
         len: 1.7, peak: 0.75, fn: (k) => {

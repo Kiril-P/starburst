@@ -7,7 +7,7 @@ import { impulse } from './dsp.js';
 export const STINGS = {
     // boss intro: noise riser, then a slam on D minor with toms
     'sting-boss': {
-        bpm: 140, gain: 1, len: 8.5, events: [
+        bpm: 140, gain: 0.3, len: 8.5, events: [
             [0, 'riser', 'x', 4, 1], [3, 'tom', 'D3', 0.5, 0.6], [3.5, 'tom', 'F3', 0.5, 0.7], [3.75, 'tom', 'A3', 0.5, 0.8],
             [4, 'kick', 'x', 1, 1], [4, 'crash', 'x', 3, 1], [4, 'bass', 'D1', 3, 1], [4, 'pad', ['D2', 'A2', 'F3', 'D4'], 3.5, 1],
             [4, 'lead', 'D5', 1.5, 0.9], [5.5, 'lead', 'F5', 0.5, 0.9], [6, 'lead', 'E5', 0.5, 0.85], [6.5, 'lead', 'D5', 1.5, 0.9],
@@ -16,15 +16,15 @@ export const STINGS = {
     },
     // wave clear: bright major run up and a bell
     'sting-clear': {
-        bpm: 132, gain: 1, len: 3.6, events: [
+        bpm: 132, gain: 0.5, len: 3.6, events: [
             [0, 'pluck', 'C5', 0.5, 0.9], [0.5, 'pluck', 'E5', 0.5, 0.9], [1, 'pluck', 'G5', 0.5, 0.9], [1.5, 'pluck', 'C6', 0.5, 0.95],
             [2, 'pluck', 'E6', 1, 1], [2, 'bell', 'C6', 2.5, 0.9], [2, 'pad', ['C3', 'G3', 'E4', 'C5'], 2.5, 0.9],
-            [0, 'kick', 'x', 1, 0.8], [2, 'kick', 'x', 1, 0.7], [2, 'hat', 'x', 1, 0.8]
+            [0, 'kick', 'x', 1, 0.5], [2, 'kick', 'x', 1, 0.45], [2, 'hat', 'x', 1, 0.5]
         ]
     },
     // game over: slow minor fall, low final note
     'sting-gameover': {
-        bpm: 76, gain: 1, len: 6.2, events: [
+        bpm: 76, gain: 0.2, len: 6.2, events: [
             [0, 'lead', 'A4', 1.5, 0.9], [1.5, 'lead', 'G4', 0.5, 0.85], [2, 'lead', 'F4', 1.5, 0.85], [3.5, 'lead', 'E4', 0.5, 0.8], [4, 'lead', 'C4', 3, 0.8],
             [0, 'pad', ['A2', 'E3', 'C4'], 2, 0.9], [2, 'pad', ['F2', 'C3', 'A3'], 2, 0.9], [4, 'pad', ['A1', 'E2', 'A2', 'C3'], 4, 1],
             [4, 'bass', 'A1', 3.5, 1], [4, 'bell', 'A3', 4, 0.7], [0, 'tom', 'A2', 1, 0.7]
@@ -32,14 +32,14 @@ export const STINGS = {
     },
     // upgrade screen opens: shimmering ascending chime
     'sting-upgrade': {
-        bpm: 120, gain: 1, len: 2.8, events: [
+        bpm: 120, gain: 0.6, len: 2.8, events: [
             [0, 'pluck', 'G4', 0.5, 0.8], [0.25, 'pluck', 'B4', 0.5, 0.8], [0.5, 'pluck', 'D5', 0.5, 0.85], [0.75, 'pluck', 'G5', 0.5, 0.9],
             [1, 'pluck', 'B5', 1, 0.95], [1, 'bell', 'G5', 2, 0.8], [1, 'pad', ['G3', 'D4', 'B4'], 2, 0.8]
         ]
     },
     // victory: fanfare in C major with a held top note
     'sting-victory': {
-        bpm: 120, gain: 1, len: 9.5, events: [
+        bpm: 120, gain: 0.3, len: 9.5, events: [
             [0, 'lead', 'G4', 0.5, 0.9], [0.5, 'lead', 'C5', 0.5, 0.9], [1, 'lead', 'E5', 0.5, 0.9], [1.5, 'lead', 'G5', 1, 1],
             [2.5, 'lead', 'E5', 0.5, 0.9], [3, 'lead', 'G5', 0.5, 0.95], [3.5, 'lead', 'C6', 2, 1],
             [0, 'pad', ['C3', 'G3', 'E4'], 3, 0.9], [3, 'pad', ['F2', 'C3', 'A3', 'C4'], 1.5, 0.9], [4.5, 'pad', ['C2', 'G2', 'E3', 'G3', 'C4'], 5, 1],
