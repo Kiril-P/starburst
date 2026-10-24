@@ -10,6 +10,7 @@
     "check": "node tools/check.mjs",
     "test:smoke": "node tools/smoke.mjs",
     "test:smoke:prod": "node tools/smoke.mjs --prod",
+    "trailer": "node tools/make-trailer.mjs",
     "gif": "node tools/make-gif.mjs",
     "icons": "node tools/make-favicon.mjs"
   },

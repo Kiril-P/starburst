@@ -21,6 +21,7 @@ const wave = parseInt(get('--wave', '7'), 10);
 const scale = parseInt(get('--scale', '1'), 10);
 const seed = parseInt(get('--seed', '7'), 10);
 const boss = a.includes('--boss');
+const setup = get('--eval', '');   // JS run in the page after the wave skip, e.g. "__dbg.weapon('spread',3); __dbg.fight('tempest')"
 const keepFrames = get('--frames', '');   // copy raw 640x360 PNG frames here and skip the GIF (used by tools/make-trailer.mjs)
 const warmup = parseFloat(get('--warmup', '6'));   // seconds of real play before recording, so the wave has filled up
 
@@ -40,11 +41,13 @@ await page.goto(server.resolvedUrls.local[0] + '?scene=Game', { waitUntil: 'load
 await page.waitForFunction(() => window.__dbg && __dbg.scene.player, { timeout: 20000 });
 
 // set the scene up in real time, then freeze the loop and step it by hand
-await page.evaluate((w, b) => {
+await page.evaluate((w, b, code) => {
     __dbg.godMode(true);
+    __dbg.scene.run.toast.show = () => {};   // no achievement cards in marketing footage
     __dbg.unlockAll();
     if (b) __dbg.boss(1); else __dbg.skipToWave(w);
-}, wave, boss);
+    if (code) (0, eval)(code);
+}, wave, boss, setup);
 await new Promise((r) => setTimeout(r, warmup * 1000));
 await page.evaluate(() => {
     const g = __game;
