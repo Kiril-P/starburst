@@ -26,6 +26,21 @@
         window.__vclock = P;   // performance.now() now returns P.vt
         P.stepR = g.step.bind(g);
         P.stepH = g.headlessStep.bind(g);
+        // Text / canvas textures upload to the GPU on every change (the HUD score changes nearly every frame). With
+        // SwiftShader that is CPU work in the GPU process, and with many sims in parallel it dominated the run time.
+        // Defer re-uploads of existing textures to the next rendered frame (latest canvas wins); new textures still
+        // upload immediately. Nothing reads those textures between renders, so the simulation is unaffected.
+        const r = g.renderer;
+        if (r && r.canvasToTexture && !r.__deferred) {
+            const up = r.canvasToTexture, pending = new Map();
+            r.__deferred = true;
+            r.canvasToTexture = function (canvas, dst, noRepeat, flipY) {
+                if (!dst || P.rendering) return up.call(this, canvas, dst, noRepeat, flipY);
+                pending.set(dst, [canvas, noRepeat, flipY]);
+                return dst;
+            };
+            P.flushTextures = () => { for (const [dst, [c, nr, fy]] of pending) up.call(r, c, dst, nr, fy); pending.clear(); };
+        }
     };
 
     /** advance up to `frames` fixed steps; tick(frame) runs before each step and may return true to stop */
@@ -38,7 +53,10 @@
             const render = P.frame % P.renderEvery === 0;
             loop.callback = render ? P.stepR : P.stepH;
             const t0 = realNow();
+            if (render && P.flushTextures) P.flushTextures();
+            P.rendering = render;
             loop.step(P.vt);
+            P.rendering = false;
             const ms = realNow() - t0;
             (render ? P.perf.rnd : P.perf.upd).push(ms);
             if (P.end) return true;
