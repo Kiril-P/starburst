@@ -45,6 +45,7 @@ export default class Drones {
         const e = nearestTarget(a.g, d.x, d.y, DRONE.range, null);
         if (!e) return;
         const ang = Math.atan2(e.y - d.y, e.x - d.x);
+        a.g.audio.play('shoot-drone', { vol: 0.22 });
         if (a.syn.swarm && ++this.shots % 3 === 0) a.missiles.launch(p, 0, a.baseDamage * 0.9, 0, d.x, d.y);
         else spawnShot(a.g.shots, d.x, d.y, ang, 1.1, SHOT.pellet, a.baseDamage * s.dmg, { pierce: a.bonusPierce });
     }

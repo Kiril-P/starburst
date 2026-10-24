@@ -33,7 +33,7 @@ export default class Charge {
             this.t = Math.min(s.chargeMs, this.t + dt);
             const tier = this.t >= s.chargeMs ? 3 : this.t >= s.chargeMs * 0.5 ? 2 : 1;
             if (tier !== this.tier && this.held) {
-                a.g.audio.play(tier === 3 ? 'combo-up' : 'ui-hover', { vol: 0.35, rate: 0.8 + tier * 0.15 });
+                a.g.audio.play('charge-tick', { vol: tier === 3 ? 0.5 : 0.35, rate: 0.7 + tier * 0.3 });
             }
             this.tier = tier;
             this.held = true;
@@ -66,13 +66,13 @@ export default class Charge {
             g.audio.play('player-shoot', { vol: 0.28, jitter: 120 });
         } else if (tier === 2) {
             spawnShot(g.shots, x, y, ang, 0.85 * m.speed, SHOT.chargeM, D * s.dmg * 0.45, { pierce: 1 + bp });
-            g.audio.play('player-shoot', { vol: 0.4, rate: 0.8 });
+            g.audio.play('charge-blast', { vol: 0.4, rate: 1.35 });
         } else {
             const over = a.syn.overload;
             spawnShot(g.shots, x, y, ang, 0.8 * m.speed, SHOT.chargeL, D * s.dmg, { pierce: over ? 99 : 3 + bp });
             if (over) for (const d of [-0.22, 0.22]) spawnShot(g.shots, x, y, ang + d, 1.4 * m.speed, SHOT.lance, D * 1.5, { pierce: 3 });
             if (s.nova) for (let i = 0; i < 10; i++) spawnShot(g.shots, p.x, p.y, ang + (i / 10) * Math.PI * 2, 0.8, SHOT.pellet, D * 0.6);
-            g.audio.play('player-shoot', { vol: 0.6, rate: 0.6 });
+            g.audio.play('charge-blast', { vol: 0.65 });
             g.fx.shake(1, 90);
             g.fx.shockwave(Math.round(x), Math.round(y), COLORS.C, 0.3);
         }

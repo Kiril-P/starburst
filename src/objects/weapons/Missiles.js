@@ -22,7 +22,7 @@ export default class Missiles {
             this.side = -this.side;
             this.launch(p, this.side, a.baseDamage * s.dmg, s.splash);
         }
-        a.g.audio.play('player-shoot', { vol: 0.2, rate: 0.55, jitter: 200 });
+        a.g.audio.play('shoot-missile', { vol: 0.3 });
     }
 
     /** one missile from the left (-1) or right (+1) of the hull; also used by the SWARM drones */

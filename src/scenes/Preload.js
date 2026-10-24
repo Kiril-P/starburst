@@ -7,23 +7,6 @@ import { pxText } from '../ui/text.js';
 import { installAudio } from '../systems/sfx.js';
 import { save } from '../systems/Save.js';
 
-// Every audio key used by the game. Files live in public/assets/audio.
-const MUSIC = { 'title-music': 'title.mp3', 'main-music': 'main.mp3' };
-const SFX = {
-    'button-sound': 'button.mp3',
-    'player-shoot': 'shoot1.mp3',
-    'enemy-shoot': 'shoot2.mp3',
-    'enemy-death': 'enemydeath.mp3',
-    'player-death': 'playerdeath.mp3',
-    'player-damaged': 'playerdamaged.mp3',
-    'thruster-hum': 'thrusterhum.mp3',
-    'wave-complete': 'wavecomplete.mp3',
-    'dash': 'dash1.mp3',
-    'dash-alt': 'dash2.mp3',
-    'forcefield': 'forcefield.mp3',
-    'phase-shift': 'phase_shift.mp3'
-};
-
 export default class Preload extends Phaser.Scene {
     constructor() { super('Preload'); }
 
@@ -33,8 +16,6 @@ export default class Preload extends Phaser.Scene {
         const fill = this.add.rectangle(W / 2 - 99, H / 2 + 4, 1, 6, 0x39e7ff).setOrigin(0, 0.5);
         this.load.on('progress', (v) => { fill.width = Math.max(1, Math.round(198 * v)); });
         this.load.on('complete', () => { label.destroy(); frame.destroy(); fill.destroy(); });
-        for (const [k, f] of Object.entries(MUSIC)) this.load.audio(k, `assets/audio/${f}`);
-        for (const [k, f] of Object.entries(SFX)) this.load.audio(k, `assets/audio/sfx/${f}`);
     }
 
     async create() {
@@ -42,7 +23,7 @@ export default class Preload extends Phaser.Scene {
         try { await Promise.all([document.fonts.load('8px "Press Start 2P"'), document.fonts.load('8px "Silkscreen"')]); } catch (e) { /* ignore */ }
         bakeAll(this, ALL_SPRITES);
         bakePlaceholders(this);
-        installAudio(this.game);   // synth sfx, limiter, music bus, reactivity
+        installAudio(this.game);   // generated sfx + music (no audio files), limiter, music bus, reactivity
         const dev = import.meta.env.DEV ? new URLSearchParams(location.search).get('scene') : null;
         this.scene.launch('SysOverlay');   // FPS counter, gamepad bridge, touch controls, auto-pause
         this.scene.start(dev || (save.seenIntro ? 'MainMenu' : 'Intro'));   // story crawl on first launch only

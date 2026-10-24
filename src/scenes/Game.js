@@ -122,7 +122,7 @@ export default class Game extends Phaser.Scene {
             },
             onStart: () => {},
             onClear: (wave) => {
-                this.audio.play('wave-complete', { vol: 0.8 });
+                this.audio.waveClear();
                 this.waves.clearEnemies((e) => this.combat.killEnemy(e, false));
                 this.combat.cancelBullets(false);
                 this.loot.vacuum();

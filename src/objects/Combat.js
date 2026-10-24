@@ -6,6 +6,9 @@ import { meteorShards } from './enemyTypes.js';
 
 const SPARK_CAP = 48;   // max sparks spawned by one bullet cancel (keeps a 400-bullet clear cheap)
 const HURT_SFX_GAP = 250; // v1 debounce for the damaged sound
+// semitones above the base pitch per chain link / per 5-kill streak step: a major pentatonic climb, so long chains sing
+const CHAIN_STEPS = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24];
+const STREAK_STEPS = [0, 2, 4, 7, 9, 12];
 
 export default class Combat {
     constructor(game) {
@@ -66,7 +69,9 @@ export default class Combat {
             g.fx.shockwave(x, y, t.meteor ? COLORS.L : COLORS.q, 0.6);
             g.bg.pulse(0.35);
         }
-        g.audio.play('enemy-death', { vol: t.big ? 0.7 : 0.5, jitter: 250, rate: t.big ? 0.85 : 1 });
+        if (this.chainRate) g.audio.play('chain-pop', { vol: 0.6, rate: this.chainRate });   // a link in a chain explosion: pitch climbs per link
+        else if (t.big) g.audio.play('enemy-death-big', { vol: 0.7 });
+        else g.audio.play('enemy-death', { vol: 0.5, jitter: 250 });
         if (t.meteor) {
             meteorShards(e, g.enemyCtx, g.waves.tier);
             if (t.splitInto && byPlayer) {
@@ -88,7 +93,7 @@ export default class Combat {
         if (this.streak < 5 || this.streak % 5) return;
         const bonus = this.addScore(this.streak * 20, false);
         g.fx.floatText(Math.round(g.player.x), Math.round(g.player.y - 26), `${this.streak} STREAK +${bonus}`, '#b7ff4a', 8);
-        g.audio.play('combo-up', { vol: 0.6 });
+        g.audio.play('streak', { vol: 0.55, rate: Math.pow(2, STREAK_STEPS[Math.min(STREAK_STEPS.length - 1, this.streak / 5 - 1)] / 12) });
     }
 
     /** chain explosion: the blast at (x,y) rips into everything close by, one ripple step at a time */
@@ -106,7 +111,9 @@ export default class Combat {
                 this.chainLen = g.time.now - this.lastChain < 1200 ? this.chainLen + 1 : 1;
                 this.lastChain = g.time.now;
                 if (this.chainLen > 1) g.fx.floatText(Math.round(o.x), Math.round(o.y - 20), `CHAIN x${this.chainLen}`, '#ffb547', 8);
+                this.chainRate = Math.pow(2, CHAIN_STEPS[Math.min(CHAIN_STEPS.length - 1, this.chainLen - 1)] / 12);
                 this.killEnemy(o, true);
+                this.chainRate = 0;
             });
         }
     }

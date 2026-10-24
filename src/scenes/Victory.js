@@ -9,7 +9,7 @@ import { Button, MenuNav, TEXT, nine, uiTween, uiDelay } from '../ui/widgets.js'
 import { pxText, centerText, fmtNum } from '../ui/text.js';
 import { save } from '../systems/Save.js';
 import { sfx } from '../systems/sfx.js';
-import { playMusic } from '../systems/music.js';
+import { playMusic, playSting } from '../systems/music.js';
 
 const PW = 232, PX = 40, PY = 112, ROW = 17;
 const ROLL = { x: 470, top: 112, bottom: 262, speed: 22 };      // credits column (px/s)
@@ -38,7 +38,8 @@ export default class Victory extends Phaser.Scene {
         this.buildCredits();
         this.buildButtons();
         this.fireT = 300;
-        sfx(this, 'level-up', { vol: 0.8 });
+        playSting('sting-victory', { vol: 0.95 });
+        sfx(this, 'level-up', { vol: 0.6 });
         uiDelay(this, 450, () => sfx(this, 'upgrade', { vol: 0.7 }));
     }
 

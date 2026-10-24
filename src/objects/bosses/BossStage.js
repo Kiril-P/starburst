@@ -26,7 +26,7 @@ export default class BossStage {
         this.dim.setVisible(true);
         this.stripeT = STRIPE_MS[kind];
         this.stripes.setVisible(true);
-        g.audio.setBossMode(true);
+        g.audio.setBossMode(true, kind === 'final');
         if (kind === 'mini') {
             g.hud.announce('INTERCEPT', `MID-BOSS  //  ${d.name}${mk}`, 2000);
             g.audio.play('boss-stinger', { vol: 0.7, rate: 1.15 });
