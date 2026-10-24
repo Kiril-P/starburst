@@ -1,5 +1,11 @@
 # STARBURST — Neon Geometry-Wars-meets-Ikaruga
 
+> **AI-GENERATED CONCEPT ART: not part of the game.** Every image in this folder was produced by an AI image-generation
+> tool from the prompts in [PROMPTS.md](PROMPTS.md). None of it ships in the build, none of it is hand-made pixel art, and
+> the game's real art is authored as ASCII sprite maps in `src/art/`. Do not present these images as screenshots or as
+> hand-drawn work. The images are excluded from the proposed asset licence ([ASSET-LICENSE.md](../../ASSET-LICENSE.md)):
+> copyright status of AI output varies by jurisdiction and by the generator's terms. See `docs/COMPLIANCE.md`.
+
 Concept art for visual approval before implementation. All six screens were generated with the built-in image generation tool and visually reviewed; the shared style sheet and completed screens served as references for subsequent images. No generation failed.
 
 ## Images

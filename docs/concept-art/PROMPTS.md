@@ -1,5 +1,7 @@
 # Generation prompts
 
+> AI-generated concept art prompts. The resulting images are AI-generated and are not part of the shipped game (see README.md in this folder).
+
 Generated with the built-in image_gen tool. The style sheet was generated first; subsequent screens used the sheet and/or completed game screens as visual references. Gameplay, boss, and upgrades received the final HUD edit below.
 
 ## stylePrompt
