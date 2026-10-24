@@ -11,7 +11,7 @@ or download the `starburst-dist` artifact from CI) with `index.html` at the zip 
 - **Classification:** Games → Shooter / Bullet hell
 - **Genre:** Shooter
 - **Tags:** bullet-hell, shmup, pixel-art, arcade, retro, neon, space, roguelite, 2d, short
-- **Input methods:** Keyboard, Mouse, Xbox controller, Touchscreen
+- **Input methods:** Keyboard, Xbox controller, Touchscreen
 - **Accessibility:** Configurable controls, Color-blind friendly, High-contrast
 - **Average session:** A few minutes
 - **Languages:** English
@@ -35,7 +35,7 @@ telegraphed attack phases. Survive past the authored waves and the endless mode 
 - Three ships: balanced **Pulsar**, the fast **Nova Dart**, and the armoured **Titan**
 - Readable patterns: orbs, rings, needles, and shards each have their own silhouette, and your true hitbox is always visible
 - Bosses with multiple phases, quests to complete, three difficulty levels, and best-run tracking
-- Keyboard, mouse aim, gamepad, and touch controls
+- Keyboard, gamepad, and touch controls
 - Installable and playable offline
 
 **Accessibility**
@@ -61,6 +61,6 @@ STARBURST has been rebuilt. Here's what's new:
 - Upgrades between waves
 - Quests
 - Gamepad and touch support
-- A full accessibility menu: rebinding, mouse aim, high-contrast and colour-blind-safe bullets, and assist mode
+- A full accessibility menu: rebinding, high-contrast and colour-blind-safe bullets, and assist mode
 
 It also works offline once loaded. Have fun, and tell me your best wave!

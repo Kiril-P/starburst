@@ -19,19 +19,18 @@ A neon pixel-art bullet hell. Dodge dense bullet patterns, graze for combo, figh
 - **Quests, best runs, and three difficulty levels.**
 - **Accessibility options**:
   - Rebind any key.
-  - Aim with the mouse instead of your movement.
   - Use a high-contrast or colour-blind-safe orange bullet palette.
   - Turn on assist mode.
   - Turn off flashes and screen shake.
   - Lower graphics quality and show an FPS counter.
-- **Plays anywhere**: keyboard, mouse, gamepad, and touch controls. It installs as an app (PWA) and works offline after the first visit.
+- **Plays anywhere**: keyboard, gamepad, and touch controls. It installs as an app (PWA) and works offline after the first visit.
 
 ## Controls
 
 | Action | Keyboard (default) | Gamepad | Touch |
 |---|---|---|---|
 | Move | Arrow keys / WASD | Left stick / D-pad | Drag on the left side of the screen |
-| Fire (hold) | Space, or left mouse button in mouse-aim mode | A / RT | FIRE button |
+| Fire (hold) | Space | A / RT | FIRE button |
 | Dash | Shift | LB / RB / LT | Dash button |
 | Forcefield | Z | X | Shield button |
 | Phase shift | X | Y | Phase button |
@@ -39,7 +38,7 @@ A neon pixel-art bullet hell. Dodge dense bullet patterns, graze for combo, figh
 | Fullscreen | F | | |
 
 - To change keys, go to **Settings → Controls**. Each action can have two keys. Menus, gamepads, and touch controls always use the default layout, so a bad binding can always be fixed from the menu.
-- By default your ship turns toward the direction it's moving and fires that way. To have it face the cursor instead, set **Settings → Aim** to **Mouse**.
+- Your ship always faces and fires straight up the screen. Movement is everything: line up your shots by flying under things.
 - To make enemy bullets easier to see, set **Settings → Enemy bullets** to **Contrast** (white cores and dark outlines) or **Orange** (every hostile bullet turns orange, against your cyan shots).
 - **Settings → Assist mode** slows enemy bullets, gives you 50% more hull, and widens the graze window. The run is labelled **ASSIST MODE** on screen, and the save marks it as not leaderboard-eligible.
 

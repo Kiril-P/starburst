@@ -3,7 +3,7 @@
 // Frame-exact and deterministic: starts its own Vite dev server, seeds Math.random, stops Phaser's RAF loop and advances
 // the game by exactly 1000/fps ms per frame with game.step(), grabbing the 640x360 canvas right after each render. So
 // the GIF plays at true speed however slow headless SwiftShader is. A tiny autopilot flies the ship (dodges the nearest
-// bullets, weaves, aims at the nearest enemy like AIM: MOUSE, holds fire) with god mode on, so the clip never ends early.
+// bullets, weaves, slides under the nearest enemy, holds fire) with god mode on, so the clip never ends early.
 // GIF encoding: ffmpeg palettegen (stats_mode=diff favours moving pixels) + paletteuse without dithering (pixel art).
 import puppeteer from 'puppeteer-core';
 import fs from 'node:fs';
@@ -21,6 +21,7 @@ const wave = parseInt(get('--wave', '7'), 10);
 const scale = parseInt(get('--scale', '1'), 10);
 const seed = parseInt(get('--seed', '7'), 10);
 const boss = a.includes('--boss');
+const keepFrames = get('--frames', '');   // copy raw 640x360 PNG frames here and skip the GIF (used by tools/make-trailer.mjs)
 const warmup = parseFloat(get('--warmup', '6'));   // seconds of real play before recording, so the wave has filled up
 
 if (spawnSync('ffmpeg', ['-version']).status !== 0) { console.error('ffmpeg not found on PATH (brew install ffmpeg / apt install ffmpeg)'); process.exit(1); }
@@ -60,28 +61,21 @@ await page.evaluate(() => {
             const dx = p.x - b.x, dy = p.y - b.y, d2 = dx * dx + dy * dy;
             if (d2 < 48 * 48 && d2 > 0) { const k = 1 / d2; fx += dx * k; fy += dy * k; }
         }
-        const tx = 320 + Math.sin(frame / 45) * 170, ty = 270 + Math.sin(frame / 31) * 40;
+        // the ship only fires straight up, so slide under the nearest enemy ahead (blended with a weave) to keep landing hits
+        let tx = 320 + Math.sin(frame / 45) * 170;
+        const ty = 270 + Math.sin(frame / 31) * 40;
+        let best = null, bd = Infinity;
+        for (const e of [...sc.waves.live, ...sc.bosses.targets]) {
+            if (!e.alive || e.y > p.y - 20) continue;
+            const d = Math.abs(e.x - p.x) + (p.y - e.y) * 0.3;
+            if (d < bd) { bd = d; best = e; }
+        }
+        if (best) tx = best.x * 0.75 + tx * 0.25;
         fx += (tx - p.x) * 0.00012; fy += (ty - p.y) * 0.00012;
         if (fx < -0.002) held.add('ArrowLeft'); else if (fx > 0.002) held.add('ArrowRight');
         if (fy < -0.002) held.add('ArrowUp'); else if (fy > 0.002) held.add('ArrowDown');
         if (frame % 90 === 45) p.queued.dash = true;
         if (frame === 70) p.queued.forcefield = true;
-    };
-    // stand-in for systems/mouseAim.js: face the nearest enemy / boss so the clip shows hits, not shots into space
-    const p = __dbg.scene.player;
-    p.mouse = {
-        firing: true, destroy() {},
-        update() {
-            const sc = __dbg.scene;
-            let best = null, bd = Infinity;
-            for (const e of [...sc.waves.live, ...sc.bosses.targets]) {
-                if (!e.alive) continue;
-                const d = (e.x - p.x) ** 2 + (e.y - p.y) ** 2;
-                if (d < bd) { bd = d; best = e; }
-            }
-            if (best) p.aim = Math.atan2(best.y - p.y, best.x - p.x);
-            return !!best;
-        }
     };
 });
 
@@ -102,6 +96,12 @@ for (let i = 0; i < total; i++) {
 await browser.close();
 await server.close();
 
+if (keepFrames) {
+    fs.rmSync(keepFrames, { recursive: true, force: true });
+    fs.cpSync(path.join(work, 'frames'), keepFrames, { recursive: true });
+    console.log(`\nwrote ${total} frames to ${keepFrames}`);
+    process.exit(0);
+}
 const sc = scale > 1 ? `,scale=iw*${scale}:ih*${scale}:flags=neighbor` : '';
 const frames = path.join(work, 'frames', '%04d.png');
 const pal = path.join(work, 'palette.png');

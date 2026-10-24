@@ -1,6 +1,7 @@
-_orig/
-node_modules/
-dist/
 .DS_Store
-tmp/
 .claude/worktrees/
+_orig/
+dist/
+marketing/
+node_modules/
+tmp/
