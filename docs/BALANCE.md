@@ -60,3 +60,109 @@ Other flags: `--ships`, `--profiles casual,skilled,oracle`, `--max-wave`, `--tra
 | hard | punishing: skilled rarely beats the final |
 | fights | main bosses 40-90 s, mid-bosses 25-40 s, final 2-3 min |
 | always | no unfair pattern deaths, no soft-locks, no console errors |
+
+## Results
+
+BEFORE = the merged build at `9b492bd` plus the sniper fix (90 runs: 3 ships × 5 seeds per cell).
+AFTER = this branch (180 runs: 3 ships × 10 seeds per cell). Bot code was the same for both (`--root` serves the
+baseline checkout). Raw data: `tmp/bot/base.jsonl`, `tmp/bot/after.jsonl` (gitignored; regenerate with the commands above).
+
+### Runs — median wave reached (21 = beat the final), share reaching wave 20, final kills
+
+| difficulty / bot | BEFORE median | AFTER median | AFTER min-max | reached w20 before → after | beat final (of all runs) before → after | target |
+|---|---|---|---|---|---|---|
+| easy casual    | 10 | 17 | 5-21  | 13% → 47%  | 13% → 23%  | clearly further than normal |
+| easy skilled   | 21 | 21 | 21-21 | 100% → 100% | 100% → 100% | forgiving |
+| normal casual  | 3  | 10 (mean 9.5) | 5-16 | 0% → 0% | 0% → 0% | dies ~wave 5-9 |
+| normal skilled | 11 | 21 | 8-21  | 27% → 73%  | 27% → 50%  | wave 12-20, beats final 30-50% |
+| hard casual    | 3  | 4  | 3-11  | 0% → 0%    | 0% → 0%    | punishing |
+| hard skilled   | 9  | 11 | 5-21  | 7% → 17%   | 7% → 3%    | rarely beats the final |
+
+A larger normal-skilled sample during tuning (60 runs, round 9) beat the final in 55%; with 10 seeds the
+confidence interval is about ±15 points, so "30-50%" is met at its upper edge.
+
+Normal casual per ship: normal 10, speedy 5, tank 16 (BEFORE: 7 / 3 / 9).
+
+### Boss fight length (median s of kills; kill rate)
+
+| boss | type | BEFORE | AFTER | AFTER kill rate | target |
+|---|---|---|---|---|---|
+| Lancer (w3)     | mini | 81  | 41  | 93%  | 25-40 |
+| Gyre (w8)       | mini | 26  | 28  | 88%  | 25-40 |
+| Bastion (w13)   | mini | 8   | 39  | 100% | 25-40 |
+| Manta (w18)     | mini | 9   | 32  | 100% | 25-40 |
+| Warden (w5)     | main | 52  | 53  | 86%  | 40-90 |
+| Hive            | main | 13  | 41  | 97%  | 40-90 |
+| Prism           | main | 30  | 50  | 92%  | 40-90 |
+| Tempest         | main | 28  | 49  | 95%  | 40-90 |
+| Colossus        | main | 64  | 42  | 95%  | 40-90 |
+| THE STARBURST (w20) | final | 20 | 150 | 75% | 120-180 |
+
+(The main boss of waves 10/15 is drawn from Hive/Prism/Tempest/Colossus, so their fight counts differ.)
+
+### Where runs end (share of runs that played the wave and died in it)
+
+| wave | 3 | 5 | 8 | 9 | 11 | 12 | 16 | 20 |
+|---|---|---|---|---|---|---|---|---|
+| BEFORE | 21% | 0% | 5% | **32%** | **34%** | 8% | 4% | 0% |
+| AFTER  | 7%  | 14% | 12% | 2% | 8% | 11% | 13% | 25% |
+
+BEFORE had a wall at the Lancer (w3) and two cliffs at waves 9 and 11 (the wave table running out, see bugs);
+AFTER the difficulty rises with the sectors and peaks at the bosses and the final.
+
+### Health
+
+- Console / page errors: 0 in all 270 runs (and in the 15 oracle runs). Soft-locks: 0.
+- Oracle (zero reaction lag, `tmp/bot/oracle.jsonl`, 15 runs normal): 15/15 beat the final, **0 point-blank hits and
+  0 damage from any boss attack it couldn't dodge**; its few hits are from enemy bullets in crowded waves and Gyre's
+  ram. Nothing in the game hit it in an undodgeable way.
+- Remaining point-blank flags are mostly Starburst `shells` / `well` / `pinwheel`: mortar shells and gravity-well
+  bursts that are telegraphed at the landing point and spawn their bullets there, so bullet age is short by design.
+  The oracle took 0 hits from them; casual/skilled bots get hit because they stand in the telegraph too long.
+- Upgrade uptake (AFTER, all runs): drones, missiles, forcefield, dash, blaster, phase, thrusters, then spread;
+  heal 103 picks; synergies (swarm, hunter) are taken when available. Forcefield uses per run dropped from 10.6 to
+  12.3 overall because runs are now longer, but per minute it went down after the cooldown change.
+
+## Bugs fixed
+
+| commit | bug |
+|---|---|
+| `86902f6` | **Sniper never initialised** `hoverMs` / `nextFire` (swallowed by a trailing comment) — snipers fired every frame / never left. |
+| `60f7a89` | **Sector timed-wave plan 3 unreachable**: the mid-boss waves (3/8/13/18) replaced the third timed wave of every sector, so its new enemy (e.g. snipers) first appeared a sector late. Dropped those plan slots and folded their enemies into the next plan. |
+| `24ebc98` | **Wave table ran out at wave 11**: the 10-row v1 table was indexed by wave number, so from wave 11 on it went into endless-mode scaling (the w9/w11 death cliffs). New `WAVES.tableRowByWave` spreads the rows over 20 waves. |
+| `24ebc98` | **Flat boss HP**: late bosses melted (Bastion 8 s, Manta 9 s, final 20 s). `BOSSES.hpByWave` scales by the wave the boss is fought on. |
+| `cde3e58` | **Gyre plunge lane narrower than its ram contact zone** — standing just outside the drawn lane still got rammed. Lane 46 → 58 px. |
+| `da28580` | **Point-blank shots**: v1 enemies could fire with the muzzle on top of the player, and gravity-well rings could spawn around a player touching the core. Both now hold fire within 56 / 48 px. |
+
+## Tuning changes
+
+| knob | before | after | why |
+|---|---|---|---|
+| `WAVES.tableRowByWave` | wave = row | 20-wave curve, rows 1-12 | smooth curve; no endless scaling before wave 20 |
+| `WAVES.tierByWave` | — | 0,0,0,1×5,2×6,3×6 | enemy tier rises with the sectors |
+| `BOSSES.hpByWave` | 1 | w3 0.5, w5 1.1, w8 1.2, w10 1.3, w13 4.5, w15 2.4, w18 4, w20 10; `cycleHp` 0.6 | fight lengths toward 25-40 / 40-90 / 120-180 s |
+| Lancer `lance5` | 16°, 800 ms | 20°, 850 ms | the w3 wall: casual bots couldn't read the 5-lance fan |
+| Hive / Tempest base HP | 1500 / 1700 | 2000 / 2000 | 13 s / 28 s fights |
+| Starburst `density` / `damage` (new `def.damage` knob in `Boss.dmg`) | 1 / 1 | 1.5 / 1.65 | with HP alone the final was long but harmless |
+| forcefield cooldown | lower | 18 / 15 / 12 s | skilled bots blocked almost every hit with it |
+| phase cooldown / duration | lower / longer | 16 / 14 / 12 s, 2.5 / 2.8 / 3.2 s | same |
+| speedy / tank hull | 70 / 150 | 80 / 140 | speedy far behind, tank far ahead (still true, see below) |
+| hard `enemyHealth` / `enemyDamage` | 1.3 / 1.3 | 1.4 / 1.5 | hard skilled still beat the final too often after the curve fix |
+
+## Off target / needs a human playtest
+
+1. **Skilled final win rate (50-55% on normal) is at the top of the band**, and the bot uses abilities with perfect
+   timing. Humans will likely win less — check before lowering it further. Knobs: `BOSSES.hpByWave[20]`,
+   Starburst `damage`.
+2. **Normal casual median is wave 10** (mean 9.5, target 5-9) — one wave long. The casual bot is a guess at a casual
+   human; play waves 5-12 on normal and decide.
+3. **Easy casual reaches wave 20 in 47% of runs** — maybe too forgiving, maybe exactly what easy is for.
+4. **Ship spread is still wide**: speedy dies ~5 waves earlier than normal and tank ~6 later (normal casual). The bot
+   can't use speedy's mobility as well as a human might; worth feeling out before touching hull/speed again.
+5. **Gyre ram** (w8) is the second biggest killer (15 deaths). The lane fix made it fair (the oracle never died to it)
+   but the bot keeps getting caught; check that the plunge telegraph reads well.
+6. **Warden at wave 5** is now the first real filter (14% die there): broadside + lances + pod fans. Check it feels
+   learnable rather than cheap.
+7. Feel of the nerfed **forcefield / phase** cooldowns and of keyboard ("move") aim against strafing bosses
+   (Lancer, Manta) — the bot needed target leading to cope.
+8. Starburst mortar shells / wells: telegraphed, but if humans also stand in them, lengthen the telegraph.
