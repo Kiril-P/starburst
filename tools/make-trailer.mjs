@@ -22,10 +22,10 @@ fs.mkdirSync(WORK, { recursive: true });
 // ---- clips to record (id, make-gif args, length in seconds) ------------------------------------------------------------
 const CLIPS = [
     { id: 'boss1',  args: ['--boss', '--warmup', '9'], seconds: 4, seed: 11 },
-    { id: 'wave3',  args: ['--wave', '3', '--warmup', '6'], seconds: 4, seed: 5 },
-    { id: 'wave8',  args: ['--wave', '8', '--warmup', '7'], seconds: 4, seed: 7 },
-    { id: 'gear',   args: ['--wave', '12', '--warmup', '6', '--eval', "__dbg.weapon('spread',3);__dbg.weapon('missiles',2);__dbg.buff('rapid')"], seconds: 4, seed: 3 },
-    { id: 'sec3',   args: ['--wave', '11', '--warmup', '7'], seconds: 4, seed: 9 },
+    { id: 'wave3',  args: ['--wave', '4', '--warmup', '9'], seconds: 4, seed: 5 },
+    { id: 'wave8',  args: ['--wave', '7', '--warmup', '10'], seconds: 4, seed: 7 },
+    { id: 'gear',   args: ['--wave', '14', '--warmup', '10', '--eval', "__dbg.weapon('spread',3);__dbg.weapon('missiles',2);__dbg.buff('rapid')"], seconds: 4, seed: 3 },
+    { id: 'sec3',   args: ['--wave', '17', '--warmup', '9'], seconds: 4, seed: 9 },
     { id: 'boss2',  args: ['--eval', "__dbg.fight('hive')", '--wave', '10', '--warmup', '10'], seconds: 5, seed: 21 },
     { id: 'boss3',  args: ['--boss', '--wave', '15', '--warmup', '10', '--eval', "__dbg.boss(3)"], seconds: 4, seed: 13 }
 ];
@@ -35,7 +35,7 @@ const T = [
     { kind: 'clip', clip: 'boss1', at: 1.0, dur: 2.2, caption: 'ONE SHIP.|A THOUSAND BULLETS.', cap: 'bottom' },
     { kind: 'logo', clip: 'boss1', at: 3.0, dur: 2.2, sub: 'A NEON BULLET HELL', sfx: 'playerdeath' },
     { kind: 'clip', clip: 'wave3', at: 0.5, dur: 3.2, caption: 'GRAZE DEATH. BUILD THE COMBO.', cap: 'bottom' },
-    { kind: 'clip', clip: 'wave8', at: 0.5, dur: 3.2, caption: '20 WAVES. 4 SECTORS.', cap: 'bottom' },
+    { kind: 'clip', clip: 'wave8', at: 0.5, dur: 3.2, caption: '20 WAVES. EVERY ONE DIFFERENT.', cap: 'bottom' },
     { kind: 'clip', clip: 'gear', at: 0.5, dur: 3.4, caption: 'FIND WEAPONS. BREAK THE GAME.', cap: 'bottom' },
     { kind: 'clip', clip: 'boss2', at: 1.0, dur: 3.4, caption: 'BOSSES THAT FIGHT BACK.', cap: 'bottom' },
     { kind: 'clip', clip: 'sec3', at: 0.3, dur: 0.9, caption: '' },
@@ -177,7 +177,7 @@ if (!only || only === 'stills') {
         { name: 'boss-warden', clip: 'boss1', at: 2.2, caption: 'BOSSES THAT FIGHT BACK.' },
         { name: 'swarm-sector1', clip: 'wave3', at: 2.0, caption: 'GRAZE DEATH. BUILD THE COMBO.' },
         { name: 'arsenal', clip: 'gear', at: 2.0, caption: 'FIND WEAPONS. BREAK THE GAME.' },
-        { name: 'sector-three', clip: 'sec3', at: 2.0, caption: '20 WAVES. 4 SECTORS.' },
+        { name: 'sector-three', clip: 'sec3', at: 2.0, caption: '20 WAVES. EVERY ONE DIFFERENT.' },
         { name: 'boss-hive', clip: 'boss2', at: 2.6, caption: 'ONE SHIP.|A THOUSAND BULLETS.' },
         { name: 'boss-prism', clip: 'boss3', at: 2.4, caption: 'DODGE. DASH. SURVIVE.' }
     ];
