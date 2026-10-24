@@ -70,6 +70,15 @@ export const WAVES = {
     endlessBulletSpeedStep: 0.03
 };
 
+// Boss HP. Boss defs (objects/bosses/*) hold each boss's own base HP; the player's damage output grows a lot over a
+// run (weapon levels, secondaries, synergies), and main bosses 2-3 are shuffled between waves 10 and 15, so the HP
+// multiplier is set by the WAVE the fight happens on. Tuned with the balance bot (docs/BALANCE.md).
+export const BOSSES = {
+    hpByWave: { 3: 1, 5: 1, 8: 1, 10: 1, 13: 1, 15: 1, 18: 1, 20: 1 },   // past wave 20: the wave-20 value (+ cycle)
+    cycleHp: 0.6                                                        // endless: each pass through the roster
+};
+export const bossHpScale = (wave) => BOSSES.hpByWave[wave] ?? BOSSES.hpByWave[((wave - 1) % 20) + 1] ?? 1;
+
 // Bullet speed multiplier per tier: late waves get faster, denser patterns.
 export const TIER_BULLET_SPEED = [0.9, 1, 1.05, 1.1];
 

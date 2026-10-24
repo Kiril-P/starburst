@@ -7,6 +7,7 @@
 import { COLORS } from '../../art/palette.js';
 import { fmtNum } from '../../ui/text.js';
 import { save } from '../../systems/Save.js';
+import { BOSSES, bossHpScale } from '../../systems/tuning.js';
 import BossStage from './BossStage.js';
 import { planRun, bossFor, isBossWave, logBoss, BY_ID, DEF_OF, MID_OFFSET, FINAL_EVERY } from './roster.js';
 
@@ -41,7 +42,7 @@ export default class BossDirector {
         const g = this.g, Cls = this.forced || pick.Cls, cycle = pick.cycle;
         this.forced = null;
         this.boss = new Cls(g, {
-            hpMod: g.diff.enemyHealth * (1 + cycle * 0.6), cycle,
+            hpMod: g.diff.enemyHealth * bossHpScale(wave) * (1 + cycle * BOSSES.cycleHp), cycle,
             onPhase: (b, p) => this.onPhase(b, p),
             onDefeat: (b) => this.onDefeat(b),
             onHit: () => g.combo.add(0.015)        // chip damage keeps a combo chain alive during long fights
