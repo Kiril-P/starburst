@@ -4,7 +4,9 @@ import fs from 'node:fs';
 
 const a = process.argv.slice(2);
 const files = a.filter((x) => !x.startsWith('--'));
-const runs = files.flatMap((f) => fs.readFileSync(f, 'utf8').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l)));
+const all = files.flatMap((f) => fs.readFileSync(f, 'utf8').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l)));
+// crashed runs (harness problems: page failed to load, watchdog) carry no game data; they are listed at the end
+const runs = all.filter((r) => r.result !== 'crash');
 const by = (xs, f) => xs.reduce((m, x) => { const k = f(x); (m[k] ??= []).push(x); return m; }, {});
 const med = (xs) => { if (!xs.length) return '-'; const s = [...xs].sort((p, q) => p - q); return s[Math.floor(s.length / 2)]; };
 const mean = (xs) => (xs.length ? xs.reduce((p, q) => p + q, 0) / xs.length : 0);
@@ -82,7 +84,7 @@ console.log('\n### Flags\n');
 console.log(Object.keys(fl).length ? table(['flag', 'count', 'example'], Object.entries(fl).map(([k, v]) => [k, v.length, `${v[0].run} wave ${v[0].wave}`])) : 'none');
 const errs = runs.flatMap((r) => r.errors || []);
 console.log(`\nerrors: ${errs.length}${errs.length ? '\n' + [...new Set(errs)].slice(0, 10).join('\n') : ''}`);
-const crash = runs.filter((r) => r.result === 'crash');
+const crash = all.filter((r) => r.result === 'crash');
 if (crash.length) console.log(`crashed runs: ${crash.length}: ${crash.map((r) => r.why).slice(0, 3).join(' | ')}`);
 const perf = runs.filter((r) => r.perf);
 console.log(`\nperf (ms per sim step, CPU, SwiftShader box): update p50 ${med(perf.map((r) => r.perf.updP50))} p99 ${med(perf.map((r) => r.perf.updP99))} worst ${Math.max(0, ...perf.map((r) => r.perf.updMax))}; render p50 ${med(perf.map((r) => r.perf.rndP50))} p95 ${med(perf.map((r) => r.perf.rndP95))}; max bullets ${Math.max(0, ...runs.flatMap((r) => Object.values(r.waves || {}).map((w) => w.maxBullets)))}`);
