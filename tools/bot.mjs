@@ -70,6 +70,8 @@ function drive(frames, o) {
         P.wire(g);
         P.lastWave = g.waves.wave;
         if (g.waves.wave > o.maxWave) { P.end = { result: 'maxwave', wave: o.maxWave }; return true; }
+        // --boss: the job is that one fight
+        if (o.boss && P.bosses.length && !P.boss && g.waves.state !== 'boss') { P.end = { result: P.bosses[0].result === 'killed' ? 'bosskill' : 'died', wave: g.waves.wave }; return true; }
         P.observe(g);
         const us = g.upgradeScreen;
         if (us) {
@@ -120,8 +122,14 @@ async function job(o) {
     const t0 = Date.now();
     let res;
     try {
-        await page.goto(base + '/?scene=Game', { waitUntil: 'load' });
-        await page.waitForFunction(() => window.__dbg && window.__dbg.scene.player && window.__game.loop.frame > 5, { timeout: 60000 });
+        // a cold dev server transforms ~200 modules per page: with many pages at once that can take a while
+        for (let tries = 0; ; tries++) {
+            try {
+                await page.goto(base + '/?scene=Game', { waitUntil: 'load', timeout: 180000 });
+                await page.waitForFunction(() => window.__dbg && window.__dbg.scene.player && window.__game.loop.frame > 5, { timeout: 120000 });
+                break;
+            } catch (e) { if (tries >= 2) throw e; errors.length = 0; }
+        }
         await page.evaluate(probeSrc);
         await page.evaluate(brainSrc);
         await page.evaluate((o) => { window.__probe.renderEvery = o.renderEvery; window.__probe.takeover(); window.__brain.init(o.profile, o.seed * 7919 + 1); }, o);
@@ -147,8 +155,16 @@ async function job(o) {
     } catch (e) {
         res = { ...o, result: 'crash', why: e.message.slice(0, 300), errors, realMs: Date.now() - t0 };
     }
-    await ctx.close();
+    await ctx.close().catch(() => {});
     return res;
+}
+
+// warm the dev server's module cache with one page before the parallel workers hit it
+{
+    const page = await browser.newPage();
+    await page.goto(base + '/?scene=Game', { waitUntil: 'load', timeout: 300000 });
+    await page.waitForFunction(() => window.__dbg, { timeout: 300000 });
+    await page.close();
 }
 
 const jobs = [];
