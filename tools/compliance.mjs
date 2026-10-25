@@ -90,7 +90,7 @@ if (!fs.existsSync('dist')) {
     }
     const html = fs.existsSync('dist/index.html') ? fs.readFileSync('dist/index.html', 'utf8') : '';
     if (!/Content-Security-Policy/i.test(html)) fail('dist/index.html has no Content-Security-Policy meta');
-    if (/https?:\/\/(?!kpetrovski\.me|kirilp\.itch\.io)[^"'\s<)]+/.test(html.replace(/<meta[^>]*Content-Security-Policy[^>]*>/i, '').replace(/xmlns="[^"]*"/g, ''))) {
+    if (/https?:\/\/(?!kirilpetrovski\.com|kirilp\.itch\.io)[^"'\s<)]+/.test(html.replace(/<meta[^>]*Content-Security-Policy[^>]*>/i, '').replace(/xmlns="[^"]*"/g, ''))) {
         fail('dist/index.html references an external URL (itch.io HTML5 games must not make external requests)');
     }
 }

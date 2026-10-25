@@ -39,7 +39,7 @@ Run `npm run compliance` (CI runs it with `--require-dist`) to re-check the mech
 | 16 | Info | CI had default token permissions and no audit step. | Fixed: `permissions: contents: read`, `persist-credentials: false`, `npm audit`, compliance step. No secrets in workflow |
 | 17 | Info | `npm audit` (prod and full): **0 vulnerabilities**. No upgrades needed. Phaser stays 3.90, Vite 8. | n/a |
 | 18 | Info | Secret scan of HEAD and all 183 commits (private keys, AWS/GitHub/Slack/OpenAI/Google keys, `api_key`, `password`, `token`, `.env`): **nothing found**. Only personal-path hits are #8 and #11. | n/a |
-| 19 | Info | No external network requests from the game (no analytics, CDN, remote fonts); the only absolute URLs in the build are `og:` meta tags pointing to `kpetrovski.me`. | n/a |
+| 19 | Info | No external network requests from the game (no analytics, CDN, remote fonts); the only absolute URLs in the build are `og:` meta tags pointing to `kirilpetrovski.com`. | n/a |
 
 ## 2. Provenance inventory
 
