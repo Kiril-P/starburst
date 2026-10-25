@@ -34,7 +34,7 @@ const cspPlugin = () => ({
 });
 
 export default defineConfig({
-    // Relative base so the build works from any sub-path (itch.io, kpetrovski.me/play/starburst/)
+    // Relative base so the build works from any sub-path (itch.io, a portfolio sub-path, ...)
     base: './',
     // Unique per build: the service worker cache is keyed by it, so every deploy replaces the previous cache even if
     // package.json's version was not bumped (public/ files such as icons are not content-hashed).
