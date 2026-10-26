@@ -169,3 +169,33 @@ Music (full intensity, 3 passes rendered, after the game's master limiter; pre-l
 
 What a human still has to judge by ear: melodic taste, whether each sector track feels like its backdrop, the balance of the
 layers (the lab page's intensity slider), the mix of music vs. sfx in a real fight, and the pitch climb of the chain / streak sounds.
+
+## Crackle investigation (2026-10-24)
+
+A playtester heard the sound / music "sometimes crackle". Measured, not guessed:
+
+**Real problem found and fixed: clicks from hard edges in the one-shots, not CPU.**
+
+1. **Hard onsets.** 39 of the 46 sfx recipes began on a loud sample (e.g. `shoot-spread` 99 % of its peak on sample 0, `ui-hover`
+   93 %, `pickup` 79 %, `player-shoot` 56 %). A step from silence is a broadband click, and the weapon sounds repeat every 45-70 ms,
+   so fire read as crackle. `renderSfx()` now applies a 1.5 ms fade-in (the 4 ms fade-out already existed). Re-scan:
+   every non-loop recipe now starts at 0.
+2. **Voice stealing.** When a key hit its voice cap, `sfx()` called `destroy()` on the oldest *playing* voice: a cut mid-waveform
+   (a click). Several keys are longer than `gap x cap` (`enemy-death-big` 750 ms vs 240 ms, `chain-pop`, `shoot-missile`,
+   `shoot-lance`, `charge-blast`, `pickup`), so swarms and chains stole voices constantly. Stolen voices now ramp their gain to 0
+   over 12 ms before being destroyed (`fadeOut()` in `systems/sfx.js`).
+
+**Ruled out (measured):**
+
+- *Underruns / CPU.* Chrome 155 exposes `AudioContext.playbackStats`. A real-time context running the boss-final track at full
+  intensity reported **0 underrun events** for `latencyHint` interactive / balanced / playback, idle and with 30 busy processes on
+  this 15-core machine. Offline render speed (7-10x real time for most tracks; `title-music`, which has the longest reverb tail,
+  about 3x) puts the music at roughly 10-35 % of one core. The convolver reverb is the single biggest cost (render time drops
+  by half to two thirds without it). On a much slower laptop that is the first thing to cut (shorter `impulse()`), but there is no
+  evidence it is needed.
+- *Music voice envelopes.* Every `dsp.js` voice starts from a 0.0001 floor and ends at the floor before `stop()`; the loop check
+  shows a sample-exact seam.
+- *Limiter / glue compressor.* Peaks after the limiter are under -4 dBFS; no clipping in any render.
+
+If it still happens on a given machine, `ctx.playbackStats.underrunEvents` (Chrome DevTools console:
+`__game.sound.context.playbackStats`) tells whether the audio thread starved, in which case lower the Quality setting or shorten the room.

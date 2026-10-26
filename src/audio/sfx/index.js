@@ -5,14 +5,16 @@ import { kit } from './kit.js';
 import { BASE } from './recipesBase.js';
 import { COMBAT } from './recipesCombat.js';
 import { GAME } from './recipesGame.js';
+import { STATION } from './recipesStation.js';
 
-export const RECIPES = { ...BASE, ...COMBAT, ...GAME };
+export const RECIPES = { ...BASE, ...COMBAT, ...GAME, ...STATION };
 export const SFX_KEYS = Object.keys(RECIPES);
 const RMS_CAP = 0.16;   // -16 dBFS
 const PEAK_CAP = 0.8;   // -2 dBFS: no recipe is ever hotter, whatever its `peak` says
 
 /**
- * Render a recipe to Float32 samples, normalised to its `peak` with a 4 ms de-click fade at the end. Loop recipes are
+ * Render a recipe to Float32 samples, normalised to its `peak` with a 1.5 ms fade-in and a 4 ms fade-out (most recipes
+ * start at a high amplitude: without the fade-in every shot / hover / pickup begins with a step from silence = a click). Loop recipes are
  * rendered over two cycles and the second is kept, so filter state carries over and the buffer wraps without a click.
  */
 export function renderSfx(key, sr) {
@@ -29,8 +31,8 @@ export function renderSfx(key, sr) {
     // noise bursts at the same peak), so one volume number means roughly the same loudness for every key
     let sq = 0;
     for (let i = 0; i < n; i++) sq += out[i] * out[i];
-    const rms = Math.sqrt(sq / n) || 1, g = max > 0 ? Math.min(Math.min(r.peak, PEAK_CAP) / max, (r.rms ?? RMS_CAP) / rms) : 0, fade = r.loop ? 0 : Math.min(n, Math.round(sr * 0.004));
-    for (let i = 0; i < n; i++) out[i] *= g * (i >= n - fade ? (n - i) / fade : 1);
+    const rms = Math.sqrt(sq / n) || 1, g = max > 0 ? Math.min(Math.min(r.peak, PEAK_CAP) / max, (r.rms ?? RMS_CAP) / rms) : 0, fade = r.loop ? 0 : Math.min(n, Math.round(sr * 0.004)), fadeIn = r.loop ? 0 : Math.min(n, Math.round(sr * 0.0015));
+    for (let i = 0; i < n; i++) out[i] *= g * (i >= n - fade ? (n - i) / fade : 1) * (i < fadeIn ? i / fadeIn : 1);
     return out;
 }
 

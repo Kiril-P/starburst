@@ -23,7 +23,8 @@ export function galleryCounts() {
 export function addBossGalleryEntry(menu) {
     const open = () => menu.press(() => menu.openOverlay('MenuBossGallery'));
     const { down, total } = galleryCounts();
-    const b = navButton(menu, 16 + 80, 312, 160, 20, 'BOSSES', open, { value: `${down}/${total}`, valueColor: PALETTE[4] });
+    const last = menu.buttons[menu.buttons.length - 1];   // sits directly under the last nav button, above BEST RUN
+    const b = navButton(menu, last.x, last.y + (menu.buttons[1].y - menu.buttons[0].y), 160, 20, 'BOSSES', open, { value: `${down}/${total}`, valueColor: PALETTE[4] });
     b.setDepth(DEPTH.HUD);
     b.homeX = b.x;
     menu.buttons.push(b);

@@ -45,7 +45,11 @@ const RULES = {
     'shield-hit': { gap: 60, cap: 3, jitter: 150 },
     warning: { gap: 1200, cap: 1 },
     'boss-explosion': { gap: 300, cap: 2 },
-    'boss-stinger': { gap: 400, cap: 1 }
+    'boss-stinger': { gap: 400, cap: 1 },
+    'beam-charge': { gap: 250, cap: 3 },
+    'beam-fire': { gap: 120, cap: 3 },
+    warp: { gap: 120, cap: 3, jitter: 120 },
+    'seeker-lock': { gap: 400, cap: 2 }
 };
 const DEFAULT_RULE = { gap: 0, cap: 4, jitter: 0 };
 // when this many voices are already sounding, these are dropped first (the sounds that fire most and matter least)
@@ -54,6 +58,18 @@ const BUDGET = 20;
 const voices = new Map();     // key -> [{ snd, t }]
 const lastAt = new Map();     // key -> last trigger time (ms)
 let active = 0;               // voices sounding across all keys
+
+/** Stop a playing voice without a click: a hard destroy() mid-waveform is a step in the signal (a pop). */
+function fadeOut(snd) {
+    if (!snd.manager) return;
+    const g = snd.volumeNode, ctx = snd.manager.context;
+    if (!g || !ctx) { snd.destroy(); return; }
+    const t = ctx.currentTime;
+    g.gain.cancelScheduledValues(t);
+    g.gain.setValueAtTime(g.gain.value, t);
+    g.gain.linearRampToValueAtTime(0, t + 0.012);
+    setTimeout(() => { if (snd.manager) snd.destroy(); }, 30);
+}
 
 /**
  * Play a one-shot honouring the SFX volume and the key's rules.
@@ -76,7 +92,7 @@ export function sfx(scene, key, opts = {}) {
     if (!list) voices.set(key, (list = []));
     while (list.length >= rule.cap) {
         const old = list.shift();
-        if (old.snd.manager) old.snd.destroy();   // stealing: the newest trigger matters most
+        fadeOut(old.snd);   // stealing: the newest trigger matters most
     }
     const jitter = opts.jitter ?? rule.jitter ?? 0;
     const detune = jitter ? (Math.random() * 2 - 1) * jitter : 0;
