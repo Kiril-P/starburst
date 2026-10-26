@@ -14,6 +14,7 @@ import { playMusic, playSting, duck } from '../systems/music.js';
 import { addBuildSummary } from '../ui/buildSummary.js';
 import { settleRun } from '../systems/runResult.js';
 import RewardsPanel, { REWARDS_X } from './gameover/RewardsPanel.js';
+import WorldRank from './gameover/WorldRank.js';
 import { wipeTo } from './cine/wipe.js';
 
 const PW = 248, ROW = 17, ROW_BIG = 26, PX = (W - PW) >> 1, PY = 100;
@@ -49,6 +50,7 @@ export default class GameOver extends Phaser.Scene {
         this.buildButtons();
         addBuildSummary(this, data.build);
         this.rewards = new RewardsPanel(this, REWARDS_X, PY, this.result);
+        this.world = new WorldRank(this, W / 2, this.buttonY + 70, data.tele, this.result.mode);   // online boards + telemetry (no-op offline)
 
         this.input.keyboard.on('keydown', this.skip, this);
         this.input.on('pointerdown', this.skip, this);

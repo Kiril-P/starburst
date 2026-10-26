@@ -55,12 +55,19 @@ jobs:
       - name: Smoke test (dev build via __dbg hooks, then production bundle + service worker)
         run: npm run test:smoke:prod
 
+      - name: Online API (validation, ranking, rate limit) and the game against it
+        run: |
+          npm run test:server
+          npm run test:online
+
       - name: Upload smoke screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: smoke-screenshots
-          path: tmp/smoke/
+          path: |
+            tmp/smoke/
+            tmp/online/
           if-no-files-found: ignore
 
       - name: Upload build

@@ -15,7 +15,7 @@ const walk = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((d) =
     const p = path.join(dir, d.name);
     return d.isDirectory() ? walk(p) : /\.m?js$/.test(d.name) ? [p] : [];
 });
-const files = [...walk('src'), ...walk('tools'), 'public/sw.js'].filter((f) => fs.existsSync(f));
+const files = [...walk('src'), ...walk('tools'), ...walk('server'), 'public/sw.js'].filter((f) => fs.existsSync(f));
 
 for (const f of files) {
     const r = spawnSync(process.execPath, ['--check', f], { encoding: 'utf8' });

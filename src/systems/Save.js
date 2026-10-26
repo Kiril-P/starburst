@@ -84,6 +84,15 @@ export const save = {
     set leaderboard(v) { set('leaderboard', JSON.stringify(v)); },
     get lifetime() { return json('lifetime', {}); },                  // { runs, kills, graze, credits, dailies, purchases }
     set lifetime(v) { set('lifetime', JSON.stringify(v)); },
+    // --- online (systems/net.js): boards + anonymous telemetry, on by default, one switch in SETTINGS ---------------
+    get online() { return str('online', '1') === '1'; },
+    set online(v) { set('online', v ? '1' : '0'); },
+    get callsign() { const c = str('callsign', ''); return /^[A-Z0-9]{3}$/.test(c) ? c : ''; },   // 3-char arcade name for the world boards
+    set callsign(v) { set('callsign', v); },
+    get worldRuns() { return json('worldRuns', []).filter((id) => typeof id === 'string').slice(-30); },   // ids of this device's board entries (to highlight them)
+    set worldRuns(v) { set('worldRuns', JSON.stringify(v.slice(-30))); },
+    get outbox() { return json('outbox', []).filter((r) => r && typeof r === 'object').slice(-20); },      // runs that could not be sent (offline)
+    set outbox(v) { set('outbox', JSON.stringify(v.slice(-20))); },
     get seenIntro() { return str('seenIntro', '0') === '1'; },
     set seenIntro(v) { set('seenIntro', v ? '1' : '0'); },
 

@@ -3,19 +3,21 @@
 // Boss waves (bosses/roster.js isBossWave) have no timer or spawners: state 'boss' waits for bossDefeated() (BossDirector).
 // Driven by simulation dt (no scene timers) so pause / hit-stop / slow-mo freeze it naturally.
 import { W } from '../config.js';
-import { WAVES } from '../systems/tuning.js';
+import { WAVES, sectorHp } from '../systems/tuning.js';
 import { WAVE_TABLE, BOSS_EVERY } from './waves.js';
 import { isBossWave } from './bosses/roster.js';   // main bosses every 5th wave + mid-bosses (waves 3, 8, 13 ...)
 import { resolveType, ENEMY_TYPES } from './enemyTypes.js';
 import Enemy from './Enemy.js';
+import { origin } from './patterns.js';
 import Formations from './formations.js';
-import { applyScript } from './waveScripts.js';
+import { applyScript, midAddsFor } from './waveScripts.js';
 import { runEvent, eventDue } from './waveEvents.js';
 import { applySector, sectorBiome, sectorInfo, isSectorStart } from './sectors.js';
 import SectorBanner from '../fx/SectorBanner.js';
 
 import { rngStream } from '../systems/rng.js';
 
+const ELITE_TYPES = new Set(['basic', 'spread', 'circular', 'splitter', 'shield']);   // the ones that shoot with attack() (Enemy adds the bursts)
 const rnd = rngStream('spawns');    // seeded in Daily Runs (systems/rng.js), Math.random otherwise
 const rand = (a, b) => a + rnd() * (b - a);
 
@@ -66,7 +68,11 @@ export default class WaveManager {
         this.state = 'intro';
         this.timer = WAVES.introMs;
         this.timeLeft = this.cfg.duration;
-        if (this.isBoss) { this.state = 'boss'; this.spawners = []; }
+        if (this.isBoss) {
+            this.state = 'boss';
+            // mid-bosses get light reinforcements (waveScripts MID_ADDS); main bosses fight alone
+            this.spawners = (midAddsFor(wave) ?? []).map(([type, every, delay]) => ({ type, every, filler: false, next: delay }));
+        }
         this.hooks.onIntro(wave, this.cfg);
         if (isSectorStart(wave)) this.banner.show(wave, sectorInfo(wave));
     }
@@ -120,6 +126,18 @@ export default class WaveManager {
                     this.hooks.onClear(this.wave);
                 }
                 break;
+            case 'boss': {
+                const b = this.scene.bosses?.boss;
+                if (this.spawners.length && b && b.alive && b.state === 'fight') {
+                    for (const sp of this.spawners) {
+                        if ((sp.next -= dt) > 0) continue;
+                        sp.next += sp.every * (1 + rand(-0.2, 0.2));
+                        this.spawnGroup(sp.type);
+                    }
+                    this.formations.update(dt);
+                }
+                break;
+            }
             case 'cleared':
                 if ((this.timer -= dt) <= 0) {
                     this.state = 'upgrade';
@@ -137,12 +155,14 @@ export default class WaveManager {
         const live = this.live;
         for (let i = live.length - 1; i >= 0; i--) {
             const e = live[i];
+            origin.v = e.typeName;
             if (e.alive && !e.update(dt, ctx)) {
                 this.hooks.onEscape(e);
                 e.despawn();
             }
             if (!e.alive) { e.listed = false; live[i] = live[live.length - 1]; live.pop(); }
         }
+        origin.v = '';
     }
 
     /** free slots under the wave's max-active cap; minor enemies (mines, split pods) don't take a slot */
@@ -162,6 +182,11 @@ export default class WaveManager {
         const formation = typeName === 'basic' && this.room() >= 3 && rnd() < WAVES.formationChance[this.tier];
         const x = formation ? rand(m + gap, W - m - gap) : rand(m, W - m);
         const lead = this.spawn(typeName, x, -20);
+        if (!formation && this.wave >= 4 && ELITE_TYPES.has(typeName) && rnd() < Math.min(0.2, 0.04 + 0.01 * this.wave) && !this.live.some((o) => o.alive && o.elite)) {
+            lead.makeElite();
+            this.scene.hud?.toast('ELITE: DROPS A REWARD', '#ffb547');
+            this.scene.audio?.play('warning', { vol: 0.35 });
+        }
         if (!formation) return;
         for (const side of [-1, 1]) {
             const e = this.spawn(typeName, x + side * gap, -34);
@@ -179,7 +204,7 @@ export default class WaveManager {
         const fa = WAVES.firstAttackMs;
         let hovering = 0;
         for (const o of this.live) if (o.alive && o.hover && o.hoverMs > 0) hovering++;
-        e.spawn(typeName, x, y, { hpMod: this.diff.enemyHealth, tier: this.tier, firstAttackMs: rand(fa[0], fa[1]), canHover: hovering < WAVES.maxHovering, ...extra });
+        e.spawn(typeName, x, y, { hpMod: this.diff.enemyHealth * sectorHp(this.cfg?.sector ?? 0), tier: this.tier, firstAttackMs: rand(fa[0], fa[1]), canHover: hovering < WAVES.maxHovering, ...extra });
         e.listed = true;
         this.live.push(e);
         return e;

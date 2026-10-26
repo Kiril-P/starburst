@@ -1,0 +1,20 @@
+# Cloudflare Worker + D1 for the STARBURST boards and telemetry. See README.md in this folder for the one-time setup.
+name = "starburst-api"
+main = "src/index.js"
+compatibility_date = "2025-10-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "starburst"
+database_id = "e77ae0af-7622-4650-838f-ef6f1ee9c5e7"
+
+# 20 writes per minute per IP (the key is hashed by Cloudflare; this code never stores it).
+# Needs a wrangler release that knows [[ratelimits]]; if yours does not, delete this block: the Worker skips the check.
+[[ratelimits]]
+name = "RL"
+namespace_id = "1001"
+  [ratelimits.simple]
+  limit = 20
+  period = 60
+
+# Secret (not in this file): `npx wrangler secret put ADMIN_TOKEN` guards GET /v1/admin/summary.

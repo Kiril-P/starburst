@@ -22,9 +22,10 @@ import { ACHIEVEMENTS, unlockedCount } from '../systems/achievements.js';
 import { topRuns } from '../systems/leaderboard.js';
 import { createCredits, shipInfoFor, lockFooter, denyLocked } from './menu/metaUi.js';
 import { wipeTo } from './cine/wipe.js';
+import { startTelemetry } from '../systems/telemetry.js';
 
 // layout (native px)
-const NAV = { x: 16, w: 160, h: 20, y: 100, step: 22 };
+const NAV = { x: 16, w: 160, h: 20, y: 96, step: 22 };
 const SHIP_XS = [282, 404, 526];
 const SHIP_Y = 172;
 const STAGE_CX = 404;            // centre of the ship stage (right of the nav column)
@@ -44,6 +45,7 @@ export default class MainMenu extends Phaser.Scene {
     }
 
     create() {
+        startTelemetry();   // once per page load; no-op without an API / with ONLINE off (systems/telemetry.js)
         this.bg = new Background(this);
         this.sky = new SkyFx(this);
         this.logo = new TitleLogo(this, W / 2, 40);
@@ -54,7 +56,7 @@ export default class MainMenu extends Phaser.Scene {
 
         this.buildNav();
         addBossGalleryEntry(this);   // BOSSES button + [B] (owned by the bosses module)
-        this.bestRun = createBestRun(this, NAV.x, NAV.y + NAV.step * this.buttons.length - 3, NAV.w, 62, save);
+        this.bestRun = createBestRun(this, NAV.x, NAV.y + NAV.step * this.buttons.length - 5, NAV.w, 60, save);
         this.shipInfo = createShipInfo(this, STAGE_CX, 258, 300);
         this.shipInfo.show(shipInfoFor(SHIPS[shipIdx]));
         this.credits = createCredits(this, W - 8, 8);

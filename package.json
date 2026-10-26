@@ -1,7 +1,7 @@
 {
   "name": "starburst",
   "private": true,
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "STARBURST: a neon pixel-art bullet hell for the browser (Phaser 3 + Vite)",
   "license": "MIT",
   "author": "Kiril Petrovski",
@@ -17,6 +17,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:online": "VITE_API_URL=https://starburst-api.kirilp.workers.dev vite build",
     "preview": "vite preview",
     "check": "node tools/check.mjs",
     "test:smoke": "node tools/smoke.mjs",
@@ -26,7 +27,11 @@
     "icons": "node tools/make-favicon.mjs",
     "bot": "node tools/bot.mjs",
     "bot:report": "node tools/bot/report.mjs",
-    "compliance": "node tools/compliance.mjs"
+    "compliance": "node tools/compliance.mjs",
+    "test:server": "node --test server/test",
+    "test:online": "node tools/online-smoke.mjs",
+    "server:dev": "node server/dev.mjs",
+    "telemetry": "node tools/telemetry-report.mjs"
   },
   "dependencies": {
     "@fontsource/press-start-2p": "^5.3.0",

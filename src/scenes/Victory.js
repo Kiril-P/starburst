@@ -10,6 +10,7 @@ import { pxText, centerText, fmtNum } from '../ui/text.js';
 import { save } from '../systems/Save.js';
 import { sfx } from '../systems/sfx.js';
 import { playMusic, playSting } from '../systems/music.js';
+import { submitRun } from '../systems/telemetry.js';
 
 const PW = 232, PX = 40, PY = 112, ROW = 17;
 const ROLL = { x: 470, top: 112, bottom: 262, speed: 22 };      // credits column (px/s)
@@ -148,6 +149,8 @@ export default class Victory extends Phaser.Scene {
         this.leaving = true;
         const d = this.data0;
         save.recordRun(Math.floor(d.score || 0), d.wave || 20);
+        const log = d.game?.runlog;
+        if (log && !log.done) submitRun(log.finish('win', { score: d.score, wave: d.wave || 20, stats: d.stats }));
         playMusic('title-music', { fadeIn: 900, fadeOut: 900 });
         this.cameras.main.fadeOut(220, 7, 11, 26);
         this.cameras.main.once('camerafadeoutcomplete', () => {

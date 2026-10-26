@@ -9,6 +9,7 @@ import { fmtNum } from '../../ui/text.js';
 import { save } from '../../systems/Save.js';
 import { BOSSES, bossHpScale } from '../../systems/tuning.js';
 import BossStage from './BossStage.js';
+import { origin } from '../patterns.js';
 import { planRun, bossFor, isBossWave, logBoss, BY_ID, DEF_OF, MID_OFFSET, FINAL_EVERY } from './roster.js';
 
 const NONE = [];
@@ -56,11 +57,19 @@ export default class BossDirector {
         return true;
     }
 
+    /** 'boss:warden/p2': the telemetry label of whatever this boss fires in its current phase */
+    srcTag(b) {
+        if (this.tagPhase !== b.phase || this.tagBoss !== b) { this.tagBoss = b; this.tagPhase = b.phase; this.tag = `boss:${b.def.id}/p${b.phase}`; }
+        return this.tag;
+    }
+
     update(dt) {
         const b = this.boss;
         this.stage.update(dt);
         if (!b) return;
+        origin.v = this.srcTag(b);
         b.update(dt);
+        origin.v = '';
         if (b.state === 'fight' && b.age > b.enterTotal + 600) this.stage.settle();
         if (b.alive) {
             this.fightMs += dt;
@@ -177,6 +186,7 @@ export default class BossDirector {
     /** the final boss is dead: freeze the run and show the Victory scene on top */
     victory() {
         const g = this.g;
+        g.runlog.won = true;
         this.clear();
         g.audio.stopHum();
         g.scene.launch('Victory', { score: g.combat.score, wave: g.waves.wave, stats: { ...g.combat.stats }, game: g });

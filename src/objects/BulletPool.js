@@ -7,6 +7,7 @@ import { W, H } from '../config.js';
 import { ENEMY_BULLET } from '../systems/tuning.js';
 import { save } from '../systems/Save.js';
 import { contrastTexture } from '../art/highContrast.js';
+import { origin } from './patterns.js';
 
 export default class BulletPool {
     /** opts: { size, depth, cullMargin } */
@@ -49,6 +50,7 @@ export default class BulletPool {
         b.damage = extra?.damage ?? ENEMY_BULLET.damage;
         b.grazed = false;
         b.age = 0;
+        b.src = origin.v;   // who fired it (telemetry: what hurt the player)
         b.vx = Math.cos(angle) * speed;
         b.vy = Math.sin(angle) * speed;
         // needles/shards/player shots are drawn pointing UP, so rotate by +90deg relative to travel angle

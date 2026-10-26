@@ -3,6 +3,7 @@
 import { COLORS } from '../art/palette.js';
 import { PLAYER, SCORE, JUICE, ABILITIES } from '../systems/tuning.js';
 import { meteorShards } from './enemyTypes.js';
+import { origin } from './patterns.js';
 
 const SPARK_CAP = 48;   // max sparks spawned by one bullet cancel (keeps a 400-bullet clear cheap)
 const HURT_SFX_GAP = 250; // v1 debounce for the damaged sound
@@ -17,6 +18,7 @@ export default class Combat {
         this.stats = { graze: 0, maxCombo: 1, kills: 0 };
         this.streak = 0; this.lastKill = -1e9;   // rapid-kill streak (popup every 5)
         this.chainLen = 0; this.lastChain = -1e9;
+        this.waveHits = 0;                       // hull hits taken in the current wave (FLAWLESS bonus when it ends at 0)
     }
 
     addScore(base, useCombo = true) {
@@ -49,7 +51,7 @@ export default class Combat {
     killEnemy(e, byPlayer) {
         const g = this.g;
         const t = e.type;
-        const x = e.x, y = e.y;
+        const x = e.x, y = e.y, elite = e.elite;
         e.despawn();
         if (byPlayer) {
             const pts = this.addScore(t.score);
@@ -58,6 +60,7 @@ export default class Combat {
             const up = g.combo.kill(t.score);
             this.stats.maxCombo = Math.max(this.stats.maxCombo, g.combo.mult);
             this.streakKill();
+            if (elite) this.eliteDown(x, y, t);
             g.fx.floatText(x, y - 10, String(pts), g.combo.mult > 1 ? '#ffe3a0' : '#f4faff', 8);
             if (up && g.combo.mult >= 2) g.fx.floatText(x, y - 20, `x${g.combo.mult}`, '#39e7ff', 8);
         }
@@ -73,7 +76,10 @@ export default class Combat {
         else if (t.big) g.audio.play('enemy-death-big', { vol: 0.7 });
         else g.audio.play('enemy-death', { vol: 0.5, jitter: 250 });
         if (t.meteor) {
+            const prev = origin.v;
+            origin.v = 'shards:' + e.typeName;
             meteorShards(e, g.enemyCtx, g.waves.tier);
+            origin.v = prev;
             if (t.splitInto && byPlayer) {
                 for (const dir of [-1, 1]) {
                     const m = g.waves.spawn(t.splitInto, x + dir * 6, y);
@@ -83,6 +89,15 @@ export default class Combat {
         }
         if (byPlayer && (e.volatile || t.chain)) this.chain(x, y, e.volatile ? 58 : 64);
         if (t.onKill) t.onKill(e, g, byPlayer, x, y);   // splitters break apart (enemyTypes2.js)
+    }
+
+    /** an ELITE fell: triple score, a shockwave, and a guaranteed drop (Loot.eliteDrop) */
+    eliteDown(x, y, t) {
+        const g = this.g, pts = this.addScore(t.score * 3);
+        g.fx.floatText(Math.round(x), Math.round(y - 22), `ELITE +${pts}`, '#ffb547', 8);
+        g.fx.shockwave(Math.round(x), Math.round(y), COLORS.A, 1);
+        g.fx.hitStop(70);
+        g.loot?.eliteDrop(x, y);
     }
 
     /** kills within 0.7s of each other build a streak; every 5th pays a flat bonus and pops a label by the ship */
@@ -121,20 +136,27 @@ export default class Combat {
     ram(e) {
         const g = this.g;
         if (!g.player.hittable) return;
-        this.hurt(PLAYER.contactDamage * g.diff.enemyDamage);
+        this.hurt(PLAYER.contactDamage * g.diff.enemyDamage, 'ram:' + (e.typeName || (g.bosses.boss ? 'boss:' + g.bosses.boss.def.id : 'unknown')));
         if (e.damage(PLAYER.contactDamageToEnemy)) this.killEnemy(e, true);
     }
 
     bulletHit(b) {
         this.g.enemyBullets.kill(b);
-        this.hurt(b.damage);
+        this.hurt(b.damage, b.src);
     }
 
-    hurt(amount) {
+    /** a live laser band (objects/beams.js) caught the player */
+    beamHit(b) { this.hurt(this.g.enemyCtx.damage * b.mul, 'beam:' + (b.owner.typeName || 'unknown')); }
+
+    /** `src` = what hit (telemetry label: enemy type, 'boss:id/pN', 'beam:type', 'ram:type'); only for the run log */
+    hurt(amount, src) {
         const g = this.g;
         if (g.god) { g.fx.hitSpark(g.player.x, g.player.y, COLORS.R); return; }
         if (g.powerups?.absorb()) return;   // SHIELD power-up eats one hit
+        const hp0 = g.player.hp;
         const dead = g.player.damage(amount);
+        if (hp0 > g.player.hp) g.runlog.hurt(src, hp0 - g.player.hp, dead);
+        this.waveHits++;
         g.combo.reset();
         if (dead) { g.startDeath(); return; }
         const now = g.game.loop.time;

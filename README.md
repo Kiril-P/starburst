@@ -24,6 +24,7 @@ A neon pixel-art bullet hell. Dodge dense bullet patterns, graze for combo, figh
   - Turn off flashes and screen shake.
   - Lower graphics quality and show an FPS counter.
 - **Plays anywhere**: keyboard, gamepad, and touch controls. It installs as an app (PWA) and works offline after the first visit.
+- **Boards**: local top 10 (all-time and daily) on every build. Builds with an online API add **WORLD** and **W.DAILY** boards with a 3-letter callsign, and send anonymous run statistics that are used to balance the game. One switch (**Settings → Online**) turns all of that off. Details: [`docs/PRIVACY.md`](docs/PRIVACY.md), backend: [`server/`](server/README.md).
 
 ## Controls
 
@@ -48,7 +49,7 @@ Originally made for **Bullet Hell Jam 6**.
 
 ## Development
 
-Built with JavaScript, Phaser 3.90, and Vite. Everything, including Phaser and the fonts, is bundled locally, so the game works offline. The pixel art is not made of image files: every sprite is an ASCII map in `src/art/` that is baked into textures at startup, and sound is synthesized at runtime. A strict Content-Security-Policy is injected into production builds.
+Built with JavaScript, Phaser 3.90, and Vite. Everything, including Phaser and the fonts, is bundled locally, so the game works offline. The only network use is the optional online API (boards and anonymous stats, off unless the build sets `VITE_API_URL`). The pixel art is not made of image files: every sprite is an ASCII map in `src/art/` that is baked into textures at startup, and sound is synthesized at runtime. A strict Content-Security-Policy is injected into production builds.
 
 ```sh
 npm install
@@ -58,6 +59,10 @@ npm run preview          # serve the production build
 npm run check            # static checks: syntax, sprite maps, texture contract, PWA manifest
 npm run test:smoke       # headless smoke test of the whole game loop (needs Chrome; set CHROME_PATH if not found)
 npm run test:smoke:prod  # same, plus the production bundle and its service worker
+npm run test:server      # online API: validation, ranking, rate limit, summary (Node 22.13+)
+npm run test:online      # the real game against the real API handler: callsign, world board, offline queue
+npm run server:dev       # local API on :8787 (VITE_API_URL=http://localhost:8787 npm run dev to use it)
+npm run telemetry        # real-player balance report from the API (see server/README.md)
 npm run gif              # re-record docs/media/gameplay.gif (needs ffmpeg)
 npm run icons            # regenerate favicon / PWA icons from the pixel-art source
 npm run compliance       # release checks: asset allowlist, secrets, licence metadata, no dev hooks in dist/ (see docs/COMPLIANCE.md)

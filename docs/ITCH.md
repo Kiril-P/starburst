@@ -1,7 +1,7 @@
 # itch.io page draft
 
-Copy-paste material for https://kirilp.itch.io/starburst. Upload: zip the *contents* of `dist/` (after `npm run build`,
-or download the `starburst-dist` artifact from CI) with `index.html` at the zip root. Run `npm run compliance -- --require-dist` first. Full rules and checklist: `docs/COMPLIANCE.md`.
+Copy-paste material for https://kirilp.itch.io/starburst. Upload: zip the *contents* of `dist/` (after `npm run build:online` for the build with world boards, or `npm run build` for a fully offline one;
+the `starburst-dist` artifact from CI is the offline build) with `index.html` at the zip root. Run `npm run compliance -- --require-dist` first. Full rules and checklist: `docs/COMPLIANCE.md`.
 
 ## Page settings
 
@@ -57,6 +57,7 @@ telegraphed attack phases. Survive past the authored waves and the endless mode 
 - Bosses with multiple phases, quests to complete, three difficulty levels, and best-run tracking
 - Keyboard, gamepad, and touch controls
 - Installable and playable offline
+- World leaderboards (all-time and daily) with a 3-letter callsign. The game sends anonymous run statistics to improve balance; **Settings → Online** turns it off. No account, no tracking: see `docs/PRIVACY.md`. (Only if the uploaded build was made with `VITE_API_URL`; otherwise delete this bullet.)
 
 **Accessibility**
 - Fully rebindable keys (two per action)

@@ -93,6 +93,11 @@ if (!fs.existsSync('dist')) {
     if (/https?:\/\/(?!kirilpetrovski\.com|kirilp\.itch\.io)[^"'\s<)]+/.test(html.replace(/<meta[^>]*Content-Security-Policy[^>]*>/i, '').replace(/xmlns="[^"]*"/g, ''))) {
         fail('dist/index.html references an external URL (itch.io HTML5 games must not make external requests)');
     }
+    // the only network the build may be allowed to reach is the one https API origin from VITE_API_URL (docs/PRIVACY.md)
+    const connect = (html.replace(/&#39;/g, "'").match(/connect-src([^;"]*)/i)?.[1] || '').trim().split(/\s+/).filter((s) => s && !/^('self'|data:|blob:)$/.test(s));
+    if (connect.length > 1) fail(`CSP connect-src allows more than one external origin: ${connect.join(' ')}`);
+    if (connect.some((o) => !o.startsWith('https://'))) fail(`CSP connect-src allows a non-https origin (${connect.join(' ')}): build with the production VITE_API_URL`);
+    notes.push(connect.length ? `online build: the game may contact ${connect[0]} (boards + anonymous telemetry, docs/PRIVACY.md)` : 'offline build: no network origin allowed by the CSP');
 }
 
 for (const n of notes) console.log(`note: ${n}`);

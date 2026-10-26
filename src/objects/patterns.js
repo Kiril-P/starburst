@@ -33,6 +33,10 @@ export function style(shape, color) {
     return s;
 }
 
+/** Who is firing right now ('basic', 'boss:warden', ...). Enemy / boss updates set it, the Sequencer carries it into delayed
+ *  steps, and BulletPool stamps it on each bullet so a hit can be blamed on its source (telemetry only). */
+export const origin = { v: '' };
+
 export const angleTo = (x, y, tx, ty) => Math.atan2(ty - y, tx - x);
 
 /** One bullet toward a target. */
@@ -90,7 +94,7 @@ export class Sequencer {
 
     run(owner, everyMs, times, step) {
         const t = this.spare.pop() || {};
-        t.owner = owner; t.every = everyMs; t.left = times; t.step = step; t.i = 0; t.wait = 0;
+        t.owner = owner; t.every = everyMs; t.left = times; t.step = step; t.i = 0; t.wait = 0; t.src = origin.v;
         this.tasks.push(t);
         return t;
     }
@@ -102,7 +106,10 @@ export class Sequencer {
             if (t.owner && t.owner.alive === false) t.left = 0;
             t.wait -= dt;
             while (t.left > 0 && t.wait <= 0) {
+                const prev = origin.v;
+                origin.v = t.src;
                 t.step(t.i++, t.owner ? t.owner.x : 0, t.owner ? t.owner.y : 0);
+                origin.v = prev;
                 t.left--;
                 t.wait += t.every;
             }
