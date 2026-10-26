@@ -8,7 +8,7 @@ import { W } from '../config.js';
 import { BOSS_EVERY } from './waves.js';
 import { FORMATION_NAMES } from './formations.js';
 
-const ZOO = ['sniper', 'kamikaze', 'shield', 'turret', 'minelayer', 'splitter'];
+const ZOO = ['sniper', 'kamikaze', 'shield', 'turret', 'minelayer', 'splitter', 'strafer', 'seeker', 'pylon', 'emitter', 'warper'];
 
 export function installEnemyDebug(g, dbg) {
     Object.assign(dbg, {

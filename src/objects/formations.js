@@ -6,6 +6,7 @@
 // shrink when the wave is near its max-active cap, and grow with the pattern tier.
 import { W } from '../config.js';
 import { SET_PIECES } from './formationsSet.js';
+import { STATION_PIECES } from './formationsStation.js';
 
 const rand = (a, b) => a + Math.random() * (b - a);
 const ease = (k) => 1 - (1 - k) * (1 - k);
@@ -17,6 +18,7 @@ const sized = (f, n) => Math.max(2, Math.round(n * Math.min(1.2, f.wm.diff?.patt
 /** member = { at: ms delay, type, x, y, path?, extra?, after?(e) } */
 const DEFS = {
     ...SET_PIECES,
+    ...STATION_PIECES,
     // classic V: swoops in, holds the shape while gliding and swaying in sync, then breaks off
     vee(f, type, tier) {
         const count = tier >= 1 && sized(f, 5) >= 4 ? 5 : 3, x0 = rand(90, W - 90), out = [];

@@ -67,6 +67,11 @@ export const WAVES = {
     // bosses; with bosses on 3/5/8/10/... the timed waves used to reach row 10 at wave 11 and go endless from there.
     // Boss-wave entries are unused. Past wave 20: the last entry + 1 endless step per wave.
     tableRowByWave: [1, 2, 2, 3, 3, 4, 5, 5, 6, 6, 7, 8, 8, 9, 9, 10, 11, 11, 12, 12],
+    // per-sector scaling (index = sector, 0-based; later sectors continue +hpStepEndless per sector): enemies get tougher and
+    // shoot a little faster, so a strong build can't delete a wave before it fires (that was why sector 3 asked for no movement)
+    hpBySector: [1, 1.25, 1.6, 2],
+    fireBySector: [1, 0.94, 0.86, 0.78],
+    hpStepEndless: 0.3,
     maxHovering: 2,          // at most this many spiral-casting (hovering) enemies at once, so patterns stay legible
     // background biome per wave (fx/bgArt BIOMES: 0 violet, 1 teal, 2 magenta, 3 dusk, 4 toxic). Magenta/dusk are
     // avoided because magenta orbs / amber needles would melt into them. Past the end it alternates the last two.
@@ -86,6 +91,11 @@ export const BOSSES = {
 export const bossHpScale = (wave) => BOSSES.hpByWave[wave] ?? BOSSES.hpByWave[((wave - 1) % 20) + 1] ?? 1;
 
 // Bullet speed multiplier per tier: late waves get faster, denser patterns.
+/** enemy HP multiplier for a 0-based sector index (see WAVES.hpBySector) */
+export const sectorHp = (s) => WAVES.hpBySector[s] ?? WAVES.hpBySector[WAVES.hpBySector.length - 1] + (s - WAVES.hpBySector.length + 1) * WAVES.hpStepEndless;
+/** enemy fire-interval multiplier for a 0-based sector index (< 1 = faster) */
+export const sectorFire = (s) => WAVES.fireBySector[Math.min(s, WAVES.fireBySector.length - 1)];
+
 export const TIER_BULLET_SPEED = [0.9, 1, 1.05, 1.1];
 
 export const COMBO = {

@@ -66,6 +66,12 @@ export default class Loot {
         }
     }
 
+    /** an ELITE died: a handful of big gems and one capsule (hull repair when hurt, else a random power-up) */
+    eliteDrop(x, y) {
+        this.burst('gem_l', 3, x, y, 40, 110);
+        this.burst(this.g.player.hp / this.g.player.maxHp < 0.8 ? 'repair' : pickWeighted(LOOT.powerWeights), 1, x, y, 25, 50);
+    }
+
     bossBurst(x, y) {
         const B = LOOT.boss;
         for (const k of ['gem_l', 'gem_m', 'gem_s']) this.burst(k, B[k], x, y, 50, 170);

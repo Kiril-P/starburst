@@ -6,6 +6,7 @@ import { SPEED_SCALE, ENEMY_BULLET, SCORE } from '../systems/tuning.js';
 import { aimed, fan, ring, curtain, burst, style, angleTo, DEG, TAU } from './patterns.js';
 import { TYPES_2 } from './enemyTypes2.js';
 import { TYPES_3 } from './enemyTypes3.js';
+import { TYPES_4 } from './enemyTypes4.js';
 
 const ORB_S = style('orbS', 'magenta');
 const ORB_M = style('orbM', 'magenta');
@@ -80,7 +81,7 @@ export const ENEMY_TYPES = {
 
 // v2 enemies (sniper, kamikaze, shield, turret, minelayer, mine, splitter, splitter_s) live in their own files.
 // maxAlive caps how many of a type the timed spawners keep on screen (formations may add a few more).
-Object.assign(ENEMY_TYPES, TYPES_2, TYPES_3);
+Object.assign(ENEMY_TYPES, TYPES_2, TYPES_3, TYPES_4);
 
 /** Shard burst for a broken meteor. */
 export function meteorShards(e, c, tier) {

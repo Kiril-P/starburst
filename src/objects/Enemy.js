@@ -6,6 +6,10 @@
 import Phaser from 'phaser';
 import { W, H, DEPTH } from '../config.js';
 import { ENEMY_TYPES } from './enemyTypes.js';
+import { ring, style } from './patterns.js';
+import { COLORS } from '../art/palette.js';
+
+const ELITE_ORB = style('orbS', 'amber');
 
 import { rngStream } from '../systems/rng.js';
 
@@ -42,6 +46,8 @@ export default class Enemy extends Phaser.GameObjects.Sprite {
         this.tier = opts.tier;
         this.gen = (this.gen || 0) + 1;   // lets delayed effects tell a pooled enemy's lives apart
         this.volatile = false;            // chain-explodes neighbours when killed (formations 'fuse')
+        this.elite = false;               // tougher, extra ring bursts, guaranteed reward (makeElite)
+        if (this.halo) this.halo.setVisible(false);
         this._vt = 0;
         this.age = 0;
         this.shots = 0;
@@ -88,6 +94,7 @@ export default class Enemy extends Phaser.GameObjects.Sprite {
             if (on !== this._vt) { this._vt = on; if (on) this.setTintFill(0xffb547); else this.clearTint(); }
         }
         if (this.frameMs > 0 && (this.frameMs -= dt) <= 0) this.setFrame(0);   // e.g. shield flash -> idle
+        if (this.halo && this.elite) this.halo.setPosition(Math.round(this.x), Math.round(this.y)).setAlpha(0.7 + 0.3 * Math.sin(this.age / 160));
         if (this.type.think) {
             this.type.think(this, dt, c);
         } else if (this.type.meteor) {
@@ -106,6 +113,7 @@ export default class Enemy extends Phaser.GameObjects.Sprite {
                     this.nextFire += this.type.fireRate * c.fireRateMod;
                     this.type.attack(this, c, this.tier);
                     this.shots++;
+                    if (this.elite && (this.shots & 1)) ring(c.pool, this.x, this.y, { speed: 34 * c.speed, style: ELITE_ORB, damage: c.damage, count: Math.max(4, Math.round(8 * c.density)), offset: this.shots * 0.4 });
                     c.onShoot(this);
                 }
             }
@@ -135,6 +143,14 @@ export default class Enemy extends Phaser.GameObjects.Sprite {
         if (this.x < half) this.x = half; else if (this.x > W - half) this.x = W - half;
     }
 
+    /** Promote to an ELITE: 2.6x hull, an amber halo, a ring burst on every other volley, and a guaranteed reward when it falls. */
+    makeElite() {
+        this.elite = true;
+        this.hp *= 2.6;
+        if (!this.halo) this.halo = this.scene.add.image(0, 0, 'glow_l').setBlendMode(Phaser.BlendModes.ADD).setTint(COLORS.A).setDepth(DEPTH.ENEMY - 1);
+        this.halo.setVisible(true).setPosition(Math.round(this.x), Math.round(this.y));
+    }
+
     /** Returns true if this hit killed it. src = the player shot (lets armoured types deflect by hit angle). */
     damage(amount, src) {
         if (!this.alive) return false;
@@ -154,10 +170,12 @@ export default class Enemy extends Phaser.GameObjects.Sprite {
         this.stop();
         this.setActive(false).setVisible(false);
         if (this.gfx) this.gfx.clear();   // sniper laser
+        if (this.halo) this.halo.setVisible(false);
     }
 
     destroy(fromScene) {
         if (this.gfx) { this.gfx.destroy(); this.gfx = null; }
+        if (this.halo) { this.halo.destroy(); this.halo = null; }
         super.destroy(fromScene);
     }
 }

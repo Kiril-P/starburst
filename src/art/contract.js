@@ -40,6 +40,11 @@ export const CONTRACT = {
     enemy_mine: [9, 9, 3],          // 0 unarmed, 1 armed, 2 hot
     enemy_splitter: [21, 21, 2],
     enemy_splitter_s: [11, 11, 2],
+    // --- enemies3.js: strafer, seeker, laser pylon (+ the wall emitter, the same sprite rotated), warper ---------------
+    enemy_strafer: [25, 15, 2],     // animated; frame 1 = guns hot
+    enemy_seeker: [15, 15, 2],      // animated; rotated toward its heading by code
+    enemy_pylon: [17, 24, 3],       // 0 idle, 1 charging, 2 firing (set by code)
+    enemy_warper: [21, 21, 2],      // 1 = flared (set by code)
 
     // --- bosses.js (owner: bosses) ----------------------------------------------------------------
     // Face DOWN, origin centre. Idle frames animate (fps in bosses.js) except boss_prism (frames set by code).

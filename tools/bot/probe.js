@@ -60,6 +60,11 @@
             P.rendering = false;
             const ms = realNow() - t0;
             (render ? P.perf.rnd : P.perf.upd).push(ms);
+            if (P.vt - (P.scoreAt ?? -1e9) >= 10000) {   // score / wave every 10 s of game time: calibrates the server's plausibility limit (server/src/validate.js)
+                P.scoreAt = P.vt;
+                const gm = window.__game && __game.scene.getScene('Game');
+                if (gm && gm.combat) (P.scoreTrace ??= []).push([Math.round(P.vt - P.t0), gm.waves.wave, gm.combat.score]);
+            }
             if (P.end) return true;
         }
         return false;
@@ -116,6 +121,7 @@
         });
         W(g.combat, 'killEnemy', (f) => function (e) { const prev = P.src; P.src = 'shards:' + e.typeName; f.apply(this, arguments); P.src = prev; });
         W(g.combat, 'bulletHit', (f) => function (b) { P.hit = { src: b.src || '?', age: b.age, sd: Math.hypot(b.sx - g.player.x, b.sy - g.player.y) }; f.call(this, b); });
+        W(g.combat, 'beamHit', (f) => function (b) { P.hit = { src: 'beam:' + (b.owner.typeName || '?'), age: Math.round(b.t - b.chargeMs), sd: Math.round(Math.hypot(b.x - g.player.x, b.y - g.player.y)) }; f.call(this, b); });
         W(g.combat, 'ram', (f) => function (e) {
             P.hit = { src: 'ram:' + (e.typeName || (g.bosses.boss ? 'boss:' + g.bosses.boss.def.id : '?')), age: e.bornAt ? P.vt - e.bornAt : 9999, sd: 0 };
             f.call(this, e);
@@ -149,7 +155,13 @@
         if (!g.paused && g.sys.isActive()) {
             w.frames++; w.sumBullets += n; w.maxBullets = Math.max(w.maxBullets, n);
             w.maxEnemies = Math.max(w.maxEnemies, wm.live.length);
-            if (wm.state === 'active' || wm.state === 'boss') w.ms += DT;
+            if (wm.state === 'active' || wm.state === 'boss') {
+                w.ms += DT;
+                // how much the pilot has to move: px travelled and the share of frames spent (nearly) standing still
+                const pl = g.player;
+                if (P.lx !== undefined) { const d = Math.hypot(pl.x - P.lx, pl.y - P.ly); w.dist = (w.dist || 0) + d; w.act = (w.act || 0) + 1; if (d * 60 < 12) w.still = (w.still || 0) + 1; }
+                P.lx = pl.x; P.ly = pl.y;
+            } else P.lx = undefined;
         }
         w.kills = g.combat.stats.kills - w.kills0;
         w.state = wm.state;
@@ -186,11 +198,11 @@
     const pct = (a, q) => { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y); return +s[Math.min(s.length - 1, Math.floor(q * s.length))].toFixed(2); };
     P.summary = () => {
         const waves = {};
-        for (const [k, w] of Object.entries(P.waves)) waves[k] = { start: w.start, ms: Math.round(w.ms), dmg: Math.round(w.dmg), hits: w.hits, kills: w.kills, maxBullets: w.maxBullets, avgBullets: Math.round(w.sumBullets / Math.max(1, w.frames)), maxEnemies: w.maxEnemies, state: w.state };
+        for (const [k, w] of Object.entries(P.waves)) waves[k] = { start: w.start, ms: Math.round(w.ms), dmg: Math.round(w.dmg), hits: w.hits, kills: w.kills, maxBullets: w.maxBullets, avgBullets: Math.round(w.sumBullets / Math.max(1, w.frames)), maxEnemies: w.maxEnemies, state: w.state, dist: Math.round(w.dist || 0), still: w.act ? +((w.still || 0) / w.act).toFixed(2) : 0 };
         const u = P.perf.upd, r = P.perf.rnd;
         return {
             waves, bosses: P.bosses.map(({ obj, ...b }) => b), hits: P.hits, death: P.death || null, picks: P.picks, pickups: P.pickups, abil: P.abil,
-            flags: P.flags, simMs: Math.round(P.vt - P.t0),
+            flags: P.flags, simMs: Math.round(P.vt - P.t0), scoreTrace: P.scoreTrace || [], score: (() => { const gm = window.__game && __game.scene.getScene('Game'); return gm && gm.combat ? gm.combat.score : 0; })(),
             perf: { updP50: pct(u, 0.5), updP99: pct(u, 0.99), updMax: pct(u, 1), rndP50: pct(r, 0.5), rndP95: pct(r, 0.95) }
         };
     };

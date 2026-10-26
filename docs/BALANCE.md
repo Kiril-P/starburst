@@ -166,3 +166,83 @@ AFTER the difficulty rises with the sectors and peaks at the bosses and the fina
 7. Feel of the nerfed **forcefield / phase** cooldowns and of keyboard ("move") aim against strafing bosses
    (Lancer, Manta) — the bot needed target leading to cope.
 8. Starburst mortar shells / wells: telegraphed, but if humans also stand in them, lengthen the telegraph.
+
+---
+
+# Pass 2: "I didn't even have to move" (2026-10-24)
+
+A playtester found sector 3 lackluster, boring and easy, and never moved. The bot confirmed it, so this pass adds enemies and
+mechanics that make standing still fail, and scales every sector's enemies up so a strong build can't delete a wave before it fires.
+
+## What the bot said before (12 runs, skilled + casual, normal / tank, same bot code)
+
+Mean damage the skilled pilot took per timed wave: wave 6 **0**, wave 11 **3**, wave 12 **1**, wave 13 **3**, wave 16 **0**,
+wave 18 **1**. It reached wave 20 in 100 % of runs and beat the final in 4 of 6. Sector 3 (waves 11-15) cost 3 / 1 / 3 / 20 / 25 HP.
+
+## What changed
+
+Content (details in `docs/WAVES.md`): five new enemies (strafer, seeker, pylon, emitter, warper), a real laser-beam mechanic
+(`objects/beams.js`: telegraph, lock, hit test, graze), five new set pieces, a rewrite of waves 2, 4, 6, 7, 9, 11, 12, 14, 16, 17, 19
+(sector 3 is now LOCKDOWN / SECURITY SWEEP / GAUNTLET), light reinforcements during mid-boss fights, ELITE enemies, a FLAWLESS bonus.
+Numbers: enemy HP x1 / 1.25 / 1.6 / 2 and enemy fire interval x1 / 0.94 / 0.86 / 0.78 by sector.
+
+## Results (36 runs: 3 ships x 6 seeds x skilled / casual, normal difficulty)
+
+| | before (12 runs) | after (36 runs) | target |
+|---|---|---|---|
+| skilled, median wave reached | 21 | 21 | 12-20, final beaten in 30-50 % |
+| skilled, reached wave 20 | 100 % | 72 % | |
+| skilled, beat the final (of all skilled runs) | 4/6 (67 %) | 9/18 (50 %) | 30-50 % |
+| casual, median wave | 10 | 11 (normal 11, speedy 5, tank 15) | dies around 5-9 |
+| soft-locks / console errors | 0 / 0 | 0 / 0 | 0 |
+
+Mean damage the skilled pilot takes per timed wave (HP):
+
+| wave | 6 | 7 | 9 | 11 | 12 | 13 | 14 | 16 | 17 | 18 | 19 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| before | 0 | 12 | 7 | 3 | 1 | 3 | 20 | 0 | 26 | 1 | 16 |
+| after  | 3 | 11 | 12 | **45** | **23** | **24** | **53** | **36** | **50** | 6 | 35 |
+
+Deaths in a wave (casual + skilled): wave 11 4 %, 14 5 %, 17 18 %, 19 0 %, wave 20 (final) 36 % of runs that played it.
+`px/s moved` in the sector 3 waves is now 155-180 (was 128-166) and the time the pilot spends standing still is 11-17 % there.
+Waves 6 and 18 are still gentle (rock shower and the Manta); they are the bot's best case for dodging rocks and blinks.
+
+## Difficulty ladder (6 runs per cell, an earlier build of this pass)
+
+easy casual median wave 17, easy skilled beats the final 5/5; hard casual median 3, hard skilled beat the final 0/2.
+
+## Fairness (oracle pilot: zero reaction lag, sees everything)
+
+16 oracle runs from wave 1 (two earlier builds of this pass, normal + tank): 16/16 beat the final. After the last change, starting directly at waves 14 and 19 (12 runs each):
+**0 beam hits**, and the only hits are ordinary bullets in crowded rooms. This check removed a first version of the emitters: with a
+sweeping horizontal beam on both walls even the oracle was hit 1-8 times a run in wave 19 (the two wedges leave no safe row), so
+emitter beams are now a fixed band and only the ceiling pylons sweep (tier 2+).
+
+## Bot changes
+
+`tools/bot/brain.js`: reads beams (a live band costs 1.8x a bullet hit, sweeping beams cover their whole sector) and has a
+`statue` profile that never moves (it dies in wave 1, so it is not a useful gate; the per-wave movement numbers are).
+`tools/bot/probe.js`: per-wave `dist` (px travelled) and `still` (share of frames standing still), `beamHit` attribution
+(`beam:pylon` / `beam:emitter`, age = ms since the band went live, distance = to the emitter). `report.mjs --waves`: two new columns.
+
+## Still needs a human
+
+- How the beams *feel*: the lock time (430 ms strobing), the 1.0-1.5 s charge and the sweep speed are numbers from a bot with 170 ms
+  reaction time; a human with a gamepad or a laptop trackpad may want more warning. `chargeMs` / `restMs` in `enemyTypes4.js`.
+- Elite frequency (`min(20 %, 4 % + 1 % x wave)` per eligible spawn, one at a time) and whether the reward feels worth the extra HP.
+- Whether wave 17 (SPIRAL DANCE with warpers, 18 % of bot deaths) and wave 20 are the right peak.
+
+## Online boards: score limits (calibration, 2026-10-25)
+
+`server/src/validate.js` only ranks a run whose score is plausible for its length. The limits come from 12 full bot runs (3 ships x oracle / skilled x 2 seeds, `tmp/bot/score-calib.jsonl`, scores sampled every 10 s of game time by `tools/bot/probe.js`):
+
+| | oracle (6 runs) | skilled (6 runs) |
+|---|---|---|
+| ended | 6 victories | 4 victories, 2 deaths (waves 12 and 17) |
+| final score | 1.8 - 2.9 M | 22 k - 3.2 M |
+| average score per second of play | 1316 - 2317 | 88 - 2856 |
+| time per wave (incl. upgrade screens) | 62 - 70 s | 50 - 65 s |
+| kills per second | 0.60 - 0.86 | 0.08 - 1.01 |
+| best 10-second window | 16789 points/s (a boss kill) | |
+
+Score grows much faster late in a run (combo and sector scaling), so one points-per-second figure is loose early and tight late: hence two limits. Plausible = `score <= 4000 + 6000 * seconds` (about twice the best average) **and** `score <= 4000 + 12000 * wave^2` (wave 20: 4.8 M against the best clear of 3.2 M), at most one wave per 5 s, at most `6 * seconds + 50` kills. Humans can graze and combo better than the bots, so these have headroom on purpose: a false rejection (a real record that never shows up) is worse than a forged score that is plausible anyway. The telemetry report shows rejected runs (`ranked = 0` with a name): check it after launch and loosen the limits if real runs land there.

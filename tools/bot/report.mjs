@@ -63,9 +63,9 @@ if (a.includes('--waves')) {
         if (!ws.length) continue;
         const dead = runs.filter((r) => r.result === 'died' && r.wave === w).length;
         rows.push([w, ws.length, med(ws.map((x) => Math.round(x.ms / 1000))), mean(ws.map((x) => x.dmg)).toFixed(0), mean(ws.map((x) => x.hits)).toFixed(1),
-            Math.max(...ws.map((x) => x.maxBullets)), Math.round(mean(ws.map((x) => x.avgBullets))), Math.max(...ws.map((x) => x.maxEnemies)), pct(dead, ws.length)]);
+            Math.max(...ws.map((x) => x.maxBullets)), Math.round(mean(ws.map((x) => x.avgBullets))), Math.max(...ws.map((x) => x.maxEnemies)), Math.round(mean(ws.map((x) => (x.dist || 0) / Math.max(1, x.ms / 1000)))), Math.round(100 * mean(ws.map((x) => x.still || 0))) + '%', pct(dead, ws.length)]);
     }
-    console.log(table(['wave', 'runs', 'time s', 'dmg', 'hits', 'max bullets', 'avg bullets', 'max enemies', 'died here'], rows));
+    console.log(table(['wave', 'runs', 'time s', 'dmg', 'hits', 'max bullets', 'avg bullets', 'max enemies', 'px/s moved', 'standing still', 'died here'], rows));
 }
 
 console.log('\n### Upgrades taken / pickups / abilities (per run means)\n');

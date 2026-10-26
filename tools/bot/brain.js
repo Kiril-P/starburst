@@ -14,6 +14,8 @@
         casual: { lag: 280, think: 100, noise: 4, attention: 18, horizon: 480, kinematic: false, telegraphs: 0.4, lapse: 0.05, lapseMs: 450, abilityUse: 0.4, greedy: 0.6, policy: 'casual' },
         skilled: { lag: 170, think: 50, noise: 1.5, attention: 60, horizon: 750, kinematic: true, telegraphs: 1, lapse: 0, lapseMs: 0, abilityUse: 1, greedy: 1.8, policy: 'skilled' },
         // no reaction delay, sees everything: what it still can't dodge is a fairness suspect, not a skill issue
+        // never moves (still fires and picks cards like `skilled`): the "I didn't even move" check, a wave a statue survives is a wave that asks nothing
+        statue: { lag: 0, think: 100, noise: 0, attention: 0, horizon: 100, kinematic: false, telegraphs: 0, lapse: 0, lapseMs: 0, abilityUse: 0, greedy: 0, policy: 'skilled', idle: true },
         oracle: { lag: 0, think: 33, noise: 0, attention: 250, horizon: 900, kinematic: true, telegraphs: 1, lapse: 0, lapseMs: 0, abilityUse: 1, greedy: 1, policy: 'skilled' }
     };
     const KEYS = { left: 'ArrowLeft', right: 'ArrowRight', up: 'ArrowUp', down: 'ArrowDown', fire: 'Space', dash: 'ShiftLeft', forcefield: 'KeyZ', phase: 'KeyX' };
@@ -120,6 +122,7 @@
     }
 
     function decide(g, p) {
+        if (B.prof.idle) return { dir: [0, 0], ability: null, cost: 0, firstHit: 0 };
         const P = B.prof, steps = Math.round(P.horizon / SUB), pre = Math.ceil(P.lag / SUB);
         const th = threats(g, p), pos = predict(th, pre + steps);
         const tgt = target(g, p), tele = telegraphs(g, p);
@@ -236,8 +239,20 @@
         if (k && warn) for (const it of warn.items) items.push(it);
         const lasers = [];
         for (const e of g.waves.live) if (e.alive && e.typeName === 'sniper' && e.charge > 0) lasers.push({ x: e.x, y: e.y + 11, a: e.aimA, ms: e.charge });
+        // laser beams (objects/beams.js): a band is live from chargeMs to chargeMs + fireMs of its own clock
+        const beams = (g.beams?.items || []).map((b) => ({ x: b.x, y: b.y, a: b.a0 ?? b.a, sweep: b.sweep || 0, half: b.w / 2 + 9, t: b.t, c: b.chargeMs, f: b.fireMs }));
         return (x, y, t) => {
             let c = 0;
+            for (const b of beams) {
+                const ca = Math.cos(b.a), sa = Math.sin(b.a), rx = x - b.x, ry = y - b.y;
+                if (rx * ca + ry * sa < 0) continue;
+                if (b.sweep) {   // a sweeping band covers the whole sector between its two telegraphed edges
+                    const dist = Math.hypot(rx, ry) || 1;
+                    if (Math.abs(Math.atan2(ry, rx) - b.a) > b.sweep + b.half / dist) continue;
+                } else if (Math.abs(-rx * sa + ry * ca) > b.half) continue;
+                const at = b.t + t * 1000;
+                if (at >= b.c - 120 && at <= b.c + b.f) c += 720 * k; else if (at < b.c) c += 0.8 * k;   // a band does 1.8x a bullet's damage, so it costs 1.8x a bullet hit
+            }
             for (const it of items) {
                 if (it.ms > 1400) continue;
                 const ca = Math.cos(it.a), sa = Math.sin(it.a), rx = x - it.x, ry = y - it.y;
