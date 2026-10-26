@@ -1,7 +1,7 @@
 // Victory screen after THE STARBURST (wave 20). Launched by BossDirector.victory() on top of the paused Game scene
 // with data { score, wave, stats, game }: "SECTOR CLEARED / YOU WIN" title wipe, run stats, a short credits roll and
 // pixel fireworks. CONTINUE resumes the same run in endless mode (BossDirector.continueEndless); MAIN MENU ends the
-// run here (recorded like a game over) and returns to the title.
+// run here (settled like a game over: credits, boards, callsign prompt) and returns to the title.
 import Phaser from 'phaser';
 import { W, H, DEPTH } from '../config.js';
 import { COLORS } from '../art/palette.js';
@@ -11,6 +11,9 @@ import { save } from '../systems/Save.js';
 import { sfx } from '../systems/sfx.js';
 import { playMusic, playSting } from '../systems/music.js';
 import { submitRun } from '../systems/telemetry.js';
+import { settleRun } from '../systems/runResult.js';
+import { online } from '../systems/net.js';
+import { openSubPanel } from './menu/accessRows.js';
 
 const PW = 232, PX = 40, PY = 112, ROW = 17;
 const ROLL = { x: 470, top: 112, bottom: 262, speed: 22 };      // credits column (px/s)
@@ -148,9 +151,19 @@ export default class Victory extends Phaser.Scene {
         if (this.leaving) return;
         this.leaving = true;
         const d = this.data0;
+        settleRun({ score: d.score, wave: d.wave || 20, stats: d.stats });   // credits, local board and achievements, like a game over
         save.recordRun(Math.floor(d.score || 0), d.wave || 20);
         const log = d.game?.runlog;
-        if (log && !log.done) submitRun(log.finish('win', { score: d.score, wave: d.wave || 20, stats: d.stats }));
+        const tele = log && !log.done ? log.finish('win', { score: d.score, wave: d.wave || 20, stats: d.stats }) : null;
+        // first ranked-eligible run ever: ask for the callsign before leaving, like GameOver does (skipping it sends the run unranked)
+        if (tele && online() && !tele.assist && tele.score > 0 && !save.callsign) {
+            openSubPanel(this, 'MenuCallsign');
+            this.scene.get('MenuCallsign').events.once('shutdown', () => this.exit(tele));
+        } else this.exit(tele);
+    }
+
+    exit(tele) {
+        if (tele) submitRun(tele, save.callsign);
         playMusic('title-music', { fadeIn: 900, fadeOut: 900 });
         this.cameras.main.fadeOut(220, 7, 11, 26);
         this.cameras.main.once('camerafadeoutcomplete', () => {

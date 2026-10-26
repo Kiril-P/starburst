@@ -195,11 +195,31 @@ await step('beating the final boss and leaving to the menu sends a ranked win', 
     await until(() => __dbg.scene.runlog.ms > 3500, 'a few seconds of play', 15000);
     await ev(() => __dbg.scene.bosses.victory());
     await inScene('Victory', 8000);
+    const credits0 = await ev(() => Number(localStorage.getItem('credits') || 0));
     await ev(() => __game.scene.getScene('Victory').toMenu());
     await inScene('MainMenu', 10000);
     for (let i = 0; i < 50 && !q("SELECT 1 FROM runs WHERE outcome='win'").length; i++) await sleep(100);
     const r = q("SELECT * FROM runs WHERE outcome='win'");
     must(r.length === 1 && r[0].won === 1 && r[0].name === 'KIR' && r[0].ranked === 1, `win rows: ${JSON.stringify(r).slice(0, 220)}`);
+    must(await ev((c) => Number(localStorage.getItem('credits') || 0) > c, credits0), 'a win via MAIN MENU banks no credits');
+});
+await step('a win with no callsign asks for one and is ranked under it', async () => {
+    await ev(() => localStorage.removeItem('callsign'));
+    await sleep(1500);
+    await key('Enter');
+    await inScene('Game', 12000);
+    await until(() => !!(window.__dbg && __dbg.scene.runlog), 'run log');
+    await ev(() => { __dbg.scene.combat.score = 9500; });
+    await until(() => __dbg.scene.runlog.ms > 3500, 'a few seconds of play', 15000);
+    await ev(() => __dbg.scene.bosses.victory());
+    await inScene('Victory', 8000);
+    await ev(() => __game.scene.getScene('Victory').toMenu());
+    await inScene('MenuCallsign', 5000);
+    await ev(() => { localStorage.setItem('callsign', 'WIN'); __game.scene.stop('MenuCallsign'); });
+    await inScene('MainMenu', 10000);
+    for (let i = 0; i < 50 && q("SELECT 1 FROM runs WHERE outcome='win'").length < 2; i++) await sleep(100);
+    const r = q("SELECT * FROM runs WHERE outcome='win' AND name='WIN'");
+    must(r.length === 1 && r[0].ranked === 1, `callsign win rows: ${JSON.stringify(r).slice(0, 220)}`);
 });
 await step('ONLINE off: nothing is sent', async () => {
     await ev(() => localStorage.setItem('online', '0'));
