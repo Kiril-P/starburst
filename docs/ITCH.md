@@ -5,6 +5,7 @@ the `starburst-dist` artifact from CI is the offline build) with `index.html` at
 
 ## Page settings
 
+- **Trailer:** https://youtu.be/nMRJ2e6BrjQ (set in Edit game → Gameplay video; also linked at the top of the 2.1 devlog and in the README).
 - **Kind of project:** HTML
 - **Embed:** "Embed in page", viewport **1280 × 720**. Turn on "Mobile friendly" (orientation: landscape) and "Fullscreen button". Leave "Automatically start on page load" off so audio starts after a click.
 - **SharedArrayBuffer support:** off (not needed)

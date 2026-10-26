@@ -2,7 +2,7 @@
 
 A neon pixel-art bullet hell. Dodge dense bullet patterns, graze for combo, fight bosses, and build a stronger ship between waves.
 
-**[▶ Play in browser](https://kirilpetrovski.com/play/starburst/)** · [itch.io](https://kirilp.itch.io/starburst)
+**[▶ Play in browser](https://kirilpetrovski.com/play/starburst/)** · [itch.io](https://kirilp.itch.io/starburst) · [Trailer](https://youtu.be/nMRJ2e6BrjQ)
 
 ![StarBurst gameplay](docs/media/gameplay.gif)
 
