@@ -15,7 +15,7 @@ the `starburst-dist` artifact from CI is the offline build) with `index.html` at
 - **Accessibility:** Configurable controls, Color-blind friendly, High-contrast
 - **Average session:** A few minutes
 - **Languages:** English
-- **Cover image:** 630 × 500 (itch minimum 315 × 250). Ready-made: `docs/media/itch-cover.png` (630 × 500). Screenshots (1280 × 720): `docs/media/title.png`, `gameplay.png`, `boss.png`, `sector3.png`. GIF: `docs/media/gameplay.gif` (3.9 MB; itch allows up to 3 MB per GIF cover but screenshots can be larger, so use it as a screenshot or trim with `--seconds 4`).
+- **Cover image:** 630 × 500 (itch minimum 315 × 250). Ready-made (`node tools/make-itch-assets.mjs` regenerates them): `docs/media/itch-cover.png` (630 × 500), `itch-banner.png` (1600 × 400, page header), `og-image.png`, `sector-collage.png`. Screenshots (1280 × 720): `docs/media/title.png`, `gameplay.png`, `boss.png`, `sector3.png`. GIF: `docs/media/gameplay.gif` (3.9 MB; itch allows up to 3 MB per GIF cover but screenshots can be larger, so use it as a screenshot or trim with `--seconds 4`).
 - **Theme colours (Edit theme):** background `#070b1a`, text `#dbe6ff`, links/buttons `#39e7ff`, secondary `#ff43c8`
 
 ## AI disclosure (itch.io "Generative AI" section + page text)
