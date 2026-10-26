@@ -43,7 +43,7 @@ VITE_API_URL=https://starburst-api.<your-subdomain>.workers.dev npm run build
 npm run compliance -- --require-dist        # prints "online build: the game may contact ..."
 ```
 
-Upload `dist/` to itch.io / your site as before. A custom domain (`api.kpetrovski.me`) works the same way: add a route in the Cloudflare dashboard and use that URL instead.
+Upload `dist/` to itch.io / your site as before. A custom domain (`api.kirilpetrovski.com`) works the same way: add a route in the Cloudflare dashboard and use that URL instead.
 
 `.env` files are git-ignored in this repo, so either pass `VITE_API_URL` inline as above or put it in the CI environment. There is no secret in it: the API URL is public by nature.
 

@@ -12,7 +12,7 @@ import { parseRun, parseBoard, parseEvent } from './validate.js';
 import { summary } from './summary.js';
 
 const CORS = {
-    'access-control-allow-origin': '*',   // no cookies / credentials: the game runs on itch.io, kpetrovski.me and localhost
+    'access-control-allow-origin': '*',   // no cookies / credentials: the game runs on itch.io, kirilpetrovski.com and localhost
     'access-control-allow-methods': 'GET, POST, OPTIONS',
     'access-control-allow-headers': 'content-type, authorization',
     'access-control-max-age': '86400'
