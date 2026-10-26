@@ -15,7 +15,7 @@ the `starburst-dist` artifact from CI is the offline build) with `index.html` at
 - **Accessibility:** Configurable controls, Color-blind friendly, High-contrast
 - **Average session:** A few minutes
 - **Languages:** English
-- **Cover image:** 630 × 500 (itch minimum 315 × 250). Make a dedicated crop from `docs/media/gameplay.png` or the title screen; a straight crop of `public/og-image.png` cuts off the logo. Screenshots: `docs/media/title.png`, `gameplay.png`, `boss.png`. GIF: `docs/media/gameplay.gif`.
+- **Cover image:** 630 × 500 (itch minimum 315 × 250). Ready-made: `docs/media/itch-cover.png` (630 × 500). Screenshots (1280 × 720): `docs/media/title.png`, `gameplay.png`, `boss.png`, `sector3.png`. GIF: `docs/media/gameplay.gif` (3.9 MB; itch allows up to 3 MB per GIF cover but screenshots can be larger, so use it as a screenshot or trim with `--seconds 4`).
 - **Theme colours (Edit theme):** background `#070b1a`, text `#dbe6ff`, links/buttons `#39e7ff`, secondary `#ff43c8`
 
 ## AI disclosure (itch.io "Generative AI" section + page text)
@@ -49,12 +49,12 @@ Dodge the neon storm. Graze for combo. Break the bosses.
 Fly through timed waves of enemy fire, slip through gaps a few pixels wide, and *graze* bullets on purpose. Every near
 miss feeds your combo multiplier. After each wave, pick an upgrade: unlock a **dash**, a bullet-erasing **forcefield**
 or a **phase shift** that lets you pass through everything, then level them up. Every fifth wave a boss arrives with
-telegraphed attack phases. Survive past the authored waves and the endless mode keeps raising the pressure.
+telegraphed attack phases. Four sectors (nebula, asteroid field, derelict station, solar storm) lead to a final boss; survive past it and the endless mode keeps raising the pressure.
 
 **Features**
 - Three ships: balanced **Pulsar**, the fast **Nova Dart**, and the armoured **Titan**
 - Readable patterns: orbs, rings, needles, and shards each have their own silhouette, and your true hitbox is always visible
-- Bosses with multiple phases, quests to complete, three difficulty levels, and best-run tracking
+- 20 hand-built waves in four sectors, mid-bosses and four main bosses with multiple phases, quests, three difficulty levels, a daily run and best-run tracking
 - Keyboard, gamepad, and touch controls
 - Installable and playable offline
 - World leaderboards (all-time and daily) with a 3-letter callsign. The game sends anonymous run statistics to improve balance; **Settings → Online** turns it off. No account, no tracking: see `docs/PRIVACY.md`. (Only if the uploaded build was made with `VITE_API_URL`; otherwise delete this bullet.)

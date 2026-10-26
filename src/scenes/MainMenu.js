@@ -7,6 +7,7 @@ import { COLORS, PALETTE } from '../art/palette.js';
 import Background from '../fx/Background.js';
 import { MenuNav } from '../ui/widgets.js';
 import { save } from '../systems/Save.js';
+import { BUILD } from '../systems/net.js';
 import { sfx } from '../systems/sfx.js';
 import { evaluateQuests, syncQuests } from '../systems/quests.js';
 import TitleLogo from './menu/TitleLogo.js';
@@ -62,7 +63,7 @@ export default class MainMenu extends Phaser.Scene {
         this.credits = createCredits(this, W - 8, 8);
         this.buildFooter();
         this.updateFooter();
-        this.corner = text(this, W - 6, H - 5, 'V2.0', { size: 8, origin: [1, 1], color: PALETTE[2] }).setDepth(DEPTH.HUD);
+        this.corner = text(this, W - 6, H - 5, 'V' + BUILD.split('-')[0].split('.').slice(0, 2).join('.'), { size: 8, origin: [1, 1], color: PALETTE[2] }).setDepth(DEPTH.HUD);
 
         this.flash = this.add.rectangle(0, 0, W, H, COLORS.w, 0).setOrigin(0).setDepth(DEPTH.MODAL + 10);
         this.intensity = 1;
