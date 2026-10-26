@@ -43,6 +43,6 @@ Nothing is deleted automatically yet. The data holds no personal information, bu
 
 ## Owner checklist
 
-- **OWNER DECISION: consent.** Telemetry is always on by design (no opt-in prompt), justified by the data being anonymous: no identifier that outlives a run, no IP stored. Whether that is enough where you distribute (EU/UK players, itch.io's own rules, store policies) is a legal question this repo does not answer: have it checked, or add a first-launch prompt. A prompt is a small change: gate `online()` in `src/systems/net.js` on a stored answer.
+- **Consent (decided by the owner, 2026-10-26): no opt-in prompt.** Telemetry is always on by design, with a Settings → Online switch to turn it off. It rests on the data being anonymous: no identifier that outlives a run, no IP stored. This has not had legal review; if you distribute where that matters (EU/UK players, store policies), a first-launch prompt is a small change: gate `online()` in `src/systems/net.js` on a stored answer.
 - Mention online features on the itch.io page and in the README (done in this repo; keep the itch text in sync).
 - Never put the admin token in the repo or in a `VITE_` variable: those are compiled into the public bundle.
