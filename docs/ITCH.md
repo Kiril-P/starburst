@@ -87,3 +87,25 @@ STARBURST has been rebuilt. Here's what's new:
 - A full accessibility menu: rebinding, high-contrast and colour-blind-safe bullets, and assist mode
 
 It also works offline once loaded. Have fun, and tell me your best wave!
+
+## Devlog post draft: "STARBURST 2.1: world leaderboards and sector 3"
+
+- **World leaderboards:** all-time and daily boards, with a 3-letter arcade callsign. No account needed.
+- **Anonymous run statistics** (wave reached, score, what hit you) are sent to help balance the game. **Settings → Online** turns
+  this off. No account, no cookies, no tracking; the exact fields are listed in the repo (`docs/PRIVACY.md`).
+- **Sector 3:** new enemies, new wave scripts and new beam attacks.
+- **Balance pass over the whole game**, tuned with a bot that plays full runs.
+- **Fixes:** audio crackle on busy screens, the BOSSES gallery button in the main menu.
+
+## Uploading with butler
+
+`butler` is not on Homebrew under that name (the `butler` cask is an unrelated app). Download it from
+https://broth.itch.zone/butler/darwin-arm64/LATEST/archive/default, then:
+
+```
+butler login                                   # once, opens the browser
+npm run build:online && npm run compliance -- --require-dist
+butler push dist kirilp/starburst:html5 --userversion 2.1.0
+```
+
+Page text, tags, screenshots and the devlog are edited in the itch dashboard (butler only uploads files).
